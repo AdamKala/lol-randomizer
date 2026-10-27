@@ -109,6 +109,6 @@ export function buildGroupInsights(history: ConfirmedGame[]): GroupInsights {
       const favoriteChampion = [...player.champions.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'cs'))[0]
       return { playerId: player.playerId, displayName: player.displayName, games: player.games, wins: player.wins, primaryRole: roleList[0]?.role ?? 'TOP', primaryRoleGames: roleList[0]?.games ?? 0, favoriteChampion: favoriteChampion?.[0] ?? '—', favoriteChampionGames: favoriteChampion?.[1] ?? 0, roles: roleList }
     }).sort((left, right) => right.games - left.games || left.displayName.localeCompare(right.displayName, 'cs')),
-    pairs: [...pairs.values()].sort((left, right) => right.games - left.games || (right.wins / right.games) - (left.wins / left.games) || left.playerNames.join('').localeCompare(right.playerNames.join(''), 'cs')),
+    pairs: [...pairs.values()].sort((left, right) => (right.wins / right.games) - (left.wins / left.games) || right.games - left.games || left.playerNames.join('').localeCompare(right.playerNames.join(''), 'cs')),
   }
 }

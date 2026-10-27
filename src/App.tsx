@@ -255,7 +255,7 @@ function PlayerDetailPanel({ playerId, player, history, onBack, onPlayerSelect }
   const averagePerformance = detail.performanceSamples ? detail.performance / detail.performanceSamples : 0
   const maxRoleGames = Math.max(1, ...detail.roles.map((role) => role.games))
   const recentForm = detail.matches.slice(0, 10).reverse()
-  const teammates = buildGroupInsights(history).pairs.filter((pair) => pair.playerIds.includes(playerId)).map((pair) => ({ ...pair, teammateId: pair.playerIds[0] === playerId ? pair.playerIds[1] : pair.playerIds[0], teammateName: pair.playerIds[0] === playerId ? pair.playerNames[1] : pair.playerNames[0] })).sort((left, right) => right.games - left.games || (right.wins / right.games) - (left.wins / left.games))
+  const teammates = buildGroupInsights(history).pairs.filter((pair) => pair.playerIds.includes(playerId)).map((pair) => ({ ...pair, teammateId: pair.playerIds[0] === playerId ? pair.playerIds[1] : pair.playerIds[0], teammateName: pair.playerIds[0] === playerId ? pair.playerNames[1] : pair.playerNames[0] })).sort((left, right) => (right.wins / right.games) - (left.wins / left.games) || right.games - left.games)
 
   const strengthIcon = (key: (typeof detail.strengths)[number]['key']) => {
     if (key === 'form') return Trophy
