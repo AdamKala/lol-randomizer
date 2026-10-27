@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseOpggMatchDetail, parseOpggRecentMatches } from './matches'
+import { parseOpggGamesActionResponse, parseOpggMatchDetail, parseOpggRecentMatches, selectOpggRecentMatches } from './matches'
 
 const html = `<!doctype html><html><head><script type="application/ld+json">{
   "@context":"https://schema.org",
@@ -49,6 +49,36 @@ describe('OP.GG veřejná historie', () => {
 
   it('odmítne stránku bez historie', () => {
     expect(() => parseOpggRecentMatches('<html></html>')).toThrow(/neobsahuje čitelnou historii/i)
+  })
+
+  it('vybere historii podle počtu nebo data', () => {
+    const matches = parseOpggRecentMatches(html)
+    const older = { ...matches[0], rawMatchId: 'older', gameStartedAt: '2026-10-20T10:00:00.000Z' }
+    const newer = { ...matches[0], rawMatchId: 'newer', gameStartedAt: '2026-10-27T10:00:00.000Z' }
+    expect(selectOpggRecentMatches([newer, older], { mode: 'count', count: 1 }).map((match) => match.rawMatchId)).toEqual(['newer'])
+    expect(selectOpggRecentMatches([newer, older], { mode: 'since', since: '2026-10-25T00:00:00.000Z' }).map((match) => match.rawMatchId)).toEqual(['newer'])
+    const twelve = Array.from({ length: 12 }, (_, index) => ({ ...newer, rawMatchId: `match-${index}` }))
+    expect(selectOpggRecentMatches(twelve, { mode: 'count', count: 12 })).toHaveLength(12)
+  })
+
+  it('načte stránku starších her včetně damage a kurzoru', () => {
+    const game = {
+      id: 'older-match',
+      puuid: 'puuid-1',
+      created_at: '2026-10-20T10:00:00.000Z',
+      game_version: '16.21',
+      game_length: 1800,
+      game_result: 'WIN',
+      game_type: { game_type: 'SOLORANKED' },
+      champion: { name: 'Ahri' },
+      stats: { op_score: 8.4, op_score_rank: 2, kda: { kill: 8, death: 2, assist: 11 }, cs: { totalCs: 208 } },
+      team_blue: [{ participant_id: 1, champion_id: 103, team_key: 'BLUE', position: 'MID', champion: { name: 'Ahri' }, summoner: { puuid: 'puuid-1' }, stats: { kill: 8, death: 2, assist: 11, gold_earned: 12345, vision_score: 24, total_damage_dealt_to_champions: 28765, minion_kill: 205, neutral_minion_kill: 3, result: 'WIN', op_score: 8.4, op_score_rank: 2 } }],
+      team_red: [],
+    }
+    const response = `0:{"a":"$@1"}\n1:${JSON.stringify({ data: [game], meta: { last_game_created_at: '2026-10-19T10:00:00.000Z' } })}`
+    const page = parseOpggGamesActionResponse(response, 'puuid-1')
+    expect(page.nextCursor).toBe('2026-10-19T10:00:00.000Z')
+    expect(page.matches[0]).toMatchObject({ rawMatchId: 'older-match', durationSeconds: 1800, gameVersion: '16.21', detailedParticipant: { championName: 'Ahri', totalDamageDealtToChampions: 28765, detailedStats: true } })
   })
 
   it('načte damage, vision a hodnocení z detailu zápasu', () => {

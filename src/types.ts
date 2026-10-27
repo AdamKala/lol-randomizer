@@ -148,10 +148,15 @@ export type MatchSyncResult =
   | { kind: 'matched'; match: MatchSummary }
   | { kind: 'pending'; message: string }
 
+export type RecentMatchesRange =
+  | { mode: 'count'; count: number }
+  | { mode: 'since'; since: string }
+
 export interface RecentMatchesImportRequest {
   excludedMatchIds: string[]
   region: MatchRegion
   players: Array<{ playerId: string; displayName: string; riotId: string }>
+  range: RecentMatchesRange
 }
 
 export interface RecentMatchesImportResult {

@@ -1,4 +1,4 @@
-import type { MatchParticipantStats, MatchRegion, MatchSummary, MatchSyncRequest, MatchSyncResult, RecentMatchesImportRequest, RecentMatchesImportResult } from '../src/types'
+import type { MatchParticipantStats, MatchRegion, MatchSummary, MatchSyncRequest, MatchSyncResult, RecentMatchesImportRequest, RecentMatchesImportResult, RecentMatchesRange } from '../src/types'
 
 interface PublicPlayerMatch {
   rawMatchId: string
@@ -12,13 +12,25 @@ interface PublicPlayerMatch {
   win: boolean
   opScore: number
   opScoreRank: number
+  durationSeconds?: number
+  gameVersion?: string
+  detailedParticipant?: Omit<MatchParticipantStats, 'playerId' | 'displayName' | 'riotId'>
+}
+
+interface OpggGamesPage {
+  matches: PublicPlayerMatch[]
+  nextCursor: string
 }
 
 type TrackedPlayer = MatchSyncRequest['players'][number]
 
 const PROFILE_LIMIT_BYTES = 5_000_000
 const DETAIL_LIMIT_BYTES = 8_000_000
-const USER_AGENT = 'LoL-Randomizer/1.4.1 (+https://github.com/AdamKala/lol-randomizer)'
+const ACTION_LIMIT_BYTES = 15_000_000
+const MAX_IMPORTED_MATCHES = 100
+const MAX_IMPORT_PAGES = MAX_IMPORTED_MATCHES / 20
+const USER_AGENT = 'LoL-Randomizer/1.5.0 (+https://github.com/AdamKala/lol-randomizer)'
+let cachedGamesAction: { scriptUrl: string; actionId: string } | null = null
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -57,6 +69,13 @@ function validateImportRequest(value: unknown): asserts value is RecentMatchesIm
   validateRegion(value.region)
   validatePlayers(value.players, 10)
   if (!Array.isArray(value.excludedMatchIds) || value.excludedMatchIds.some((id) => typeof id !== 'string')) throw new Error('Neplatný seznam uložených zápasů.')
+  if (!isRecord(value.range)) throw new Error('Vyber počet her nebo datum začátku importu.')
+  if (value.range.mode === 'count') {
+    const count = number(value.range.count)
+    if (typeof value.range.count !== 'number' || !Number.isInteger(count) || count < 1 || count > MAX_IMPORTED_MATCHES) throw new Error(`Počet her musí být celé číslo od 1 do ${MAX_IMPORTED_MATCHES}.`)
+  } else if (value.range.mode === 'since') {
+    if (typeof value.range.since !== 'string' || !Number.isFinite(Date.parse(value.range.since))) throw new Error('Datum začátku importu není platné.')
+  } else throw new Error('Neplatný způsob výběru historie.')
 }
 
 function splitRiotId(riotId: string): { gameName: string; tagLine: string } {
@@ -124,6 +143,188 @@ export function parseOpggRecentMatches(html: string): PublicPlayerMatch[] {
   return matches
 }
 
+export function selectOpggRecentMatches(matches: PublicPlayerMatch[], range: RecentMatchesRange): PublicPlayerMatch[] {
+  if (range.mode === 'count') return matches.slice(0, Math.max(1, Math.min(MAX_IMPORTED_MATCHES, Math.trunc(range.count))))
+  const since = Date.parse(range.since)
+  return matches.filter((match) => Date.parse(match.gameStartedAt) >= since)
+}
+
+function profilePuuid(html: string): string {
+  for (const node of jsonLdGraphs(html)) {
+    const puuid = text(propertyMap(node.identifier).get('puuid')) || text(propertyMap(node.additionalProperty).get('puuid'))
+    if (puuid) return puuid
+  }
+  const escapedPuuid = html.match(/puuid\\?"\s*:\s*\\?"([A-Za-z0-9_-]{60,100})\\?"/)?.[1]
+  if (escapedPuuid) return escapedPuuid
+  throw new Error('OP.GG profil neobsahuje identifikátor potřebný pro načtení starších her.')
+}
+
+async function responseText(response: Response, maximumBytes: number, oversizedMessage: string): Promise<string> {
+  const length = Number(response.headers.get('content-length'))
+  if (Number.isFinite(length) && length > maximumBytes) throw new Error(oversizedMessage)
+  const body = await response.text()
+  if (body.length > maximumBytes) throw new Error(oversizedMessage)
+  return body
+}
+
+async function resolveGamesAction(html: string, profileUrl: string): Promise<string> {
+  if (cachedGamesAction && html.includes(cachedGamesAction.scriptUrl)) return cachedGamesAction.actionId
+  const sources = [...html.matchAll(/<script[^>]+src=["']([^"']+\.js)["']/g)].map((match) => match[1])
+  const preferred = sources.find((source) => /\/chunks\/1534-[^/]+\.js$/.test(source))
+  const candidates = preferred ? [preferred, ...sources.filter((source) => source !== preferred)] : [...sources].reverse()
+  for (const source of candidates) {
+    const url = new URL(source, profileUrl)
+    if (url.protocol !== 'https:' || url.hostname !== 'c-lol-web.op.gg') continue
+    const response = await fetch(url, { headers: { Accept: 'application/javascript', 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(20_000) })
+    if (!response.ok) continue
+    const script = await responseText(response, PROFILE_LIMIT_BYTES, 'OP.GG skript pro stránkování je neočekávaně velký.')
+    const actionId = script.match(/createServerReference\)\("([a-f0-9]{40,64})"[^;]{0,240}"getGames"\)/)?.[1]
+    if (!actionId) continue
+    cachedGamesAction = { scriptUrl: source, actionId }
+    return actionId
+  }
+  throw new Error('OP.GG stránkování starších zápasů se změnilo. Zkus to prosím později nebo aplikaci aktualizuj.')
+}
+
+function findTrackedDetail(game: Record<string, unknown>, puuid: string): Record<string, unknown> | null {
+  let found: Record<string, unknown> | null = null
+  const visit = (value: unknown) => {
+    if (found) return
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item)
+      return
+    }
+    if (!isRecord(value)) return
+    const summoner = value.summoner
+    if (isRecord(summoner) && text(summoner.puuid) === puuid && isRecord(value.stats)) {
+      found = value
+      return
+    }
+    for (const item of Object.values(value)) visit(item)
+  }
+  visit(game.team_blue)
+  visit(game.team_red)
+  visit(game.team_arena)
+  return found
+}
+
+function paginatedMatch(value: unknown, puuid: string): PublicPlayerMatch | null {
+  if (!isRecord(value)) return null
+  const rawMatchId = text(value.id)
+  const gameStartedAt = text(value.created_at)
+  const gameType = isRecord(value.game_type) ? value.game_type : {}
+  const champion = isRecord(value.champion) ? value.champion : {}
+  const summaryStats = isRecord(value.stats) ? value.stats : {}
+  const kda = isRecord(summaryStats.kda) ? summaryStats.kda : {}
+  const cs = isRecord(summaryStats.cs) ? summaryStats.cs : {}
+  const result = text(value.game_result).toUpperCase()
+  if (!rawMatchId || !Number.isFinite(Date.parse(gameStartedAt)) || !text(champion.name) || (result !== 'WIN' && result !== 'LOSE')) return null
+  const detail = findTrackedDetail(value, puuid)
+  const detailStats = detail && isRecord(detail.stats) ? detail.stats : null
+  const detailChampion = detail && isRecord(detail.champion) ? detail.champion : champion
+  const summoner = detail && isRecord(detail.summoner) ? detail.summoner : {}
+  return {
+    rawMatchId,
+    gameStartedAt,
+    queueType: text(gameType.game_type),
+    championName: text(champion.name),
+    kills: number(kda.kill),
+    deaths: number(kda.death),
+    assists: number(kda.assist),
+    cs: number(cs.totalCs),
+    win: result === 'WIN',
+    opScore: number(summaryStats.op_score),
+    opScoreRank: number(summaryStats.op_score_rank),
+    durationSeconds: number(value.game_length),
+    gameVersion: text(value.game_version),
+    detailedParticipant: detail && detailStats ? {
+      puuid: text(summoner.puuid, puuid),
+      championId: number(detail.champion_id),
+      championName: text(detailChampion.name, text(champion.name)),
+      teamId: text(detail.team_key).toUpperCase() === 'BLUE' ? 100 : text(detail.team_key).toUpperCase() === 'RED' ? 200 : 0,
+      teamPosition: text(detail.position),
+      kills: number(detailStats.kill),
+      deaths: number(detailStats.death),
+      assists: number(detailStats.assist),
+      goldEarned: number(detailStats.gold_earned),
+      visionScore: number(detailStats.vision_score),
+      totalDamageDealtToChampions: number(detailStats.total_damage_dealt_to_champions),
+      totalMinionsKilled: number(detailStats.minion_kill),
+      neutralMinionsKilled: number(detailStats.neutral_minion_kill),
+      win: text(detailStats.result).toUpperCase() === 'WIN',
+      detailedStats: true,
+      performanceScore: number(detailStats.op_score),
+      performanceRank: number(detailStats.op_score_rank),
+    } : undefined,
+  }
+}
+
+export function parseOpggGamesActionResponse(body: string, puuid: string): OpggGamesPage {
+  for (const line of body.split('\n')) {
+    const separator = line.indexOf(':')
+    if (separator < 0) continue
+    try {
+      const payload: unknown = JSON.parse(line.slice(separator + 1))
+      if (!isRecord(payload) || !Array.isArray(payload.data)) continue
+      const meta = isRecord(payload.meta) ? payload.meta : {}
+      return {
+        matches: payload.data.map((game) => paginatedMatch(game, puuid)).filter((match): match is PublicPlayerMatch => Boolean(match)),
+        nextCursor: text(meta.last_game_created_at),
+      }
+    } catch {
+      // Flight odpověď může obsahovat i řádky, které nejsou výsledkem serverové akce.
+    }
+  }
+  throw new Error('OP.GG vrátil nečitelnou stránku starších zápasů.')
+}
+
+async function fetchPlayerMatchesRange(player: TrackedPlayer, region: MatchRegion, range: RecentMatchesRange): Promise<PublicPlayerMatch[]> {
+  const { gameName, tagLine } = splitRiotId(player.riotId)
+  const profileUrl = `https://op.gg/lol/summoners/${region}/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}`
+  try {
+    const profileResponse = await fetch(profileUrl, {
+      headers: { Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.8', 'User-Agent': USER_AGENT },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(25_000),
+    })
+    if (!profileResponse.ok) throw new Error(`OP.GG vrátil HTTP ${profileResponse.status}.`)
+    const html = await responseText(profileResponse, PROFILE_LIMIT_BYTES, 'OP.GG profil je neočekávaně velký.')
+    const puuid = profilePuuid(html)
+    const actionId = await resolveGamesAction(html, profileUrl)
+    const matches: PublicPlayerMatch[] = []
+    const matchIds = new Set<string>()
+    const cursors = new Set<string>()
+    const since = range.mode === 'since' ? Date.parse(range.since) : Number.NEGATIVE_INFINITY
+    const target = range.mode === 'count' ? range.count : MAX_IMPORTED_MATCHES
+    let endedAt = ''
+    for (let pageNumber = 0; pageNumber < MAX_IMPORT_PAGES && matches.length < target; pageNumber += 1) {
+      const response = await fetch(profileUrl, {
+        method: 'POST',
+        headers: { Accept: 'text/x-component', 'Content-Type': 'text/plain;charset=UTF-8', 'Next-Action': actionId, 'User-Agent': USER_AGENT },
+        body: JSON.stringify([{ locale: 'en', region, puuid, gameType: 'total', endedAt, champion: '' }]),
+        redirect: 'follow',
+        signal: AbortSignal.timeout(30_000),
+      })
+      if (!response.ok) throw new Error(`OP.GG stránkování vrátilo HTTP ${response.status}.`)
+      const page = parseOpggGamesActionResponse(await responseText(response, ACTION_LIMIT_BYTES, 'OP.GG stránka zápasů je neočekávaně velká.'), puuid)
+      for (const match of page.matches) {
+        if (!matchIds.has(match.rawMatchId)) {
+          matchIds.add(match.rawMatchId)
+          matches.push(match)
+        }
+      }
+      if (!page.matches.length || !page.nextCursor || cursors.has(page.nextCursor)) break
+      if (range.mode === 'since' && page.matches.some((match) => Date.parse(match.gameStartedAt) < since)) break
+      cursors.add(page.nextCursor)
+      endedAt = page.nextCursor
+    }
+    return selectOpggRecentMatches(matches, range)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Profil se nepodařilo načíst.'
+    throw new Error(`${player.displayName} (${player.riotId}, ${region.toUpperCase()}): ${message}`)
+  }
+}
+
 async function fetchPlayerMatches(player: TrackedPlayer, region: MatchRegion): Promise<PublicPlayerMatch[]> {
   const { gameName, tagLine } = splitRiotId(player.riotId)
   const url = `https://op.gg/lol/summoners/${region}/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}`
@@ -160,6 +361,12 @@ function publicMatchId(region: MatchRegion, rawMatchId: string): string {
 }
 
 function participantFor(player: TrackedPlayer, match: PublicPlayerMatch): MatchParticipantStats {
+  if (match.detailedParticipant) return {
+    playerId: player.playerId,
+    displayName: player.displayName,
+    riotId: player.riotId,
+    ...match.detailedParticipant,
+  }
   return {
     playerId: player.playerId,
     displayName: player.displayName,
@@ -301,14 +508,16 @@ async function fetchMatchDetail(player: TrackedPlayer, match: PublicPlayerMatch,
 
 function summaryFor(region: MatchRegion, player: TrackedPlayer, match: PublicPlayerMatch): MatchSummary {
   const queue = queueInfo(match.queueType)
+  const durationSeconds = match.durationSeconds ?? 0
+  const startedAt = Date.parse(match.gameStartedAt)
   return {
     matchId: publicMatchId(region, match.rawMatchId),
     fetchedAt: new Date().toISOString(),
     gameStartedAt: match.gameStartedAt,
-    gameEndedAt: match.gameStartedAt,
-    durationSeconds: 0,
+    gameEndedAt: Number.isFinite(startedAt) && durationSeconds > 0 ? new Date(startedAt + durationSeconds * 1000).toISOString() : match.gameStartedAt,
+    durationSeconds,
     ...queue,
-    gameVersion: '',
+    gameVersion: match.gameVersion ?? '',
     source: 'opgg',
     participants: [participantFor(player, match)],
   }
@@ -336,10 +545,11 @@ async function enrichProfileMatches(profiles: Array<{ player: TrackedPlayer; mat
     if (!references.has(match.rawMatchId)) references.set(match.rawMatchId, { player: profile.player, match })
   }
   const detailed = new Map<string, MatchSummary>()
+  const incomplete = summaries.filter((summary) => summary.participants.some((participant) => !participant.detailedStats))
   let cursor = 0
-  const workers = Array.from({ length: Math.min(3, summaries.length) }, async () => {
-    while (cursor < summaries.length) {
-      const summary = summaries[cursor++]
+  const workers = Array.from({ length: Math.min(3, incomplete.length) }, async () => {
+    while (cursor < incomplete.length) {
+      const summary = incomplete[cursor++]
       const rawMatchId = summary.matchId.slice(`OPGG_${region}_`.length)
       const reference = references.get(rawMatchId)
       if (!reference) continue
@@ -357,7 +567,7 @@ async function enrichProfileMatches(profiles: Array<{ player: TrackedPlayer; mat
 export async function importRecentPublicMatches(value: unknown): Promise<RecentMatchesImportResult> {
   validateImportRequest(value)
   const profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }> = []
-  for (const player of value.players) profiles.push({ player, matches: await fetchPlayerMatches(player, value.region) })
+  for (const player of value.players) profiles.push({ player, matches: await fetchPlayerMatchesRange(player, value.region, value.range) })
   return { matches: await enrichProfileMatches(profiles, value.region, value.excludedMatchIds), playerCount: value.players.length }
 }
 

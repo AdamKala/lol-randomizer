@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, ty
 import {
   AlertTriangle,
   BarChart3,
+  CalendarDays,
   Check,
   ChevronDown,
   Database,
@@ -28,7 +29,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type Draft, type MetaDataset, type Player, type Role, type RosterFileResult, type Settings } from './types'
+import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type Draft, type MetaDataset, type Player, type RecentMatchesRange, type Role, type RosterFileResult, type Settings } from './types'
 import { changePlayerRole, confirmDraft, generateDraft, getCooldownEntries, rerollOneChampion, validatePlayers } from './lib/randomizer'
 import { isDatasetStale, loadBundledDataset, validateMetaDataset } from './lib/meta'
 import { calculatePlayerStats } from './lib/stats'
@@ -129,6 +130,39 @@ function ConfirmDialog({ draft, onCancel, onConfirm }: { draft: Draft; onCancel:
   )
 }
 
+function localDateValue(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function RecentImportDialog({ importing, onCancel, onImport }: { importing: boolean; onCancel: () => void; onImport: (range: RecentMatchesRange) => Promise<boolean> }) {
+  const [mode, setMode] = useState<RecentMatchesRange['mode']>('count')
+  const [count, setCount] = useState(10)
+  const [sinceDate, setSinceDate] = useState(() => { const date = new Date(); date.setDate(date.getDate() - 7); return localDateValue(date) })
+  const today = localDateValue(new Date())
+  const countIsValid = Number.isInteger(count) && count >= 1 && count <= 100
+  const submit = async () => {
+    if ((mode === 'count' && !countIsValid) || (mode === 'since' && !sinceDate)) return
+    const range: RecentMatchesRange = mode === 'count'
+      ? { mode: 'count', count }
+      : { mode: 'since', since: new Date(`${sinceDate}T00:00:00`).toISOString() }
+    if (await onImport(range)) onCancel()
+  }
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[#02050a]/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="recent-import-title">
+      <div className="glass w-full max-w-lg rounded-xl border-cyan/25 p-5 shadow-2xl md:p-7">
+        <div className="flex items-start justify-between gap-4"><div><p className="eyebrow">Import OP.GG</p><h2 id="recent-import-title" className="mt-2 font-display text-2xl font-bold text-gold-light">Načíst hry</h2><p className="mt-2 text-sm leading-6 text-slate-400">Vyber počet posledních her, nebo datum, od kterého je chceš zahrnout.</p></div><button type="button" className="btn-ghost !min-h-9 !px-2" onClick={onCancel} disabled={importing} aria-label="Zavřít"><X size={18} /></button></div>
+        <div className="mt-6 grid grid-cols-2 gap-2 rounded-lg border border-white/[.08] bg-black/10 p-1.5"><button type="button" onClick={() => setMode('count')} className={`min-h-11 rounded-md px-3 text-sm font-bold transition ${mode === 'count' ? 'bg-cyan/15 text-cyan' : 'text-slate-500 hover:bg-white/[.04] hover:text-slate-200'}`}><HistoryIcon className="mr-2 inline" size={16} />Počet her</button><button type="button" onClick={() => setMode('since')} className={`min-h-11 rounded-md px-3 text-sm font-bold transition ${mode === 'since' ? 'bg-cyan/15 text-cyan' : 'text-slate-500 hover:bg-white/[.04] hover:text-slate-200'}`}><CalendarDays className="mr-2 inline" size={16} />Od data</button></div>
+        <div className="mt-5 rounded-lg border border-white/[.08] bg-white/[.02] p-4">{mode === 'count' ? <label className="block"><span className="text-sm font-semibold text-slate-300">Posledních her každého hráče</span><input type="number" min="1" max="100" step="1" className="field mt-2" value={count} onChange={(event) => setCount(Number(event.target.value))} autoFocus /><small className="mt-2 block text-xs text-slate-600">Zadej číslo od 1 do 100.</small></label> : <label className="block"><span className="text-sm font-semibold text-slate-300">Načíst hry ode dne</span><input type="date" max={today} className="field mt-2" value={sinceDate} onChange={(event) => setSinceDate(event.target.value)} autoFocus /><small className="mt-2 block text-xs text-slate-600">Čas se počítá od půlnoci ve tvém místním čase.</small></label>}</div>
+        <div className="mt-4 flex gap-2 rounded-lg border border-amber-400/15 bg-amber-400/[.05] p-3 text-xs leading-5 text-amber-100/70"><AlertTriangle className="mt-0.5 shrink-0" size={15} /><span>OP.GG se načítá po stránkách. Kvůli rychlosti a šetrnosti je jeden import omezený na 100 her na hráče; datum se použije v tomto rozsahu.</span></div>
+        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" className="btn-ghost" onClick={onCancel} disabled={importing}>Zrušit</button><button type="button" className="btn-blue" onClick={() => void submit()} disabled={importing || (mode === 'count' ? !countIsValid : !sinceDate)}>{importing ? <LoaderCircle size={16} className="animate-spin" /> : <Download size={16} />} {importing ? 'Načítám z OP.GG…' : 'Načíst hry'}</button></div>
+      </div>
+    </div>
+  )
+}
+
 function StatisticsPanel({ history }: { history: ConfirmedGame[] }) {
   const stats = useMemo(() => calculatePlayerStats(history), [history])
   const syncedGames = history.filter((game) => game.match)
@@ -171,7 +205,7 @@ function RecentGamesPanel({ history, importing, onImport, onClear }: { history: 
   const missingDetails = games.filter((game) => game.match?.participants.some((participant) => !participant.detailedStats)).length
   return (
     <Panel className="overflow-hidden">
-      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Veřejná data OP.GG</p><h2 className="section-title mt-1 flex items-center gap-2"><Swords size={20} className="text-gold" /> Poslední hry</h2><p className="mt-2 text-xs text-slate-500">Každý zápas je jedna karta. Rozklikni ji pro damage graf a výkony celé vaší skupiny.</p></div><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={onImport} disabled={importing} title="Načíst posledních 10 zápasů každého hráče z veřejných profilů OP.GG — bez API klíče">{importing ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importing ? 'Načítám detaily…' : 'Načíst posledních 10 / hráč'}</button></div>
+      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Veřejná data OP.GG</p><h2 className="section-title mt-1 flex items-center gap-2"><Swords size={20} className="text-gold" /> Poslední hry</h2><p className="mt-2 text-xs text-slate-500">Každý zápas je jedna karta. Rozklikni ji pro damage graf a výkony celé vaší skupiny.</p></div><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={onImport} disabled={importing} title="Vybrat počet her nebo datum začátku importu z OP.GG">{importing ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importing ? 'Načítám detaily…' : 'Načíst hry'}</button></div>
       {missingDetails > 0 && <div className="flex items-start gap-2 border-b border-amber-400/15 bg-amber-400/[.06] px-5 py-3 text-xs leading-5 text-amber-100/80"><AlertTriangle className="mt-0.5 shrink-0" size={15} /><span>{missingDetails} {missingDetails === 1 ? 'zápasu chybí detailní damage' : 'zápasům chybí detailní damage'}. Klikni na načtení znovu; uložené zápasy se aktualizují.</span></div>}
       {!games.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><Swords className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">Načti poslední zápasy uložených hráčů.</p></div></div> : <>
         <div className="divide-y divide-white/[.07]">
@@ -263,6 +297,7 @@ export default function App() {
   const [newPlayerRiotId, setNewPlayerRiotId] = useState('')
   const [editingPlayer, setEditingPlayer] = useState<Pick<Player, 'id' | 'name' | 'riotId'> | null>(null)
   const [importingRecent, setImportingRecent] = useState(false)
+  const [recentImportOpen, setRecentImportOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<AppTab>('general')
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
   const [rosterFile, setRosterFile] = useState<RosterFileResult | null>(null)
@@ -367,13 +402,13 @@ export default function App() {
     }
   }, [])
 
-  const importRecentMatches = async () => {
+  const importRecentMatches = async (range: RecentMatchesRange): Promise<boolean> => {
     const bridge = window.desktop?.matches
-    if (!bridge || !dataset) return setMessage({ type: 'error', text: 'Import OP.GG historie funguje pouze v desktopové aplikaci.' })
+    if (!bridge || !dataset) { setMessage({ type: 'error', text: 'Import OP.GG historie funguje pouze v desktopové aplikaci.' }); return false }
     const rosterPlayers = stateRef.current.players.filter((player) => player.riotId.includes('#'))
     const skipped = stateRef.current.players.length - rosterPlayers.length
-    if (!rosterPlayers.length) return setMessage({ type: 'error', text: 'Alespoň jeden hráč musí mít vyplněné Riot ID ve formátu Jméno#TAG.' })
-    if (rosterPlayers.length > 10) return setMessage({ type: 'error', text: 'Najednou lze načíst historii nejvýše deseti hráčů.' })
+    if (!rosterPlayers.length) { setMessage({ type: 'error', text: 'Alespoň jeden hráč musí mít vyplněné Riot ID ve formátu Jméno#TAG.' }); return false }
+    if (rosterPlayers.length > 10) { setMessage({ type: 'error', text: 'Najednou lze načíst historii nejvýše deseti hráčů.' }); return false }
     setImportingRecent(true)
     setMessage(null)
     try {
@@ -382,7 +417,12 @@ export default function App() {
         excludedMatchIds: current.history.flatMap((game) => (!game.origin || game.origin === 'confirmed') && game.match ? [game.match.matchId] : []),
         region: current.settings.matchRegion,
         players: rosterPlayers.map((player) => ({ playerId: player.id, displayName: player.name, riotId: player.riotId })),
+        range,
       })
+      if (!result.matches.length) {
+        setMessage({ type: 'success', text: 'Ve zvoleném rozsahu nebyly na veřejných profilech OP.GG nalezeny žádné hry.' })
+        return true
+      }
       const merged = mergeRecentMatches(stateRef.current.history, result.matches, dataset)
       setState((value) => ({ ...value, history: merged.history }))
       const skippedText = skipped ? ` Bez Riot ID (přeskočeno): ${skipped}.` : ''
@@ -391,9 +431,11 @@ export default function App() {
         ? `Z OP.GG načteno ${merged.added} nových a aktualizováno ${merged.updated} dříve uložených zápasů pro ${result.playerCount} hráčů.`
         : `Z OP.GG aktualizováno ${merged.updated} uložených zápasů včetně detailních statistik.`
       setMessage({ type: 'success', text: `${importText} Damage načten u ${detailedMatches}/${result.matches.length} zápasů.${skippedText}` })
+      return true
     } catch (error) {
       const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Import posledních zápasů se nezdařil.'
       setMessage({ type: 'error', text })
+      return false
     } finally {
       setImportingRecent(false)
     }
@@ -509,7 +551,7 @@ export default function App() {
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Cooldown potvrzených her <small className="block text-slate-600">0–10 her</small></span><input className="field text-center" type="number" min="0" max="10" value={state.settings.cooldownGames} onChange={(event) => updateSettings({ cooldownGames: Math.max(0, Math.min(10, Number(event.target.value))) })} /></label>
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální pick rate <small className="block text-slate-600">v procentech</small></span><input className="field text-center" type="number" min="0" max="100" step="0.1" value={state.settings.minPickRate} onChange={(event) => updateSettings({ minPickRate: Math.max(0, Number(event.target.value)) })} /></label>
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální počet her</span><input className="field text-center" type="number" min="0" step="100" value={state.settings.minGames} onChange={(event) => updateSettings({ minGames: Math.max(0, Number(event.target.value)) })} /></label>
-              <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] p-3"><div className="flex items-center gap-2 text-sm font-bold text-emerald-200"><Check size={16} /> Bez API klíče</div><p className="mt-1.5 text-xs leading-5 text-slate-500">Výsledky a posledních 10 her aplikace čte z veřejných profilů OP.GG. Stačí správné Riot ID a zvolený region.</p></div>
+              <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] p-3"><div className="flex items-center gap-2 text-sm font-bold text-emerald-200"><Check size={16} /> Bez API klíče</div><p className="mt-1.5 text-xs leading-5 text-slate-500">Výsledky a až 100 posledních her aplikace čte z veřejných profilů OP.GG. Stačí správné Riot ID a zvolený region.</p></div>
               <button type="button" className="btn-ghost !text-xs hover:!border-red-400/30 hover:!text-red-300" onClick={resetApp}><Trash2 size={14} /> Obnovit celou aplikaci</button>
             </div>
           </details>
@@ -566,10 +608,11 @@ export default function App() {
           </aside>
         </div>}
         {activeTab === 'statistics' && <StatisticsPanel history={state.history} />}
-        {activeTab === 'recent' && <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => void importRecentMatches()} onClear={clearRecent} />}
+        {activeTab === 'recent' && <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => setRecentImportOpen(true)} onClear={clearRecent} />}
         <footer className="mt-12 border-t border-white/[.07] py-8 text-xs leading-6 text-slate-600">LoL Randomizer není podporován společností Riot Games a neodráží názory Riot Games ani nikoho, kdo se oficiálně podílí na produkci nebo správě jejích her. Riot Games a všechny související vlastnosti jsou ochranné známky nebo registrované ochranné známky společnosti Riot Games, Inc.</footer>
       </main>
       {confirming && state.draft && <ConfirmDialog draft={state.draft} onCancel={() => setConfirming(false)} onConfirm={confirm} />}
+      {recentImportOpen && <RecentImportDialog importing={importingRecent} onCancel={() => setRecentImportOpen(false)} onImport={importRecentMatches} />}
     </div>
   )
 }

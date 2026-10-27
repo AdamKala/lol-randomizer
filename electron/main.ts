@@ -114,6 +114,20 @@ function createWindow(): BrowserWindow {
           recentTab?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
           const recentPanel = [...document.querySelectorAll('h2')].some((heading) => heading.textContent?.trim() === 'Poslední hry')
+          const importButton = [...document.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Načíst hry')
+          importButton?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          const importDialog = document.querySelector('[aria-labelledby="recent-import-title"]')
+          const countInput = importDialog?.querySelector('input[type="number"]')
+          const countInputMax = countInput?.getAttribute('max') ?? null
+          const dateModeButton = [...(importDialog?.querySelectorAll('button') ?? [])].find((button) => button.textContent?.trim() === 'Od data')
+          dateModeButton?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          const dateInput = importDialog?.querySelector('input[type="date"]')
+          const importDialogUi = Boolean(importDialog && countInput && countInputMax === '100' && dateModeButton && dateInput)
+          const closeImportButton = importDialog?.querySelector('button[aria-label="Zavřít"]')
+          closeImportButton?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
           generalTab?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
           return {
@@ -125,7 +139,20 @@ function createWindow(): BrowserWindow {
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
-            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && recentPanel),
+            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && recentPanel && importDialogUi),
+            tabDiagnostics: {
+              generalTab: Boolean(generalTab),
+              statisticsTab: Boolean(statisticsTab),
+              recentTab: Boolean(recentTab),
+              statisticsPanel,
+              recentPanel,
+              importButton: Boolean(importButton),
+              importDialog: Boolean(importDialog),
+              countInput: Boolean(countInput),
+              countMax: countInputMax,
+              dateModeButton: Boolean(dateModeButton),
+              dateInput: Boolean(dateInput),
+            },
             matchSyncBridge: typeof window.desktop?.matches?.syncGame === 'function',
             recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',
             rosterBridge: Boolean(rosterStatus && Array.isArray(rosterStatus.players)),
