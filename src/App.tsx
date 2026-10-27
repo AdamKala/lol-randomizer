@@ -22,6 +22,7 @@ import {
   Plus,
   RefreshCcw,
   RotateCw,
+  Search,
   Settings2,
   Shield,
   Shuffle,
@@ -76,6 +77,10 @@ type StatisticsSortKey = 'displayName' | 'games' | 'wins' | 'winRate' | 'kills' 
 
 function orderedByRole<T extends { role: Role }>(slots: readonly T[]): T[] {
   return [...slots].sort((left, right) => ROLES.indexOf(left.role) - ROLES.indexOf(right.role))
+}
+
+function normalizeSearch(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('cs-CZ').trim()
 }
 
 function createId(): string {
@@ -368,15 +373,26 @@ function performanceLabel(score: number, rank: number): string {
 }
 
 function RecentGamesPanel({ history, importing, onImport, onClear, onPlayerSelect }: { history: ConfirmedGame[]; importing: boolean; onImport: () => void; onClear: () => void; onPlayerSelect: (playerId: string) => void }) {
+  const [playerFilter, setPlayerFilter] = useState('')
   const games = [...history].sort((left, right) => Date.parse(right.confirmedAt) - Date.parse(left.confirmedAt))
-  const missingDetails = games.filter((game) => game.match?.participants.some((participant) => !participant.detailedStats)).length
+  const normalizedFilter = normalizeSearch(playerFilter)
+  const filteredGames = normalizedFilter
+    ? games.filter((game) => {
+        const participantNames = game.match?.participants.map((participant) => participant.displayName) ?? []
+        const plannedNames = game.slots.map((slot) => slot.player)
+        return [...participantNames, ...plannedNames].some((name) => normalizeSearch(name).includes(normalizedFilter))
+      })
+    : games
+  const playerNames = [...new Set(games.flatMap((game) => [...(game.match?.participants.map((participant) => participant.displayName) ?? []), ...game.slots.map((slot) => slot.player)]))].sort((left, right) => left.localeCompare(right, 'cs-CZ'))
+  const missingDetails = filteredGames.filter((game) => game.match?.participants.some((participant) => !participant.detailedStats)).length
   return (
     <Panel className="overflow-hidden">
       <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Veřejná data OP.GG</p><h2 className="section-title mt-1 flex items-center gap-2"><Swords size={20} className="text-gold" /> Poslední hry</h2><p className="mt-2 text-xs text-slate-500">Každý zápas je jedna karta. Rozklikni ji pro damage graf a výkony celé vaší skupiny.</p></div><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={onImport} disabled={importing} title="Vybrat počet her nebo datum začátku importu z OP.GG">{importing ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importing ? 'Načítám detaily…' : 'Načíst hry'}</button></div>
+      {games.length > 0 && <div className="flex flex-col gap-3 border-b border-white/[.08] bg-black/10 px-5 py-3 sm:flex-row sm:items-center sm:px-6"><label className="relative block min-w-0 flex-1"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cyan/70" /><input type="search" className="field !h-10 !pl-10 !pr-10" value={playerFilter} onChange={(event) => setPlayerFilter(event.target.value)} placeholder="Vyhledat hráče v posledních hrách…" aria-label="Filtrovat poslední hry podle hráče" list="recent-player-suggestions" autoComplete="off" />{playerFilter && <button type="button" className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded text-slate-500 transition hover:bg-white/[.07] hover:text-white" onClick={() => setPlayerFilter('')} aria-label="Zrušit filtr hráče"><X size={14} /></button>}<datalist id="recent-player-suggestions">{playerNames.map((name) => <option key={name} value={name} />)}</datalist></label><span className="shrink-0 text-xs text-slate-500"><strong className="text-cyan">{filteredGames.length}</strong> z {games.length} {games.length === 1 ? 'zápasu' : 'zápasů'}</span></div>}
       {missingDetails > 0 && <div className="flex items-start gap-2 border-b border-amber-400/15 bg-amber-400/[.06] px-5 py-3 text-xs leading-5 text-amber-100/80"><AlertTriangle className="mt-0.5 shrink-0" size={15} /><span>{missingDetails} {missingDetails === 1 ? 'zápasu chybí detailní damage' : 'zápasům chybí detailní damage'}. Klikni na načtení znovu; uložené zápasy se aktualizují.</span></div>}
       {!games.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><Swords className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">Načti poslední zápasy uložených hráčů.</p></div></div> : <>
-        <div className="divide-y divide-white/[.07]">
-          {games.map((game) => {
+        {filteredGames.length ? <div className="divide-y divide-white/[.07]">
+          {filteredGames.map((game) => {
             const participants = game.match?.participants ?? []
             const wins = participants.filter((participant) => participant.win).length
             const result = wins === participants.length ? 'Výhra' : wins === 0 ? 'Prohra' : 'Smíšený výsledek'
@@ -423,7 +439,7 @@ function RecentGamesPanel({ history, importing, onImport, onClear, onPlayerSelec
               </div>
             </details>
           })}
-        </div>
+        </div> : <div className="grid min-h-44 place-items-center p-8 text-center"><div><Search className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm font-semibold text-slate-400">Žádný zápas tohoto hráče</p><p className="mt-1 text-xs text-slate-600">Zkus jiné jméno nebo filtr vymaž.</p><button type="button" className="btn-ghost mt-4 !min-h-9 !px-3 !text-xs" onClick={() => setPlayerFilter('')}><X size={14} /> Vymazat filtr</button></div></div>}
         <div className="flex justify-end border-t border-white/[.07] px-5 py-3"><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear}><Trash2 size={14} /> Smazat poslední hry</button></div>
       </>}
     </Panel>
