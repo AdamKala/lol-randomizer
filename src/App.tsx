@@ -139,10 +139,10 @@ function StatisticsPanel({ history }: { history: ConfirmedGame[] }) {
     <Panel className="overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-white/[.08] p-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Skutečné výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><BarChart3 size={20} className="text-gold" /> Statistiky</h2></div><p className="text-sm text-slate-400">{syncedGames.length} zápasů · {performances} výkonů hráčů</p></div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[820px] text-left text-xs">
-          <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Hráč</th><th className="px-3 py-3">Hry</th><th className="px-3 py-3">W/L</th><th className="px-3 py-3">Winrate</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">CS Ø</th><th className="px-3 py-3">DMG Ø</th><th className="px-3 py-3">Vision Ø</th><th className="px-5 py-3">Nejhranější</th></tr></thead>
+        <table className="w-full min-w-[900px] text-left text-xs">
+          <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Hráč</th><th className="px-3 py-3">Hry</th><th className="px-3 py-3">W/L</th><th className="px-3 py-3">Winrate</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">Výkon Ø</th><th className="px-3 py-3">CS Ø</th><th className="px-3 py-3">DMG Ø</th><th className="px-3 py-3">Vision Ø</th><th className="px-5 py-3">Nejhranější</th></tr></thead>
           <tbody className="divide-y divide-white/[.06]">
-            {stats.map((row) => <tr key={row.playerId} className="hover:bg-white/[.025]"><td className="px-5 py-3 font-bold text-white">{row.displayName}</td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.cs / row.games)}</td><td className="px-3 py-3 text-slate-300">{row.damageSamples ? integer.format(Math.round(row.damage / row.damageSamples)) : '—'}</td><td className="px-3 py-3 text-slate-300">{row.visionSamples ? oneDecimal.format(row.vision / row.visionSamples) : '—'}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}
+            {stats.map((row) => <tr key={row.playerId} className="hover:bg-white/[.025]"><td className="px-5 py-3 font-bold text-white">{row.displayName}</td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 font-bold text-cyan">{row.performanceSamples ? oneDecimal.format(row.performance / row.performanceSamples) : '—'}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.cs / row.games)}</td><td className="px-3 py-3 text-slate-300">{row.damageSamples ? integer.format(Math.round(row.damage / row.damageSamples)) : '—'}</td><td className="px-3 py-3 text-slate-300">{row.visionSamples ? oneDecimal.format(row.vision / row.visionSamples) : '—'}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}
           </tbody>
         </table>
       </div>
@@ -156,12 +156,42 @@ function SyncBadge({ game }: { game: ConfirmedGame }) {
   return <span className={`rounded-full border px-2.5 py-1 text-[.62rem] font-bold ${styles}`}>{label}</span>
 }
 
-function HistoryPanel({ history, syncingIds, importingRecent, onSync, onImportRecent, onUndo, onClear, onExport, onImport }: {
+function performanceLabel(score: number, rank: number): string {
+  if (rank === 1) return 'MVP'
+  if (score >= 8.5) return 'Excelentní'
+  if (score >= 7) return 'Skvělý'
+  if (score >= 5.5) return 'Dobrý'
+  if (score > 0) return 'Slabší'
+  return 'Bez hodnocení'
+}
+
+function RecentGamesPanel({ history, importing, onImport, onClear }: { history: ConfirmedGame[]; importing: boolean; onImport: () => void; onClear: () => void }) {
+  const rows = [...history]
+    .sort((left, right) => Date.parse(right.confirmedAt) - Date.parse(left.confirmedAt))
+    .flatMap((game) => (game.match?.participants ?? []).map((participant) => ({ game, participant })))
+  return (
+    <Panel className="overflow-hidden">
+      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Veřejná data OP.GG</p><h2 className="section-title mt-1 flex items-center gap-2"><Swords size={20} className="text-gold" /> Poslední hry</h2><p className="mt-2 text-xs text-slate-500">KDA, damage a hodnocení výkonu načtené z detailů zápasů.</p></div><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={onImport} disabled={importing} title="Načíst posledních 10 zápasů každého hráče z veřejných profilů OP.GG — bez API klíče">{importing ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importing ? 'Načítám detaily…' : 'Načíst posledních 10 / hráč'}</button></div>
+      {!rows.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><Swords className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">Načti poslední zápasy uložených hráčů.</p></div></div> : <>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[850px] text-left text-xs">
+            <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Datum</th><th className="px-3 py-3">Hráč</th><th className="px-3 py-3">Šampion</th><th className="px-3 py-3">Výsledek</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">DMG</th><th className="px-3 py-3">Výkon</th><th className="px-5 py-3">Pořadí</th></tr></thead>
+            <tbody className="divide-y divide-white/[.06]">{rows.map(({ game, participant }) => {
+              const kda = (participant.kills + participant.assists) / Math.max(1, participant.deaths)
+              return <tr key={`${game.id}-${participant.playerId}`} className="hover:bg-white/[.025]"><td className="whitespace-nowrap px-5 py-3 text-slate-500">{dateTime.format(new Date(game.confirmedAt))}</td><td className="px-3 py-3 font-bold text-white">{participant.displayName}</td><td className="px-3 py-3 text-slate-300">{participant.championName}</td><td className={`px-3 py-3 font-bold ${participant.win ? 'text-emerald-300' : 'text-red-300'}`}>{participant.win ? 'Výhra' : 'Prohra'}</td><td className="px-3 py-3 text-slate-300">{participant.kills} / {participant.deaths} / {participant.assists}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format(kda)}</td><td className="px-3 py-3 text-slate-300">{participant.detailedStats ? integer.format(participant.totalDamageDealtToChampions) : '—'}</td><td className="px-3 py-3"><span className="rounded-full border border-cyan/20 bg-cyan/[.08] px-2 py-1 font-bold text-cyan">{performanceLabel(participant.performanceScore, participant.performanceRank)}{participant.performanceScore > 0 ? ` · ${oneDecimal.format(participant.performanceScore)}` : ''}</span></td><td className="px-5 py-3 text-slate-400">{participant.performanceRank > 0 ? `#${participant.performanceRank} / 10` : '—'}</td></tr>
+            })}</tbody>
+          </table>
+        </div>
+        <div className="flex justify-end border-t border-white/[.07] px-5 py-3"><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear}><Trash2 size={14} /> Smazat poslední hry</button></div>
+      </>}
+    </Panel>
+  )
+}
+
+function HistoryPanel({ history, syncingIds, onSync, onUndo, onClear, onExport, onImport }: {
   history: ConfirmedGame[]
   syncingIds: Set<string>
-  importingRecent: boolean
   onSync: (game: ConfirmedGame) => void
-  onImportRecent: () => void
   onUndo: () => void
   onClear: () => void
   onExport: () => void
@@ -170,8 +200,8 @@ function HistoryPanel({ history, syncingIds, importingRecent, onSync, onImportRe
   const importRef = useRef<HTMLInputElement>(null)
   return (
     <Panel className="overflow-hidden">
-      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Sestavy a Riot výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><HistoryIcon size={20} className="text-gold" /> Historie</h2></div><span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-semibold text-slate-300">{history.length} {history.length === 1 ? 'hra' : history.length >= 2 && history.length <= 4 ? 'hry' : 'her'}</span></div>
-      <div className="flex flex-wrap gap-2 border-b border-white/[.08] px-5 py-3"><button type="button" className="btn-blue !min-h-9 !px-3 !text-xs" onClick={onImportRecent} disabled={importingRecent} title="Načíst posledních 10 zápasů každého hráče z veřejných profilů OP.GG — bez API klíče">{importingRecent ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importingRecent ? 'Načítám z OP.GG…' : 'Posledních 10 / hráč'}</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onUndo} disabled={!history.length}><Undo2 size={14} /> Vrátit poslední</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onExport} disabled={!history.length}><Download size={14} /> Export</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={() => importRef.current?.click()}><Upload size={14} /> Import</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear} disabled={!history.length}><Trash2 size={14} /> Vymazat</button><input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={onImport} /></div>
+      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Potvrzené sestavy</p><h2 className="section-title mt-1 flex items-center gap-2"><HistoryIcon size={20} className="text-gold" /> Historie randomizeru</h2></div><span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-semibold text-slate-300">{history.length} {history.length === 1 ? 'hra' : history.length >= 2 && history.length <= 4 ? 'hry' : 'her'}</span></div>
+      <div className="flex flex-wrap gap-2 border-b border-white/[.08] px-5 py-3"><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onUndo} disabled={!history.length}><Undo2 size={14} /> Vrátit poslední</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onExport}><Download size={14} /> Export všeho</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={() => importRef.current?.click()}><Upload size={14} /> Import</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear} disabled={!history.length}><Trash2 size={14} /> Vymazat sestavy</button><input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={onImport} /></div>
       {!history.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><HistoryIcon className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">První potvrzená hra se objeví tady.</p></div></div> : (
         <div className="max-h-[52rem] divide-y divide-white/[.07] overflow-y-auto">
           {[...history].reverse().map((game) => {
@@ -179,12 +209,12 @@ function HistoryPanel({ history, syncingIds, importingRecent, onSync, onImportRe
             const duration = game.match ? Math.round(game.match.durationSeconds / 60) : null
             return (
               <details key={game.id} className="group px-5 py-4 open:bg-white/[.02]" open={game === history.at(-1)}>
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-display text-sm font-bold text-gold-light">Hra #{game.number}</p><SyncBadge game={game} />{game.origin === 'opgg-import' && <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-[.62rem] font-bold text-violet-200">OP.GG IMPORT</span>}</div><p className="mt-1 text-xs text-slate-500">{dateTime.format(new Date(game.confirmedAt))} · patch {game.patch}{game.match ? ` · ${game.match.gameMode}${duration ? ` · ${duration} min` : ''}` : ''}</p></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition group-open:rotate-180" /></summary>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-display text-sm font-bold text-gold-light">Hra #{game.number}</p><SyncBadge game={game} /></div><p className="mt-1 text-xs text-slate-500">{dateTime.format(new Date(game.confirmedAt))} · patch {game.patch}{game.match ? ` · ${game.match.gameMode}${duration ? ` · ${duration} min` : ''}` : ''}</p></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition group-open:rotate-180" /></summary>
                 {game.sync.status !== 'synced' && <div className="mt-4 flex flex-col gap-3 rounded-lg border border-white/[.07] bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-slate-400">{game.sync.message ?? 'Výsledek zatím není načten.'}</p><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={() => onSync(game)} disabled={syncing}>{syncing ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCcw size={14} />} Načíst z OP.GG</button></div>}
                 <div className="mt-4 grid gap-2">
                   {orderedByRole(game.slots).map((slot) => {
                     const actual = game.match?.participants.find((participant) => participant.playerId === slot.playerId)
-                    return <div key={`${game.id}-${slot.playerId}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"><ChampionImage champion={slot.champion} className="size-9 rounded object-cover" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-200">{slot.player}</p><p className="truncate text-[.68rem] text-slate-500">{game.origin === 'opgg-import' || game.origin === 'riot-import' ? `Hrál: ${actual?.championName ?? slot.champion.name}` : `Plán: ${slot.champion.name}${actual ? ` · Hrál: ${actual.championName}` : ''}`}</p></div>{actual ? <span className={`text-right text-[.68rem] font-bold ${actual.win ? 'text-emerald-300' : 'text-red-300'}`}>{actual.win ? 'VÝHRA' : 'PROHRA'}<small className="block font-normal text-slate-400">{actual.kills}/{actual.deaths}/{actual.assists}</small></span> : <span className="text-[.62rem] font-bold tracking-wider text-cyan/80">{slot.role}</span>}</div>
+                    return <div key={`${game.id}-${slot.playerId}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"><ChampionImage champion={slot.champion} className="size-9 rounded object-cover" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-200">{slot.player}</p><p className="truncate text-[.68rem] text-slate-500">Plán: {slot.champion.name}{actual ? ` · Hrál: ${actual.championName}` : ''}</p></div>{actual ? <span className={`text-right text-[.68rem] font-bold ${actual.win ? 'text-emerald-300' : 'text-red-300'}`}>{actual.win ? 'VÝHRA' : 'PROHRA'}<small className="block font-normal text-slate-400">{actual.kills}/{actual.deaths}/{actual.assists}</small></span> : <span className="text-[.62rem] font-bold tracking-wider text-cyan/80">{slot.role}</span>}</div>
                   })}
                 </div>
                 {game.match && <p className="mt-4 break-all border-t border-white/[.06] pt-3 text-[.62rem] text-slate-600">{game.match.source === 'opgg' ? 'OP.GG' : 'Riot'} match: {game.match.matchId} · načteno {dateTime.format(new Date(game.match.fetchedAt))}</p>}
@@ -323,14 +353,17 @@ export default function App() {
     try {
       const current = stateRef.current
       const result = await bridge.importRecentMatches({
-        excludedMatchIds: current.history.flatMap((game) => game.match ? [game.match.matchId] : []),
+        excludedMatchIds: current.history.flatMap((game) => (!game.origin || game.origin === 'confirmed') && game.match ? [game.match.matchId] : []),
         region: current.settings.matchRegion,
         players: rosterPlayers.map((player) => ({ playerId: player.id, displayName: player.name, riotId: player.riotId })),
       })
       const merged = mergeRecentMatches(stateRef.current.history, result.matches, dataset)
       setState((value) => ({ ...value, history: merged.history }))
       const skippedText = skipped ? ` Bez Riot ID (přeskočeno): ${skipped}.` : ''
-      setMessage({ type: 'success', text: merged.added ? `Z OP.GG načteno ${merged.added} nových unikátních zápasů pro ${result.playerCount} hráčů.${skippedText}` : `Poslední OP.GG zápasy už jsou v historii.${skippedText}` })
+      const importText = merged.added
+        ? `Z OP.GG načteno ${merged.added} nových a aktualizováno ${merged.updated} dříve uložených zápasů pro ${result.playerCount} hráčů.`
+        : `Z OP.GG aktualizováno ${merged.updated} uložených zápasů včetně detailních statistik.`
+      setMessage({ type: 'success', text: `${importText}${skippedText}` })
     } catch (error) {
       const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Import posledních zápasů se nezdařil.'
       setMessage({ type: 'error', text })
@@ -426,11 +459,15 @@ export default function App() {
     catch (error) { setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Import historie selhal.' }) }
   }
 
-  const undo = () => { const last = state.history.at(-1); if (!last || !window.confirm(`Vrátit hru #${last.number}? Cooldown i statistiky se přepočítají.`)) return; setState((current) => ({ ...current, history: current.history.slice(0, -1) })) }
-  const clear = () => { if (!window.confirm('Opravdu vymazat celou historii? Tuto akci nelze vrátit.')) return; setState((current) => ({ ...current, history: [] })); setMessage({ type: 'success', text: 'Historie byla vymazána.' }) }
+  const undo = () => { const last = state.history.filter((game) => !game.origin || game.origin === 'confirmed').at(-1); if (!last || !window.confirm(`Vrátit hru #${last.number}? Cooldown i statistiky se přepočítají.`)) return; setState((current) => ({ ...current, history: current.history.filter((game) => game.id !== last.id) })) }
+  const clear = () => { if (!window.confirm('Opravdu vymazat všechny potvrzené sestavy? Importované poslední hry zůstanou uložené.')) return; setState((current) => ({ ...current, history: current.history.filter((game) => game.origin === 'opgg-import' || game.origin === 'riot-import') })); setMessage({ type: 'success', text: 'Historie potvrzených sestav byla vymazána.' }) }
+  const clearRecent = () => { if (!window.confirm('Opravdu smazat všechny importované poslední hry? Potvrzené sestavy zůstanou uložené.')) return; setState((current) => ({ ...current, history: current.history.filter((game) => !game.origin || game.origin === 'confirmed') })); setMessage({ type: 'success', text: 'Importované poslední hry byly vymazány.' }) }
   const resetApp = () => { if (!window.confirm('Obnovit celou aplikaci do výchozího stavu včetně rosteru a historie?')) return; setState(DEFAULT_STATE) }
 
   if (loadingError && !dataset) return <main className="grid min-h-screen place-items-center p-6"><Panel className="max-w-lg p-8 text-center"><AlertTriangle className="mx-auto text-red-300" /><h1 className="mt-4 font-display text-2xl text-gold-light">Data se nenačetla</h1><p className="mt-3 text-sm text-slate-400">{loadingError}</p></Panel></main>
+
+  const confirmedHistory = state.history.filter((game) => !game.origin || game.origin === 'confirmed')
+  const recentHistory = state.history.filter((game) => game.origin === 'opgg-import' || game.origin === 'riot-import')
 
   const rosterPanel = (
     <Panel>
@@ -485,7 +522,8 @@ export default function App() {
             {state.draft ? <Panel className="overflow-hidden border-gold/20"><div className="flex flex-col gap-3 border-b border-white/[.08] px-5 py-5 sm:flex-row sm:items-end sm:justify-between md:px-7"><div><p className="eyebrow">Nepotvrzený návrh</p><h2 className="section-title mt-1">Tvoje sestava</h2></div><p className="text-xs text-slate-500">Reroll ani individuální změna linky nemění historii a cooldown</p></div><div className="grid grid-cols-5 gap-2 p-3 md:gap-3 md:p-5">{orderedByRole(state.draft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${state.draft!.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
 
             <StatisticsPanel history={state.history} />
-            <HistoryPanel history={state.history} syncingIds={syncingIds} importingRecent={importingRecent} onSync={(game) => void syncGame(game)} onImportRecent={() => void importRecentMatches()} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
+            <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => void importRecentMatches()} onClear={clearRecent} />
+            <HistoryPanel history={confirmedHistory} syncingIds={syncingIds} onSync={(game) => void syncGame(game)} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-6">

@@ -80,6 +80,9 @@ export interface MatchParticipantStats {
   totalMinionsKilled: number
   neutralMinionsKilled: number
   win: boolean
+  detailedStats: boolean
+  performanceScore: number
+  performanceRank: number
 }
 
 export interface MatchSummary {

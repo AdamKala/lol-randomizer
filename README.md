@@ -35,8 +35,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.2.0-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.2.0-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.3.0-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.3.0-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
@@ -51,7 +51,8 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
 - automatické dohledání společného dokončeného zápasu z veřejných profilů OP.GG bez API klíče;
 - jednorázový import posledních 10 zápasů každého hráče s Riot ID, včetně deduplikace společných her;
-- skutečný výsledek, hraný šampion, K/D/A, CS a agregované statistiky hráčů;
+- samostatná sekce posledních her se skutečným výsledkem, hraným šampionem, K/D/A, KDA, damage a OP.GG hodnocením výkonu;
+- samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage a vision;
 - tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
 - vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;
@@ -82,9 +83,9 @@ Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nov�
 2. Ve viditelném menu **Nastavení** vyber region EUNE nebo EUW.
 3. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
 4. Po dohrání aplikace společný zápas automaticky dohledá na OP.GG. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
-5. Tlačítko **Posledních 10 / hráč** načte posledních deset zápasů všech uložených hráčů s Riot ID. Společné zápasy uloží jen jednou a hráče bez Riot ID přeskočí.
+5. Tlačítko **Načíst posledních 10 / hráč** v sekci **Poslední hry** načte posledních deset zápasů všech uložených hráčů s Riot ID. Společné zápasy uloží jen jednou a hráče bez Riot ID přeskočí.
 
-Importované zápasy jsou v historii označené jako **OP.GG IMPORT** a vstupují do statistik, ale neovlivňují cooldown randomizeru. Veřejný OP.GG profil poskytuje výsledek, šampiona, K/D/A a CS. Damage a vision v něm nejsou, proto aplikace u těchto hodnot místo zavádějící nuly zobrazí pomlčku.
+Importované zápasy mají vlastní sekci **Poslední hry**, vstupují do statistik, ale neovlivňují historii sestav ani cooldown randomizeru. Aplikace načte profilový souhrn a poté veřejný detail každého unikátního zápasu, ze kterého doplní přesný damage, vision a OP.GG skóre i pořadí hráče. Pokud detail dočasně není dostupný, zachová K/D/A a CS z profilu a u chybějících hodnot zobrazí pomlčku.
 
 Automatické párování přijme společnou hru, která začala nejvýše 12 hodin po potvrzení sestavy. OP.GG je externí web a jeho HTML se může v budoucnu změnit; aplikace proto používá jeho veřejný strukturovaný JSON-LD výstup a při nekompatibilní změně zobrazí konkrétní chybu namísto poškození historie.
 
@@ -107,7 +108,7 @@ Automatické párování přijme společnou hru, která začala nejvýše 12 hod
 ```text
 electron/
 ├── main.ts                   # životní cyklus okna, app:// protokol a security policy
-├── matches.ts                # bezklíčové čtení veřejné OP.GG historie
+├── matches.ts                # bezklíčové čtení profilů a detailů veřejných OP.GG zápasů
 └── preload.ts                # minimální izolovaný bridge
 src/
 ├── App.tsx                   # React UI
@@ -127,7 +128,7 @@ Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá test
 
 ## Meta data
 
-Výchozí dataset je transparentně označený snapshot pro patch 26.21. Meta snapshot zůstává oddělený od výsledků her. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného JSON-LD na profilových stránkách OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani interní OP.GG endpoint.
+Výchozí dataset je transparentně označený snapshot pro patch 26.21. Meta snapshot zůstává oddělený od výsledků her. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného obsahu profilových stránek a detailů zápasů OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani autentizovaný endpoint.
 
 Aplikace ukazuje zdroj, patch, datum a stav zastaralosti. Aktuálnější kompatibilní JSON lze importovat přímo v UI. Import kontroluje verzi schématu, stabilní Riot ID, Data Dragon slugy, role, duplicity a statistiky.
 
@@ -152,7 +153,7 @@ V repozitáři otevři **Actions → Desktop CI and Windows release → Run work
 Projekt je určen výhradně pro `AdamKala/lol-randomizer`. Před vytvořením repozitáře ověř účet:
 
 ```bash
-gh auth login --hostname github.com --git-protocol https --web
+gh auth login --hostname github.com --git-protocol ssh --web
 gh auth status
 gh api user --jq .login
 ```

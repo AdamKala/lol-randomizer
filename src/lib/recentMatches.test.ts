@@ -15,7 +15,7 @@ const dataset: MetaDataset = {
 }
 
 function participant(overrides: Partial<MatchParticipantStats> = {}): MatchParticipantStats {
-  return { playerId: 'p1', displayName: 'Anna', riotId: 'Anna#EUW', puuid: 'puuid', championId: 103, championName: 'Ahri', teamId: 100, teamPosition: 'MIDDLE', kills: 10, deaths: 2, assists: 8, goldEarned: 12000, visionScore: 20, totalDamageDealtToChampions: 24000, totalMinionsKilled: 180, neutralMinionsKilled: 10, win: true, ...overrides }
+  return { playerId: 'p1', displayName: 'Anna', riotId: 'Anna#EUW', puuid: 'puuid', championId: 103, championName: 'Ahri', teamId: 100, teamPosition: 'MIDDLE', kills: 10, deaths: 2, assists: 8, goldEarned: 12000, visionScore: 20, totalDamageDealtToChampions: 24000, totalMinionsKilled: 180, neutralMinionsKilled: 10, win: true, detailedStats: true, performanceScore: 8.4, performanceRank: 2, ...overrides }
 }
 
 function match(matchId: string, gameStartedAt: string, participants = [participant()]): MatchSummary {
@@ -50,5 +50,13 @@ describe('import posledních Riot zápasů', () => {
     expect(restored.history).toHaveLength(1)
     expect(restored.history[0].slots).toHaveLength(6)
     expect(restored.history[0].origin).toBe('opgg-import')
+  })
+
+  it('při dalším importu aktualizuje dříve uložený zápas detailními statistikami', () => {
+    const initial = mergeRecentMatches([], [match('EUN1_1', '2026-10-27T10:00:00.000Z', [participant({ detailedStats: false, totalDamageDealtToChampions: 0 })])], dataset)
+    const refreshed = mergeRecentMatches(initial.history, [match('EUN1_1', '2026-10-27T10:00:00.000Z', [participant({ detailedStats: true, totalDamageDealtToChampions: 32100 })])], dataset)
+    expect(refreshed).toMatchObject({ added: 0, updated: 1 })
+    expect(refreshed.history).toHaveLength(1)
+    expect(refreshed.history[0].match?.participants[0]).toMatchObject({ detailedStats: true, totalDamageDealtToChampions: 32100 })
   })
 })

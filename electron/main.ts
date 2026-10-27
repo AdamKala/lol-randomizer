@@ -113,7 +113,7 @@ function createWindow(): BrowserWindow {
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
-            recentMatchesUi: document.body.textContent?.includes('Posledních 10 / hráč') === true,
+            recentMatchesUi: document.body.textContent?.includes('Poslední hry') === true && document.body.textContent?.includes('Statistiky') === true,
             matchSyncBridge: typeof window.desktop?.matches?.syncGame === 'function',
             recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',
             rosterBridge: Boolean(rosterStatus && Array.isArray(rosterStatus.players)),

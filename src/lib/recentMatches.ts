@@ -53,15 +53,21 @@ function importedGame(match: MatchSummary, dataset: MetaDataset): ConfirmedGame 
   }
 }
 
-export function mergeRecentMatches(history: ConfirmedGame[], matches: MatchSummary[], dataset: MetaDataset): { history: ConfirmedGame[]; added: number } {
+export function mergeRecentMatches(history: ConfirmedGame[], matches: MatchSummary[], dataset: MetaDataset): { history: ConfirmedGame[]; added: number; updated: number } {
   const knownMatchIds = new Set(history.flatMap((game) => game.match ? [game.match.matchId] : []))
+  const confirmedMatchIds = new Set(history.flatMap((game) => (!game.origin || game.origin === 'confirmed') && game.match ? [game.match.matchId] : []))
   const uniqueMatches = new Map<string, MatchSummary>()
   for (const match of matches) {
-    if (!knownMatchIds.has(match.matchId)) uniqueMatches.set(match.matchId, match)
+    if (!confirmedMatchIds.has(match.matchId)) uniqueMatches.set(match.matchId, match)
   }
-  const addedGames = [...uniqueMatches.values()].map((match) => importedGame(match, dataset))
-  const merged = [...history, ...addedGames]
+  const importedGames = [...uniqueMatches.values()].map((match) => importedGame(match, dataset))
+  const replacedIds = new Set(uniqueMatches.keys())
+  const retained = history.filter((game) => !(game.match && (game.origin === 'opgg-import' || game.origin === 'riot-import') && replacedIds.has(game.match.matchId)))
+  let confirmedNumber = 0
+  let importedNumber = 0
+  const merged = [...retained, ...importedGames]
     .sort((left, right) => Date.parse(left.confirmedAt) - Date.parse(right.confirmedAt) || left.id.localeCompare(right.id))
-    .map((game, index) => ({ ...game, number: index + 1 }))
-  return { history: merged, added: addedGames.length }
+    .map((game) => ({ ...game, number: game.origin === 'opgg-import' || game.origin === 'riot-import' ? ++importedNumber : ++confirmedNumber }))
+  const added = [...uniqueMatches.keys()].filter((matchId) => !knownMatchIds.has(matchId)).length
+  return { history: merged, added, updated: importedGames.length - added }
 }

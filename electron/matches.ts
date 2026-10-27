@@ -10,18 +10,22 @@ interface PublicPlayerMatch {
   assists: number
   cs: number
   win: boolean
+  opScore: number
+  opScoreRank: number
 }
 
 type TrackedPlayer = MatchSyncRequest['players'][number]
 
 const PROFILE_LIMIT_BYTES = 5_000_000
+const DETAIL_LIMIT_BYTES = 8_000_000
+const USER_AGENT = 'LoL-Randomizer/1.3 (+https://github.com/AdamKala/lol-randomizer)'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function text(value: unknown): string {
-  return typeof value === 'string' ? value : ''
+function text(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback
 }
 
 function number(value: unknown): number {
@@ -112,6 +116,8 @@ export function parseOpggRecentMatches(html: string): PublicPlayerMatch[] {
       assists: number(properties.get('assists')),
       cs: number(properties.get('cs')),
       win: result === 'WIN',
+      opScore: number(properties.get('opScore')),
+      opScoreRank: number(properties.get('opScoreRank')),
     })
   }
   if (!matches.length) throw new Error('OP.GG profil nemá žádné dokončené zápasy se statistikami.')
@@ -123,7 +129,7 @@ async function fetchPlayerMatches(player: TrackedPlayer, region: MatchRegion): P
   const url = `https://op.gg/lol/summoners/${region}/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}`
   try {
     const response = await fetch(url, {
-      headers: { Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.8', 'User-Agent': 'LoL-Randomizer/1.1 (+https://github.com/AdamKala/lol-randomizer)' },
+      headers: { Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.8', 'User-Agent': USER_AGENT },
       redirect: 'follow',
       signal: AbortSignal.timeout(25_000),
     })
@@ -172,7 +178,122 @@ function participantFor(player: TrackedPlayer, match: PublicPlayerMatch): MatchP
     totalMinionsKilled: match.cs,
     neutralMinionsKilled: 0,
     win: match.win,
+    detailedStats: false,
+    performanceScore: match.opScore,
+    performanceRank: match.opScoreRank,
   }
+}
+
+function normalizedRiotId(value: string): string {
+  return value.normalize('NFKC').trim().toLocaleLowerCase('en')
+}
+
+function collectDetailedParticipants(html: string): Record<string, unknown>[] {
+  const participants = new Map<string, Record<string, unknown>>()
+  const pattern = /<script>self\.__next_f\.push\(([\s\S]*?)\)<\/script>/g
+  const chunks: string[] = []
+  for (const match of html.matchAll(pattern)) {
+    try {
+      const payload: unknown = JSON.parse(match[1])
+      if (Array.isArray(payload) && typeof payload[1] === 'string') chunks.push(payload[1])
+    } catch {
+      // Neplatný Flight chunk přeskočíme; další může stále obsahovat detail účastníků.
+    }
+  }
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item)
+      return
+    }
+    if (!isRecord(value)) return
+    const stats = value.stats
+    const summoner = value.summoner
+    if (isRecord(stats) && isRecord(summoner) && typeof value.participant_id === 'number' && stats.total_damage_dealt_to_champions != null) {
+      const key = `${text(summoner.game_name)}#${text(summoner.tagline)}`
+      if (key !== '#' && !participants.has(normalizedRiotId(key))) participants.set(normalizedRiotId(key), value)
+    }
+    for (const item of Object.values(value)) visit(item)
+  }
+  for (const chunk of chunks) {
+    for (const line of chunk.split('\n')) {
+      const separator = line.indexOf(':')
+      if (separator < 0) continue
+      try { visit(JSON.parse(line.slice(separator + 1))) } catch { /* Flight řádky nejsou všechny samostatný JSON. */ }
+    }
+  }
+  return [...participants.values()]
+}
+
+export function parseOpggMatchDetail(html: string, region: MatchRegion, rawMatchId: string, players: TrackedPlayer[]): MatchSummary {
+  const action = jsonLdGraphs(html).find((node) => node['@type'] === 'PlayGameAction' && text(propertyMap(node.additionalProperty).get('matchId')) === rawMatchId)
+  if (!action) throw new Error('Detail OP.GG neobsahuje metadata zápasu.')
+  const properties = propertyMap(action.additionalProperty)
+  const tracked = new Map(players.map((player) => [normalizedRiotId(player.riotId), player]))
+  const participants: MatchParticipantStats[] = []
+  for (const value of collectDetailedParticipants(html)) {
+    const summoner = isRecord(value.summoner) ? value.summoner : {}
+    const stats = isRecord(value.stats) ? value.stats : {}
+    const champion = isRecord(value.champion) ? value.champion : {}
+    const riotId = `${text(summoner.game_name)}#${text(summoner.tagline)}`
+    const player = tracked.get(normalizedRiotId(riotId))
+    if (!player || participants.some((participant) => participant.playerId === player.playerId)) continue
+    participants.push({
+      playerId: player.playerId,
+      displayName: player.displayName,
+      riotId: player.riotId,
+      puuid: text(summoner.puuid),
+      championId: number(value.champion_id),
+      championName: text(champion.name, 'Neznámý šampion'),
+      teamId: text(value.team_key).toUpperCase() === 'BLUE' ? 100 : text(value.team_key).toUpperCase() === 'RED' ? 200 : 0,
+      teamPosition: text(value.position),
+      kills: number(stats.kill),
+      deaths: number(stats.death),
+      assists: number(stats.assist),
+      goldEarned: number(stats.gold_earned),
+      visionScore: number(stats.vision_score),
+      totalDamageDealtToChampions: number(stats.total_damage_dealt_to_champions),
+      totalMinionsKilled: number(stats.minion_kill),
+      neutralMinionsKilled: number(stats.neutral_minion_kill),
+      win: text(stats.result).toUpperCase() === 'WIN',
+      detailedStats: true,
+      performanceScore: number(stats.op_score),
+      performanceRank: number(stats.op_score_rank),
+    })
+  }
+  if (!participants.length) throw new Error('V detailu OP.GG nebyl nalezen žádný sledovaný hráč.')
+  const queue = queueInfo(text(properties.get('queueType')))
+  const gameStartedAt = text(action.startTime)
+  const durationSeconds = number(properties.get('durationSeconds'))
+  const startedAt = Date.parse(gameStartedAt)
+  return {
+    matchId: publicMatchId(region, rawMatchId),
+    fetchedAt: new Date().toISOString(),
+    gameStartedAt,
+    gameEndedAt: Number.isFinite(startedAt) && durationSeconds > 0 ? new Date(startedAt + durationSeconds * 1000).toISOString() : gameStartedAt,
+    durationSeconds,
+    ...queue,
+    gameVersion: text(properties.get('patch')),
+    source: 'opgg',
+    participants,
+  }
+}
+
+async function fetchMatchDetail(player: TrackedPlayer, match: PublicPlayerMatch, region: MatchRegion, players: TrackedPlayer[]): Promise<MatchSummary> {
+  const { gameName, tagLine } = splitRiotId(player.riotId)
+  const timestamp = Date.parse(match.gameStartedAt)
+  if (!Number.isFinite(timestamp)) throw new Error('Zápas nemá platný čas začátku.')
+  const url = `https://op.gg/lol/summoners/${region}/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}/matches/${encodeURIComponent(match.rawMatchId)}/${timestamp}`
+  const response = await fetch(url, {
+    headers: { Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.8', 'User-Agent': USER_AGENT },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(25_000),
+  })
+  if (!response.ok) throw new Error(`Detail OP.GG vrátil HTTP ${response.status}.`)
+  const length = Number(response.headers.get('content-length'))
+  if (Number.isFinite(length) && length > DETAIL_LIMIT_BYTES) throw new Error('Detail OP.GG je neočekávaně velký.')
+  const html = await response.text()
+  if (html.length > DETAIL_LIMIT_BYTES) throw new Error('Detail OP.GG je neočekávaně velký.')
+  return parseOpggMatchDetail(html, region, match.rawMatchId, players)
 }
 
 function summaryFor(region: MatchRegion, player: TrackedPlayer, match: PublicPlayerMatch): MatchSummary {
@@ -205,11 +326,36 @@ function mergeProfileMatches(profiles: Array<{ player: TrackedPlayer; matches: P
   return [...summaries.values()].sort((left, right) => Date.parse(left.gameStartedAt) - Date.parse(right.gameStartedAt))
 }
 
+async function enrichProfileMatches(profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }>, region: MatchRegion, excludedMatchIds: string[]): Promise<MatchSummary[]> {
+  const summaries = mergeProfileMatches(profiles, region, excludedMatchIds)
+  const references = new Map<string, { player: TrackedPlayer; match: PublicPlayerMatch }>()
+  for (const profile of profiles) for (const match of profile.matches) {
+    if (!references.has(match.rawMatchId)) references.set(match.rawMatchId, { player: profile.player, match })
+  }
+  const detailed = new Map<string, MatchSummary>()
+  let cursor = 0
+  const workers = Array.from({ length: Math.min(3, summaries.length) }, async () => {
+    while (cursor < summaries.length) {
+      const summary = summaries[cursor++]
+      const rawMatchId = summary.matchId.slice(`OPGG_${region}_`.length)
+      const reference = references.get(rawMatchId)
+      if (!reference) continue
+      try {
+        detailed.set(summary.matchId, await fetchMatchDetail(reference.player, reference.match, region, profiles.map((profile) => profile.player)))
+      } catch {
+        // Profilový souhrn s KDA a OP skóre je stále užitečný fallback.
+      }
+    }
+  })
+  await Promise.all(workers)
+  return summaries.map((summary) => detailed.get(summary.matchId) ?? summary)
+}
+
 export async function importRecentPublicMatches(value: unknown): Promise<RecentMatchesImportResult> {
   validateImportRequest(value)
   const profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }> = []
   for (const player of value.players) profiles.push({ player, matches: await fetchPlayerMatches(player, value.region) })
-  return { matches: mergeProfileMatches(profiles, value.region, value.excludedMatchIds), playerCount: value.players.length }
+  return { matches: await enrichProfileMatches(profiles, value.region, value.excludedMatchIds), playerCount: value.players.length }
 }
 
 export async function syncPublicMatch(value: unknown): Promise<MatchSyncResult> {
@@ -227,6 +373,6 @@ export async function syncPublicMatch(value: unknown): Promise<MatchSyncResult> 
     .sort((left, right) => left.startedAt - right.startedAt)[0]?.matchId
   if (!matchedId) return { kind: 'pending', message: 'Společná hra zatím na OP.GG není. Aplikace to zkusí znovu automaticky.' }
   const selectedProfiles = profiles.map((profile) => ({ player: profile.player, matches: profile.matches.filter((match) => match.rawMatchId === matchedId) }))
-  const match = mergeProfileMatches(selectedProfiles, value.region, [])[0]
+  const match = (await enrichProfileMatches(selectedProfiles, value.region, []))[0]
   return match ? { kind: 'matched', match } : { kind: 'pending', message: 'Společnou hru se z OP.GG nepodařilo sestavit.' }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseOpggRecentMatches } from './matches'
+import { parseOpggMatchDetail, parseOpggRecentMatches } from './matches'
 
 const html = `<!doctype html><html><head><script type="application/ld+json">{
   "@context":"https://schema.org",
@@ -21,7 +21,9 @@ const html = `<!doctype html><html><head><script type="application/ld+json">{
           {"@type":"PropertyValue","name":"kills","value":8},
           {"@type":"PropertyValue","name":"deaths","value":2},
           {"@type":"PropertyValue","name":"assists","value":11},
-          {"@type":"PropertyValue","name":"cs","value":205}
+          {"@type":"PropertyValue","name":"cs","value":205},
+          {"@type":"PropertyValue","name":"opScore","value":8.4},
+          {"@type":"PropertyValue","name":"opScoreRank","value":2}
         ]
       }
     }]
@@ -40,10 +42,39 @@ describe('OP.GG veřejná historie', () => {
       assists: 11,
       cs: 205,
       win: true,
+      opScore: 8.4,
+      opScoreRank: 2,
     }])
   })
 
   it('odmítne stránku bez historie', () => {
     expect(() => parseOpggRecentMatches('<html></html>')).toThrow(/neobsahuje čitelnou historii/i)
+  })
+
+  it('načte damage, vision a hodnocení z detailu zápasu', () => {
+    const detailJsonLd = JSON.stringify({
+      '@type': 'PlayGameAction',
+      startTime: '2026-10-27T10:00:00.000Z',
+      additionalProperty: [
+        { name: 'matchId', value: 'public-match-1' },
+        { name: 'queueType', value: 'SOLORANKED' },
+        { name: 'patch', value: '16.21' },
+        { name: 'durationSeconds', value: 1800 },
+      ],
+    })
+    const participant = {
+      participant_id: 3,
+      champion_id: 103,
+      team_key: 'BLUE',
+      position: 'MID',
+      champion: { name: 'Ahri' },
+      summoner: { game_name: 'Test', tagline: 'EUNE', puuid: 'puuid-1' },
+      stats: { kill: 8, death: 2, assist: 11, gold_earned: 12345, vision_score: 24, total_damage_dealt_to_champions: 28765, minion_kill: 205, neutral_minion_kill: 3, result: 'WIN', op_score: 8.4, op_score_rank: 2 },
+    }
+    const flightLine = `65:${JSON.stringify({ data: [participant] })}\n`
+    const detailHtml = `<script type="application/ld+json">${detailJsonLd}</script><script>self.__next_f.push(${JSON.stringify([1, flightLine])})</script>`
+    const result = parseOpggMatchDetail(detailHtml, 'eune', 'public-match-1', [{ playerId: 'p1', displayName: 'Tester', riotId: 'Test#EUNE' }])
+    expect(result).toMatchObject({ durationSeconds: 1800, gameMode: 'Ranked Solo/Duo', gameVersion: '16.21', source: 'opgg' })
+    expect(result.participants[0]).toMatchObject({ championName: 'Ahri', kills: 8, deaths: 2, assists: 11, totalDamageDealtToChampions: 28765, visionScore: 24, detailedStats: true, performanceScore: 8.4, performanceRank: 2 })
   })
 })

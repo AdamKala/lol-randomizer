@@ -70,7 +70,7 @@ function normalizeDraft(value: unknown, players: Player[], maxSlots = 5): Draft 
   return { id: value.id, createdAt: value.createdAt, patch: value.patch, slots: slots as Draft['slots'] }
 }
 
-function normalizeParticipant(value: unknown): MatchParticipantStats | null {
+function normalizeParticipant(value: unknown, detailedStatsFallback: boolean): MatchParticipantStats | null {
   if (!isRecord(value) || typeof value.playerId !== 'string') return null
   return {
     playerId: value.playerId,
@@ -90,12 +90,15 @@ function normalizeParticipant(value: unknown): MatchParticipantStats | null {
     totalMinionsKilled: finite(value.totalMinionsKilled),
     neutralMinionsKilled: finite(value.neutralMinionsKilled),
     win: boolean(value.win),
+    detailedStats: typeof value.detailedStats === 'boolean' ? value.detailedStats : detailedStatsFallback,
+    performanceScore: finite(value.performanceScore),
+    performanceRank: finite(value.performanceRank),
   }
 }
 
 function normalizeMatch(value: unknown): MatchSummary | null {
   if (!isRecord(value) || typeof value.matchId !== 'string' || !Array.isArray(value.participants)) return null
-  const participants = value.participants.map(normalizeParticipant)
+  const participants = value.participants.map((participant) => normalizeParticipant(participant, value.source !== 'opgg'))
   if (!participants.length || participants.some((participant) => !participant)) return null
   return {
     matchId: value.matchId,

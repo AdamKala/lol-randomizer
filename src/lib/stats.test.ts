@@ -3,7 +3,7 @@ import type { ConfirmedGame, MatchParticipantStats } from '../types'
 import { calculatePlayerStats } from './stats'
 
 function participant(overrides: Partial<MatchParticipantStats> = {}): MatchParticipantStats {
-  return { playerId: 'p1', displayName: 'Anna', riotId: 'Anna#EUW', puuid: 'puuid', championId: 103, championName: 'Ahri', teamId: 100, teamPosition: 'MIDDLE', kills: 10, deaths: 2, assists: 8, goldEarned: 12000, visionScore: 20, totalDamageDealtToChampions: 24000, totalMinionsKilled: 180, neutralMinionsKilled: 10, win: true, ...overrides }
+  return { playerId: 'p1', displayName: 'Anna', riotId: 'Anna#EUW', puuid: 'puuid', championId: 103, championName: 'Ahri', teamId: 100, teamPosition: 'MIDDLE', kills: 10, deaths: 2, assists: 8, goldEarned: 12000, visionScore: 20, totalDamageDealtToChampions: 24000, totalMinionsKilled: 180, neutralMinionsKilled: 10, win: true, detailedStats: true, performanceScore: 8.4, performanceRank: 2, ...overrides }
 }
 
 function syncedGame(id: string, stats: MatchParticipantStats): ConfirmedGame {
@@ -23,9 +23,9 @@ describe('statistiky', () => {
     expect(stats[0]).toMatchObject({ games: 3, wins: 2, losses: 1, kills: 24, deaths: 8, assists: 22, favoriteChampion: 'Ahri' })
   })
 
-  it('u OP.GG dat nepočítá chybějící damage a vision jako nulu', () => {
-    const imported = syncedGame('opgg', participant({ totalDamageDealtToChampions: 0, visionScore: 0 }))
+  it('u profilového fallbacku nepočítá chybějící damage a vision jako nulu', () => {
+    const imported = syncedGame('opgg', participant({ totalDamageDealtToChampions: 0, visionScore: 0, detailedStats: false }))
     imported.match!.source = 'opgg'
-    expect(calculatePlayerStats([imported])[0]).toMatchObject({ damageSamples: 0, visionSamples: 0, cs: 190 })
+    expect(calculatePlayerStats([imported])[0]).toMatchObject({ damageSamples: 0, visionSamples: 0, cs: 190, performance: 8.4, performanceSamples: 1 })
   })
 })

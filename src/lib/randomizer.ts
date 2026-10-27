@@ -183,7 +183,7 @@ export function changePlayerRole(
 
 export function confirmDraft(draft: Draft, history: ConfirmedGame[], confirmedAt = new Date().toISOString()): ConfirmedGame[] {
   if (history.some((game) => game.id === draft.id)) return history
-  const number = history.reduce((max, game) => Math.max(max, game.number), 0) + 1
+  const number = history.filter((game) => !game.origin || game.origin === 'confirmed').reduce((max, game) => Math.max(max, game.number), 0) + 1
   const canSync = draft.slots.every((slot) => slot.riotId.includes('#'))
   return [...history, {
     ...draft,
