@@ -73,7 +73,7 @@ describe('OP.GG veřejná historie', () => {
     }
     const flightLine = `65:${JSON.stringify({ data: [participant] })}\n`
     const detailHtml = `<script type="application/ld+json">${detailJsonLd}</script><script>self.__next_f.push(${JSON.stringify([1, flightLine])})</script>`
-    const result = parseOpggMatchDetail(detailHtml, 'eune', 'public-match-1', [{ playerId: 'p1', displayName: 'Tester', riotId: 'Test#EUNE' }])
+    const result = parseOpggMatchDetail(detailHtml, 'eune', 'public-match-1', [{ playerId: 'p1', displayName: 'Tester', riotId: 'Test #EUNE' }])
     expect(result).toMatchObject({ durationSeconds: 1800, gameMode: 'Ranked Solo/Duo', gameVersion: '16.21', source: 'opgg' })
     expect(result.participants[0]).toMatchObject({ championName: 'Ahri', kills: 8, deaths: 2, assists: 11, totalDamageDealtToChampions: 28765, visionScore: 24, detailedStats: true, performanceScore: 8.4, performanceRank: 2 })
   })

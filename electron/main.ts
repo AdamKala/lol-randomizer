@@ -104,6 +104,18 @@ function createWindow(): BrowserWindow {
           await new Promise((resolve) => requestAnimationFrame(resolve))
           const lightTheme = getComputedStyle(document.documentElement).colorScheme === 'light'
             && getComputedStyle(document.body).backgroundColor === 'rgb(233, 239, 245)'
+          const tabButtons = [...document.querySelectorAll('nav button')]
+          const statisticsTab = tabButtons.find((button) => button.textContent?.trim() === 'Statistiky')
+          const recentTab = tabButtons.find((button) => button.textContent?.trim() === 'Poslední hry')
+          const generalTab = tabButtons.find((button) => button.textContent?.trim() === 'Obecné')
+          statisticsTab?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          const statisticsPanel = [...document.querySelectorAll('h2')].some((heading) => heading.textContent?.trim().startsWith('Statistiky'))
+          recentTab?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          const recentPanel = [...document.querySelectorAll('h2')].some((heading) => heading.textContent?.trim() === 'Poslední hry')
+          generalTab?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
           return {
             title: document.title,
             heading: document.querySelector('h1')?.textContent ?? '',
@@ -113,7 +125,7 @@ function createWindow(): BrowserWindow {
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
-            recentMatchesUi: document.body.textContent?.includes('Poslední hry') === true && document.body.textContent?.includes('Statistiky') === true,
+            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && recentPanel),
             matchSyncBridge: typeof window.desktop?.matches?.syncGame === 'function',
             recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',
             rosterBridge: Boolean(rosterStatus && Array.isArray(rosterStatus.players)),
@@ -121,7 +133,7 @@ function createWindow(): BrowserWindow {
           }
         })()`)
         console.log(`[electron-smoke] ${JSON.stringify(result)}`)
-        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.recentMatchesUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true
+        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.tabsUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true
         app.exit(valid ? 0 : 1)
       } catch (error) {
         console.error('[electron-smoke] selhal', error)

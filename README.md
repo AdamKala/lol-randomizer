@@ -35,8 +35,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.3.0-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.3.0-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.4.0-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.4.0-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
@@ -51,7 +51,8 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
 - automatické dohledání společného dokončeného zápasu z veřejných profilů OP.GG bez API klíče;
 - jednorázový import posledních 10 zápasů každého hráče s Riot ID, včetně deduplikace společných her;
-- samostatná sekce posledních her se skutečným výsledkem, hraným šampionem, K/D/A, KDA, damage a OP.GG hodnocením výkonu;
+- horní záložky **Obecné**, **Statistiky** a **Poslední hry**;
+- poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, K/D/A, KDA, damage, OP.GG hodnocením a damage grafem;
 - samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage a vision;
 - tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
@@ -85,7 +86,7 @@ Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nov�
 4. Po dohrání aplikace společný zápas automaticky dohledá na OP.GG. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
 5. Tlačítko **Načíst posledních 10 / hráč** v sekci **Poslední hry** načte posledních deset zápasů všech uložených hráčů s Riot ID. Společné zápasy uloží jen jednou a hráče bez Riot ID přeskočí.
 
-Importované zápasy mají vlastní sekci **Poslední hry**, vstupují do statistik, ale neovlivňují historii sestav ani cooldown randomizeru. Aplikace načte profilový souhrn a poté veřejný detail každého unikátního zápasu, ze kterého doplní přesný damage, vision a OP.GG skóre i pořadí hráče. Pokud detail dočasně není dostupný, zachová K/D/A a CS z profilu a u chybějících hodnot zobrazí pomlčku.
+Importované zápasy mají vlastní záložku **Poslední hry**, vstupují do statistik, ale neovlivňují historii sestav ani cooldown randomizeru. Jeden společný zápas se zobrazí jako jedna rozbalovací karta s počtem vašich hráčů; uvnitř je jejich damage graf a jednotlivé výkony. Aplikace načte profilový souhrn a poté veřejný detail každého unikátního zápasu, ze kterého doplní přesný damage, vision a OP.GG skóre i pořadí hráče. Mezery kolem `#` v Riot ID nevadí. Pokud detail dočasně není dostupný, zachová K/D/A a CS z profilu, zobrazí upozornění a dovolí detail později aktualizovat.
 
 Automatické párování přijme společnou hru, která začala nejvýše 12 hodin po potvrzení sestavy. OP.GG je externí web a jeho HTML se může v budoucnu změnit; aplikace proto používá jeho veřejný strukturovaný JSON-LD výstup a při nekompatibilní změně zobrazí konkrétní chybu namísto poškození historie.
 

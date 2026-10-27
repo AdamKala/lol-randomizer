@@ -18,7 +18,7 @@ type TrackedPlayer = MatchSyncRequest['players'][number]
 
 const PROFILE_LIMIT_BYTES = 5_000_000
 const DETAIL_LIMIT_BYTES = 8_000_000
-const USER_AGENT = 'LoL-Randomizer/1.3 (+https://github.com/AdamKala/lol-randomizer)'
+const USER_AGENT = 'LoL-Randomizer/1.4 (+https://github.com/AdamKala/lol-randomizer)'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -185,7 +185,10 @@ function participantFor(player: TrackedPlayer, match: PublicPlayerMatch): MatchP
 }
 
 function normalizedRiotId(value: string): string {
-  return value.normalize('NFKC').trim().toLocaleLowerCase('en')
+  const normalized = value.normalize('NFKC').trim()
+  const separator = normalized.lastIndexOf('#')
+  if (separator < 0) return normalized.toLocaleLowerCase('en')
+  return `${normalized.slice(0, separator).trim()}#${normalized.slice(separator + 1).trim()}`.toLocaleLowerCase('en')
 }
 
 function collectDetailedParticipants(html: string): Record<string, unknown>[] {

@@ -46,6 +46,7 @@ const ROLE_LABELS: Record<Role, { short: string; title: string; mark: string }> 
 const dateTime = new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' })
 const integer = new Intl.NumberFormat('cs-CZ')
 const oneDecimal = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+type AppTab = 'general' | 'statistics' | 'recent'
 
 function orderedByRole<T extends { role: Role }>(slots: readonly T[]): T[] {
   return [...slots].sort((left, right) => ROLES.indexOf(left.role) - ROLES.indexOf(right.role))
@@ -166,21 +167,41 @@ function performanceLabel(score: number, rank: number): string {
 }
 
 function RecentGamesPanel({ history, importing, onImport, onClear }: { history: ConfirmedGame[]; importing: boolean; onImport: () => void; onClear: () => void }) {
-  const rows = [...history]
-    .sort((left, right) => Date.parse(right.confirmedAt) - Date.parse(left.confirmedAt))
-    .flatMap((game) => (game.match?.participants ?? []).map((participant) => ({ game, participant })))
+  const games = [...history].sort((left, right) => Date.parse(right.confirmedAt) - Date.parse(left.confirmedAt))
+  const missingDetails = games.filter((game) => game.match?.participants.some((participant) => !participant.detailedStats)).length
   return (
     <Panel className="overflow-hidden">
-      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Veřejná data OP.GG</p><h2 className="section-title mt-1 flex items-center gap-2"><Swords size={20} className="text-gold" /> Poslední hry</h2><p className="mt-2 text-xs text-slate-500">KDA, damage a hodnocení výkonu načtené z detailů zápasů.</p></div><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={onImport} disabled={importing} title="Načíst posledních 10 zápasů každého hráče z veřejných profilů OP.GG — bez API klíče">{importing ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importing ? 'Načítám detaily…' : 'Načíst posledních 10 / hráč'}</button></div>
-      {!rows.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><Swords className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">Načti poslední zápasy uložených hráčů.</p></div></div> : <>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[850px] text-left text-xs">
-            <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Datum</th><th className="px-3 py-3">Hráč</th><th className="px-3 py-3">Šampion</th><th className="px-3 py-3">Výsledek</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">DMG</th><th className="px-3 py-3">Výkon</th><th className="px-5 py-3">Pořadí</th></tr></thead>
-            <tbody className="divide-y divide-white/[.06]">{rows.map(({ game, participant }) => {
-              const kda = (participant.kills + participant.assists) / Math.max(1, participant.deaths)
-              return <tr key={`${game.id}-${participant.playerId}`} className="hover:bg-white/[.025]"><td className="whitespace-nowrap px-5 py-3 text-slate-500">{dateTime.format(new Date(game.confirmedAt))}</td><td className="px-3 py-3 font-bold text-white">{participant.displayName}</td><td className="px-3 py-3 text-slate-300">{participant.championName}</td><td className={`px-3 py-3 font-bold ${participant.win ? 'text-emerald-300' : 'text-red-300'}`}>{participant.win ? 'Výhra' : 'Prohra'}</td><td className="px-3 py-3 text-slate-300">{participant.kills} / {participant.deaths} / {participant.assists}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format(kda)}</td><td className="px-3 py-3 text-slate-300">{participant.detailedStats ? integer.format(participant.totalDamageDealtToChampions) : '—'}</td><td className="px-3 py-3"><span className="rounded-full border border-cyan/20 bg-cyan/[.08] px-2 py-1 font-bold text-cyan">{performanceLabel(participant.performanceScore, participant.performanceRank)}{participant.performanceScore > 0 ? ` · ${oneDecimal.format(participant.performanceScore)}` : ''}</span></td><td className="px-5 py-3 text-slate-400">{participant.performanceRank > 0 ? `#${participant.performanceRank} / 10` : '—'}</td></tr>
-            })}</tbody>
-          </table>
+      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Veřejná data OP.GG</p><h2 className="section-title mt-1 flex items-center gap-2"><Swords size={20} className="text-gold" /> Poslední hry</h2><p className="mt-2 text-xs text-slate-500">Každý zápas je jedna karta. Rozkliknutím zobrazíš výkony hráčů a damage graf.</p></div><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={onImport} disabled={importing} title="Načíst posledních 10 zápasů každého hráče z veřejných profilů OP.GG — bez API klíče">{importing ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importing ? 'Načítám detaily…' : 'Načíst posledních 10 / hráč'}</button></div>
+      {missingDetails > 0 && <div className="flex items-start gap-2 border-b border-amber-400/15 bg-amber-400/[.06] px-5 py-3 text-xs leading-5 text-amber-100/80"><AlertTriangle className="mt-0.5 shrink-0" size={15} /><span>{missingDetails} {missingDetails === 1 ? 'zápasu chybí detailní damage' : 'zápasům chybí detailní damage'}. Klikni na načtení znovu; uložené zápasy se aktualizují.</span></div>}
+      {!games.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><Swords className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">Načti poslední zápasy uložených hráčů.</p></div></div> : <>
+        <div className="divide-y divide-white/[.07]">
+          {games.map((game) => {
+            const participants = game.match?.participants ?? []
+            const wins = participants.filter((participant) => participant.win).length
+            const result = wins === participants.length ? 'Výhra' : wins === 0 ? 'Prohra' : 'Smíšený výsledek'
+            const resultClass = wins === participants.length ? 'text-emerald-300' : wins === 0 ? 'text-red-300' : 'text-amber-200'
+            const maxDamage = Math.max(1, ...participants.filter((participant) => participant.detailedStats).map((participant) => participant.totalDamageDealtToChampions))
+            const startedAt = game.match?.gameStartedAt || game.confirmedAt
+            const duration = game.match?.durationSeconds ? Math.round(game.match.durationSeconds / 60) : 0
+            return <details key={game.id} className="group open:bg-white/[.018]">
+              <summary className="grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition hover:bg-white/[.025] sm:px-6">
+                <span className={`rounded-md border px-3 py-2 text-xs font-extrabold uppercase tracking-wider ${wins === participants.length ? 'border-emerald-400/20 bg-emerald-400/[.08] text-emerald-300' : wins === 0 ? 'border-red-400/20 bg-red-400/[.08] text-red-300' : 'border-amber-400/20 bg-amber-400/[.08] text-amber-200'}`}>{result}</span>
+                <span className="min-w-0"><strong className="block font-display text-base text-gold-light">{dateTime.format(new Date(startedAt))}</strong><small className="mt-1 block text-xs text-slate-500">{game.match?.gameMode || 'League of Legends'}{duration ? ` · ${duration} min` : ''} · našich hráčů: <b className="text-slate-300">{participants.length}</b></small></span>
+                <ChevronDown size={18} className="text-slate-500 transition group-open:rotate-180" />
+              </summary>
+              <div className="border-t border-white/[.06] bg-black/10 p-5 sm:p-6">
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,.8fr)]">
+                  <div><div className="mb-4 flex items-center justify-between"><div><p className="eyebrow">Damage do šampionů</p><h3 className="mt-1 font-display text-lg font-bold text-white">Porovnání hráčů</h3></div><span className={`text-xs font-bold ${resultClass}`}>{result}</span></div>
+                    {participants.some((participant) => participant.detailedStats) ? <div className="grid gap-3">{[...participants].sort((left, right) => right.totalDamageDealtToChampions - left.totalDamageDealtToChampions).map((participant) => <div key={participant.playerId} className="grid grid-cols-[5.5rem_minmax(0,1fr)_4.5rem] items-center gap-3"><span className="truncate text-xs font-semibold text-slate-300" title={participant.displayName}>{participant.displayName}</span><div className="h-7 overflow-hidden rounded-md border border-white/[.06] bg-white/[.035]"><div className="flex h-full min-w-1 items-center rounded-sm bg-gradient-to-r from-cyan/45 to-cyan px-2 transition-all" style={{ width: `${participant.detailedStats ? Math.max(3, (participant.totalDamageDealtToChampions / maxDamage) * 100) : 0}%` }}><span className="truncate text-[.62rem] font-bold text-[#031113]">{participant.championName}</span></div></div><strong className="text-right text-xs text-gold-light">{participant.detailedStats ? integer.format(participant.totalDamageDealtToChampions) : '—'}</strong></div>)}</div> : <div className="rounded-lg border border-dashed border-amber-400/20 p-5 text-sm text-amber-100/70">Detail damage zatím chybí. Znovu načti poslední hry.</div>}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">{[...participants].sort((left, right) => (left.performanceRank || 99) - (right.performanceRank || 99)).map((participant) => {
+                    const kda = (participant.kills + participant.assists) / Math.max(1, participant.deaths)
+                    return <article key={participant.playerId} className="rounded-lg border border-white/[.07] bg-white/[.025] p-3"><div className="flex items-start justify-between gap-3"><div><strong className="text-sm text-white">{participant.displayName}</strong><p className="mt-0.5 text-xs text-slate-500">{participant.championName}</p></div><span className="rounded-full border border-cyan/20 bg-cyan/[.08] px-2 py-1 text-[.65rem] font-bold text-cyan">{performanceLabel(participant.performanceScore, participant.performanceRank)}{participant.performanceScore > 0 ? ` · ${oneDecimal.format(participant.performanceScore)}` : ''}</span></div><dl className="mt-3 grid grid-cols-4 gap-2 border-t border-white/[.06] pt-3 text-center"><div><dt className="text-[.58rem] uppercase text-slate-600">K/D/A</dt><dd className="mt-1 text-xs font-bold text-slate-200">{participant.kills}/{participant.deaths}/{participant.assists}</dd></div><div><dt className="text-[.58rem] uppercase text-slate-600">KDA</dt><dd className="mt-1 text-xs font-bold text-gold-light">{oneDecimal.format(kda)}</dd></div><div><dt className="text-[.58rem] uppercase text-slate-600">DMG</dt><dd className="mt-1 text-xs font-bold text-cyan">{participant.detailedStats ? integer.format(participant.totalDamageDealtToChampions) : '—'}</dd></div><div><dt className="text-[.58rem] uppercase text-slate-600">Pořadí</dt><dd className="mt-1 text-xs font-bold text-slate-300">{participant.performanceRank > 0 ? `#${participant.performanceRank}` : '—'}</dd></div></dl></article>
+                  })}</div>
+                </div>
+              </div>
+            </details>
+          })}
         </div>
         <div className="flex justify-end border-t border-white/[.07] px-5 py-3"><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear}><Trash2 size={14} /> Smazat poslední hry</button></div>
       </>}
@@ -238,6 +259,7 @@ export default function App() {
   const [newPlayerRiotId, setNewPlayerRiotId] = useState('')
   const [editingPlayer, setEditingPlayer] = useState<Pick<Player, 'id' | 'name' | 'riotId'> | null>(null)
   const [importingRecent, setImportingRecent] = useState(false)
+  const [activeTab, setActiveTab] = useState<AppTab>('general')
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
   const [rosterFile, setRosterFile] = useState<RosterFileResult | null>(null)
   const [rosterReady, setRosterReady] = useState(() => !window.desktop?.roster)
@@ -360,10 +382,11 @@ export default function App() {
       const merged = mergeRecentMatches(stateRef.current.history, result.matches, dataset)
       setState((value) => ({ ...value, history: merged.history }))
       const skippedText = skipped ? ` Bez Riot ID (přeskočeno): ${skipped}.` : ''
+      const detailedMatches = result.matches.filter((match) => match.participants.every((participant) => participant.detailedStats)).length
       const importText = merged.added
         ? `Z OP.GG načteno ${merged.added} nových a aktualizováno ${merged.updated} dříve uložených zápasů pro ${result.playerCount} hráčů.`
         : `Z OP.GG aktualizováno ${merged.updated} uložených zápasů včetně detailních statistik.`
-      setMessage({ type: 'success', text: `${importText}${skippedText}` })
+      setMessage({ type: 'success', text: `${importText} Damage načten u ${detailedMatches}/${result.matches.length} zápasů.${skippedText}` })
     } catch (error) {
       const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Import posledních zápasů se nezdařil.'
       setMessage({ type: 'error', text })
@@ -512,17 +535,21 @@ export default function App() {
     <div className="min-h-screen">
       <header className="border-b border-white/[.07] bg-[#040913]/75 backdrop-blur-xl"><div className="mx-auto flex max-w-[1900px] flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><div className="flex items-center gap-4"><div className="grid size-12 shrink-0 rotate-45 place-items-center border border-gold/60 bg-gold/10 shadow-gold"><Dice5 className="-rotate-45 text-gold" size={24} /></div><div><p className="eyebrow">Summoner's Rift · uložený roster</p><h1 className="font-display text-2xl font-extrabold tracking-wide text-gold-light sm:text-3xl">LoL Randomizer</h1></div></div>{dataset ? <div className="flex flex-wrap items-center gap-2 text-xs"><span className={`rounded-full border px-3 py-1.5 font-bold ${isDatasetStale(dataset) ? 'border-amber-400/30 bg-amber-400/10 text-amber-200' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'}`}>{isDatasetStale(dataset) ? 'Snapshot je zastaralý' : 'Snapshot je aktuální'}</span><span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-slate-300">Patch {dataset.patch}</span></div> : <span className="text-sm text-slate-500">Načítám role data…</span>}</div></header>
 
+      <nav className="sticky top-0 z-40 border-b border-white/[.08] bg-[#040913]/90 backdrop-blur-xl" aria-label="Hlavní sekce aplikace"><div className="mx-auto flex max-w-[1900px] gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">{([
+        { id: 'general', label: 'Obecné', icon: Dice5 },
+        { id: 'statistics', label: 'Statistiky', icon: BarChart3 },
+        { id: 'recent', label: 'Poslední hry', icon: HistoryIcon },
+      ] as const).map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => setActiveTab(id)} className={`relative flex min-h-14 shrink-0 items-center gap-2 px-4 text-sm font-bold transition ${activeTab === id ? 'text-cyan' : 'text-slate-500 hover:text-slate-200'}`} aria-current={activeTab === id ? 'page' : undefined}><Icon size={17} /> {label}{activeTab === id && <span className="absolute inset-x-2 bottom-0 h-0.5 bg-cyan shadow-[0_0_12px_rgba(10,200,185,.7)]" />}</button>)}</div></nav>
+
       <main className="mx-auto max-w-[1900px] px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
         {message && <div className={`mb-6 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${message.type === 'error' ? 'border-red-400/25 bg-red-500/10 text-red-200' : 'border-emerald-400/25 bg-emerald-500/10 text-emerald-200'}`} role="status"><span className="flex items-center gap-2">{message.type === 'error' ? <AlertTriangle size={17} /> : <Check size={17} />}{message.text}</span><button type="button" onClick={() => setMessage(null)} aria-label="Zavřít zprávu"><X size={16} /></button></div>}
 
-        <div className="grid items-start gap-6 xl:grid-cols-[280px_minmax(0,1fr)_300px] 2xl:grid-cols-[310px_minmax(0,1fr)_340px]">
+        {activeTab === 'general' && <div className="grid items-start gap-6 xl:grid-cols-[280px_minmax(0,1fr)_300px] 2xl:grid-cols-[310px_minmax(0,1fr)_340px]">
           <aside className="xl:sticky xl:top-6">{rosterPanel}</aside>
           <div className="space-y-6">
 
             {state.draft ? <Panel className="overflow-hidden border-gold/20"><div className="flex flex-col gap-3 border-b border-white/[.08] px-5 py-5 sm:flex-row sm:items-end sm:justify-between md:px-7"><div><p className="eyebrow">Nepotvrzený návrh</p><h2 className="section-title mt-1">Tvoje sestava</h2></div><p className="text-xs text-slate-500">Reroll ani individuální změna linky nemění historii a cooldown</p></div><div className="grid grid-cols-5 gap-2 p-3 md:gap-3 md:p-5">{orderedByRole(state.draft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${state.draft!.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
 
-            <StatisticsPanel history={state.history} />
-            <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => void importRecentMatches()} onClear={clearRecent} />
             <HistoryPanel history={confirmedHistory} syncingIds={syncingIds} onSync={(game) => void syncGame(game)} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
           </div>
 
@@ -533,7 +560,9 @@ export default function App() {
 
             <Panel className="p-5"><p className="eyebrow">Stav skupiny</p><div className="mt-4 grid grid-cols-3 gap-2 text-center"><div className="rounded-lg bg-white/[.035] p-3"><Users className="mx-auto text-cyan/70" size={17} /><strong className="mt-2 block font-display text-lg text-white">{state.players.length}</strong><span className="text-[.62rem] text-slate-500">uloženo</span></div><div className="rounded-lg bg-white/[.035] p-3"><UserRoundCheck className="mx-auto text-emerald-300/70" size={17} /><strong className="mt-2 block font-display text-lg text-white">{selectedPlayers.length}</strong><span className="text-[.62rem] text-slate-500">hraje</span></div><div className="rounded-lg bg-white/[.035] p-3"><Swords className="mx-auto text-gold/80" size={17} /><strong className="mt-2 block font-display text-lg text-white">{state.history.length}</strong><span className="text-[.62rem] text-slate-500">her</span></div></div></Panel>
           </aside>
-        </div>
+        </div>}
+        {activeTab === 'statistics' && <StatisticsPanel history={state.history} />}
+        {activeTab === 'recent' && <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => void importRecentMatches()} onClear={clearRecent} />}
         <footer className="mt-12 border-t border-white/[.07] py-8 text-xs leading-6 text-slate-600">LoL Randomizer není podporován společností Riot Games a neodráží názory Riot Games ani nikoho, kdo se oficiálně podílí na produkci nebo správě jejích her. Riot Games a všechny související vlastnosti jsou ochranné známky nebo registrované ochranné známky společnosti Riot Games, Inc.</footer>
       </main>
       {confirming && state.draft && <ConfirmDialog draft={state.draft} onCancel={() => setConfirming(false)} onConfirm={confirm} />}
