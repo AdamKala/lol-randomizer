@@ -8,6 +8,12 @@ const ROLE_PATHS = { TOP: 'top', JUNGLE: 'jungle', MID: 'mid', ADC: 'adc', SUPPO
 const SLUG_OVERRIDES = { MonkeyKing: 'monkeyking' }
 const REQUEST_DELAY_MS = 350
 const MAX_ATTEMPTS = 3
+const forceRefresh = process.argv.includes('--force')
+const roleFilter = process.argv.find((argument) => argument.startsWith('--role='))?.slice('--role='.length).toUpperCase()
+
+if (roleFilter && !Object.hasOwn(ROLE_PATHS, roleFilter)) {
+  throw new Error(`Neznámá role ${roleFilter}. Použij TOP, JUNGLE, MID, ADC nebo SUPPORT.`)
+}
 
 const wait = (milliseconds) => new Promise((resolveWait) => setTimeout(resolveWait, milliseconds))
 const roundRate = (value) => Math.round(value * 100) / 100
@@ -27,10 +33,9 @@ function parseMatchups(html) {
 }
 
 function selectCounter(matchups) {
-  const maxGames = Math.max(...matchups.map((matchup) => matchup.play), 0)
-  const minimumGames = Math.max(25, Math.ceil(maxGames * 0.05))
-  const candidates = matchups.filter((matchup) => matchup.play >= minimumGames)
-  return candidates.sort((left, right) => left.win_rate - right.win_rate || right.play - left.play)[0]
+  return matchups
+    .filter((matchup) => matchup.play > 0)
+    .sort((left, right) => left.win_rate - right.win_rate || right.play - left.play)[0]
 }
 
 async function fetchEntry(entry) {
@@ -75,7 +80,11 @@ const refreshed = []
 const failures = []
 
 for (const [index, entry] of dataset.entries.entries()) {
-  if (entry.winRate !== undefined && entry.counter && !process.argv.includes('--force')) {
+  if (roleFilter && entry.role !== roleFilter) {
+    refreshed.push(entry)
+    continue
+  }
+  if (entry.winRate !== undefined && entry.counter && !forceRefresh) {
     refreshed.push(entry)
     console.log(`[${index + 1}/${dataset.entries.length}] ${entry.role} ${entry.name}: data už jsou uložená`)
     continue
@@ -108,7 +117,7 @@ dataset.source = {
   name: 'OP.GG + U.GG snapshot',
   url: 'https://op.gg/lol/champions',
   scope: 'Ranked Solo, Emerald+, Global; role-specific champion statistics',
-  methodology: 'Výběr champion-role kombinací pochází z původního U.GG snapshotu, nikoli z Riot tříd. Pickrate a winrate jsou načtené z veřejných OP.GG stránek. Největší counter je soupeř, proti kterému má daný pick nejnižší winrate; započítávají se matchup vzorky s alespoň 25 hrami a 5 % velikosti nejčastějšího matchupu. Počet her zůstává z původního ručně kurátorovaného U.GG snapshotu.',
+  methodology: 'Výběr champion-role kombinací pochází z původního U.GG snapshotu, nikoli z Riot tříd. Pickrate a winrate jsou načtené z veřejných OP.GG stránek. Největší counter je první soupeř po seřazení veřejné OP.GG matchup tabulky od nejnižšího winratu daného picku, bez dodatečného filtru velikosti vzorku. Počet her zůstává z původního ručně kurátorovaného U.GG snapshotu.',
 }
 
 await writeFile(datasetPath, `${JSON.stringify(dataset, null, 2)}\n`)

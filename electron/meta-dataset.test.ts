@@ -33,4 +33,13 @@ describe('výchozí meta dataset', () => {
     expect(nautilus?.counter?.name).toBe('Rell')
     expect(nautilus?.counter?.winRateAgainst).toBeLessThan(nautilus?.winRate ?? 0)
   })
+
+  it('kopíruje první řádek OP.GG i u menšího matchup vzorku', () => {
+    const smolder = bundledDataset.entries.find((entry) => entry.name === 'Smolder' && entry.role === 'ADC')
+    expect(smolder?.counter).toEqual(expect.objectContaining({
+      name: "Vel'Koz",
+      winRateAgainst: 42.97,
+      games: 128,
+    }))
+  })
 })

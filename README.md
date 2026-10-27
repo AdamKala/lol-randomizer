@@ -173,7 +173,7 @@ Veřejné role-specific statistiky OP.GG lze znovu načíst do verzovaného offl
 npm run meta:refresh-opgg
 ```
 
-Aktualizátor znovu nestahuje už kompletní položky; úplné obnovení všech hodnot lze vynutit pomocí `npm run meta:refresh-opgg -- --force`.
+Aktualizátor znovu nestahuje už kompletní položky; úplné obnovení všech hodnot lze vynutit pomocí `npm run meta:refresh-opgg -- --force`. Pro jedinou roli lze přidat například `--role=ADC`.
 
 ## GitHub Actions
 
