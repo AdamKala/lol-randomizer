@@ -1,6 +1,6 @@
 [package]
 name = "lol-randomizer"
-version = "2.0.0"
+version = "2.0.1"
 description = "Lehký desktopový randomizer rolí a šampionů pro League of Legends"
 authors = ["AdamKala"]
 license = "MIT"

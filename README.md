@@ -46,8 +46,8 @@ npm run dist:win
 
 Příkaz vytvoří NSIS instalátor a zkopíruje jej do `release/`. Do stejné složky uloží také samostatnou přenosnou binárku:
 
-- `LoL-Randomizer-2.0.0-x64-setup.exe` — instalátor se zástupci a odinstalací;
-- `LoL-Randomizer-Portable-2.0.0-x64.exe` — přímé spuštění bez instalace.
+- `LoL-Randomizer-2.0.1-x64-setup.exe` — instalátor se zástupci a odinstalací;
+- `LoL-Randomizer-Portable-2.0.1-x64.exe` — přímé spuštění bez instalace.
 
 Instalátor používá režim WebView2 `downloadBootstrapper`: nepřibaluje celý runtime a v případě potřeby jej při instalaci stáhne. Portable varianta potřebuje WebView2 již přítomné v systému; na běžných aktuálních Windows 10/11 je součástí systému.
 

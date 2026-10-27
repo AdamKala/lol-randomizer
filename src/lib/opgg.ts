@@ -28,7 +28,7 @@ type TrackedPlayer = MatchSyncRequest['players'][number]
 const PROFILE_LIMIT_BYTES = 5_000_000
 const DETAIL_LIMIT_BYTES = 8_000_000
 const ACTION_LIMIT_BYTES = 15_000_000
-const USER_AGENT = 'LoL-Randomizer/2.0.0 (+https://github.com/AdamKala/lol-randomizer)'
+const USER_AGENT = 'LoL-Randomizer/2.0.1 (+https://github.com/AdamKala/lol-randomizer)'
 let cachedGamesAction: { scriptUrl: string; actionId: string } | null = null
 
 export function createOpggGamesActionHeaders(actionId: string, profileUrl: string): Record<string, string> {
