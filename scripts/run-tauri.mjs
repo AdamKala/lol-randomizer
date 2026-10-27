@@ -5,12 +5,17 @@ import { delimiter, join } from "node:path";
 
 const env = { ...process.env };
 const cargoBin = join(homedir(), ".cargo", "bin");
-const pathEntries = (env.PATH ?? "").split(delimiter);
+// Windows exposes this variable as `Path`, while Unix uses `PATH`. Creating a
+// second differently-cased key on Windows can replace the runner's original
+// search path and hide npm from Tauri's beforeBuildCommand.
+const pathKey = Object.keys(env).find((name) => name.toLowerCase() === "path") ?? "PATH";
+const currentPath = env[pathKey] ?? "";
+const pathEntries = currentPath.split(delimiter);
 
 // rustup keeps Cargo here. Some terminals opened before rustup was installed do
 // not source ~/.cargo/env until they are restarted.
 if (existsSync(cargoBin) && !pathEntries.includes(cargoBin)) {
-  env.PATH = `${cargoBin}${delimiter}${env.PATH ?? ""}`;
+  env[pathKey] = `${cargoBin}${delimiter}${currentPath}`;
 }
 
 // Snap-packaged VS Code exports GTK/GIO paths from its core20 runtime. Native
