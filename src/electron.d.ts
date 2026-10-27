@@ -1,6 +1,6 @@
 export {}
 
-import type { MatchSyncRequest, MatchSyncResult, RiotApiStatus } from './types'
+import type { MatchSyncRequest, MatchSyncResult, Player, RiotApiStatus, RosterFileResult } from './types'
 
 declare global {
   interface Window {
@@ -11,6 +11,10 @@ declare global {
         getStatus: () => Promise<RiotApiStatus>
         setApiKey: (apiKey: string) => Promise<RiotApiStatus>
         syncGame: (request: MatchSyncRequest) => Promise<MatchSyncResult>
+      }>
+      roster: Readonly<{
+        load: () => Promise<RosterFileResult>
+        save: (players: Player[]) => Promise<RosterFileResult>
       }>
     }>
   }

@@ -1,7 +1,7 @@
 {
   "name": "lol-randomizer",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Desktopový randomizer rolí a šampionů pro League of Legends",
   "author": "AdamKala",
   "repository": "https://github.com/AdamKala/lol-randomizer",
@@ -55,6 +55,7 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "data/players.json",
       "package.json"
     ],
     "win": {

@@ -35,8 +35,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.1.0-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.1.0-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.1.1-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.1.1-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
@@ -59,7 +59,17 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 
 Výchozí role dataset `public/data/champion-roles.v1.json` a všechny ikony, které používá, jsou součástí aplikace. Po instalaci tedy randomizer, historie i obrázky fungují bez připojení k internetu. Externí odkaz na zdroj dat se pouze na vyžádání otevře ve výchozím systémovém prohlížeči.
 
-Roster, výběr hráčů, rozpracovaný draft, historie, stažené výsledky, nastavení i importovaný dataset se ukládají do persistentního Chromium `localStorage` v uživatelském profilu Electronu. Data přežijí zavření i aktualizaci aplikace. Neexistuje žádný vlastní backend, účet ani telemetrie.
+Roster se při spuštění ze zdrojového projektu ukládá do verzovaného souboru `data/players.json`. Přidání hráče, změna jména či Riot ID i odebrání hráče soubor automaticky upraví. Po běžném `git add`, commitu a pushi je tedy stejný roster součástí repozitáře a načte se i na dalším počítači.
+
+```bash
+git add data/players.json
+git commit -m "data: update player roster"
+git push
+```
+
+Push není prováděn automaticky aplikací. Výběr hráčů, rozpracovaný draft, historie, stažené výsledky, nastavení a importovaný dataset zůstávají v persistentním Chromium `localStorage`; nepatří do Gitu. Instalovaná či portable aplikace nemá pracovní Git repozitář, a proto používá vlastní `players.json` v uživatelském profilu. Git synchronizace rosteru funguje při spuštění přes `npm run dev` nebo `npm start` přímo v checkoutu projektu.
+
+Pozor: `data/players.json` obsahuje jména a případná Riot ID v čitelné podobě. V public repozitáři budou po pushi veřejná. Riot API klíč se do tohoto souboru nikdy nezapisuje.
 
 Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nový výsledek lze přirozeně načíst jen s připojením k internetu a platným Riot API klíčem.
 

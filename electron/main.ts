@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, net, protocol, session, shell } from
 import { dirname, isAbsolute, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { getRiotApiStatus, setRiotApiKey, syncRiotMatch } from './riot'
+import { loadRosterFile, saveRosterFile } from './roster'
 
 const electronRoot = dirname(fileURLToPath(import.meta.url))
 const rendererRoot = resolve(electronRoot, '../dist')
@@ -86,6 +87,7 @@ function createWindow(): BrowserWindow {
   if (process.env.ELECTRON_SMOKE_TEST === '1') {
     window.webContents.once('did-finish-load', async () => {
       try {
+        const verifyRosterWrite = process.env.ELECTRON_SMOKE_TEST_ROSTER_WRITE === '1'
         const result = await window.webContents.executeJavaScript(`(async () => {
           const dataset = await fetch('./data/champion-roles.v1.json').then((response) => response.json())
           const iconOk = await fetch('./champions/Aatrox.png').then((response) => response.ok)
@@ -97,6 +99,10 @@ function createWindow(): BrowserWindow {
           const riotStatus = typeof window.desktop?.riot?.getStatus === 'function'
             ? await window.desktop.riot.getStatus()
             : null
+          const rosterStatus = typeof window.desktop?.roster?.load === 'function'
+            ? await window.desktop.roster.load()
+            : null
+          const rosterWriteOk = ${verifyRosterWrite ? "Boolean(rosterStatus && (await window.desktop.roster.save(rosterStatus.players)).exists)" : 'true'}
           return {
             title: document.title,
             heading: document.querySelector('h1')?.textContent ?? '',
@@ -105,10 +111,12 @@ function createWindow(): BrowserWindow {
             storageBefore,
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             riotBridge: Boolean(riotStatus && typeof riotStatus.hasApiKey === 'boolean'),
+            rosterBridge: Boolean(rosterStatus && Array.isArray(rosterStatus.players)),
+            rosterWriteOk,
           }
         })()`)
         console.log(`[electron-smoke] ${JSON.stringify(result)}`)
-        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.riotBridge === true
+        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.riotBridge === true && result.rosterBridge === true && result.rosterWriteOk === true
         app.exit(valid ? 0 : 1)
       } catch (error) {
         console.error('[electron-smoke] selhal', error)
@@ -135,6 +143,8 @@ app.whenReady().then(() => {
   ipcMain.handle('riot:get-status', () => getRiotApiStatus())
   ipcMain.handle('riot:set-api-key', (_event, apiKey: unknown) => setRiotApiKey(apiKey))
   ipcMain.handle('riot:sync-game', (_event, request: unknown) => syncRiotMatch(request))
+  ipcMain.handle('roster:load', () => loadRosterFile())
+  ipcMain.handle('roster:save', (_event, players: unknown) => saveRosterFile(players))
 
   if (!developmentUrl) {
     protocol.handle('app', (request) => {

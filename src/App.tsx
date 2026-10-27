@@ -26,7 +26,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import type { AppState, ChampionRoleEntry, ConfirmedGame, Draft, MetaDataset, Player, RiotApiStatus, Role, Settings } from './types'
+import type { AppState, ChampionRoleEntry, ConfirmedGame, Draft, MetaDataset, Player, RiotApiStatus, Role, RosterFileResult, Settings } from './types'
 import { confirmDraft, generateDraft, getCooldownEntries, rerollOneChampion, validatePlayers } from './lib/randomizer'
 import { isDatasetStale, loadBundledDataset, validateMetaDataset } from './lib/meta'
 import { calculatePlayerStats } from './lib/stats'
@@ -199,6 +199,9 @@ export default function App() {
   const [apiKey, setApiKey] = useState('')
   const [savingApiKey, setSavingApiKey] = useState(false)
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
+  const [rosterFile, setRosterFile] = useState<RosterFileResult | null>(null)
+  const [rosterReady, setRosterReady] = useState(() => !window.desktop?.roster)
+  const rosterSnapshot = useRef<string | null>(null)
   const datasetInput = useRef<HTMLInputElement>(null)
   const dataset = state.customDataset ?? bundledDataset
 
@@ -206,10 +209,51 @@ export default function App() {
     let active = true
     loadBundledDataset().then((data) => { if (active) setBundledDataset(data) }).catch((error: unknown) => { if (active) setLoadingError(error instanceof Error ? error.message : 'Dataset se nepodařilo načíst.') })
     window.desktop?.riot.getStatus().then((status) => { if (active) setRiotStatus(status) }).catch(() => undefined)
+    const rosterBridge = window.desktop?.roster
+    if (rosterBridge) rosterBridge.load().then(async (loaded) => {
+      if (!active) return
+      const localPlayers = stateRef.current.players
+      if (!loaded.players.length && localPlayers.length) {
+        const saved = await rosterBridge.save(localPlayers)
+        if (!active) return
+        rosterSnapshot.current = JSON.stringify(saved.players)
+        setRosterFile(saved)
+      } else {
+        rosterSnapshot.current = JSON.stringify(loaded.players)
+        setRosterFile(loaded)
+        setState((current) => {
+          const fileIds = new Set(loaded.players.map((player) => player.id))
+          const retainedSelection = current.selectedPlayerIds.filter((id) => fileIds.has(id))
+          return { ...current, players: loaded.players, selectedPlayerIds: retainedSelection.length ? retainedSelection : loaded.players.slice(0, 5).map((player) => player.id) }
+        })
+      }
+      setRosterReady(true)
+    }).catch((error: unknown) => {
+      if (!active) return
+      setRosterReady(true)
+      setMessage({ type: 'error', text: error instanceof Error ? `Soubor hráčů se nepodařilo načíst: ${error.message}` : 'Soubor hráčů se nepodařilo načíst.' })
+    })
     return () => { active = false }
   }, [])
 
   useEffect(() => { stateRef.current = state; saveState(state) }, [state])
+
+  useEffect(() => {
+    const rosterBridge = window.desktop?.roster
+    if (!rosterReady || !rosterBridge) return
+    const serialized = JSON.stringify(state.players)
+    if (serialized === rosterSnapshot.current) return
+    const valid = state.players.every((player) => player.id && player.name.trim() && player.name.length <= 40 && player.riotId.length <= 81 && (!player.riotId || player.riotId.includes('#')))
+      && new Set(state.players.map((player) => player.name.trim().toLocaleLowerCase('cs'))).size === state.players.length
+    if (!valid) return
+    const timer = window.setTimeout(() => {
+      rosterBridge.save(state.players).then((saved) => {
+        rosterSnapshot.current = JSON.stringify(saved.players)
+        setRosterFile(saved)
+      }).catch((error: unknown) => setMessage({ type: 'error', text: error instanceof Error ? `Hráče se nepodařilo uložit do souboru: ${error.message}` : 'Hráče se nepodařilo uložit do souboru.' }))
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [rosterReady, state.players])
 
   const selectedPlayers = useMemo(() => state.players.filter((player) => state.selectedPlayerIds.includes(player.id)), [state.players, state.selectedPlayerIds])
   const cooldown = useMemo(() => getCooldownEntries(state.history, state.settings.cooldownGames), [state.history, state.settings.cooldownGames])
@@ -362,7 +406,7 @@ export default function App() {
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
             <Panel className="p-5 md:p-7">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div><p className="eyebrow">Stálý roster</p><h2 className="section-title mt-1">Kdo dneska intí?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Hráče přidáš jen jednou. Pro dnešní sestavu zaškrtni 1–5 lidí; ostatní zůstanou uložené na příště.</p></div><details className="group relative"><summary className="btn-ghost cursor-pointer list-none"><Settings2 size={17} /> Nastavení <ChevronDown size={15} className="transition group-open:rotate-180" /></summary><div className="mt-3 grid gap-4 rounded-lg border border-white/10 bg-[#07101d] p-4 lg:absolute lg:right-0 lg:z-20 lg:w-[30rem] lg:shadow-2xl"><label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Cooldown potvrzených her <small className="block text-slate-600">0–10 her</small></span><input className="field text-center" type="number" min="0" max="10" value={state.settings.cooldownGames} onChange={(event) => updateSettings({ cooldownGames: Math.max(0, Math.min(10, Number(event.target.value))) })} /></label><label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální pick rate <small className="block text-slate-600">v procentech</small></span><input className="field text-center" type="number" min="0" max="100" step="0.1" value={state.settings.minPickRate} onChange={(event) => updateSettings({ minPickRate: Math.max(0, Number(event.target.value)) })} /></label><label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální počet her</span><input className="field text-center" type="number" min="0" step="100" value={state.settings.minGames} onChange={(event) => updateSettings({ minGames: Math.max(0, Number(event.target.value)) })} /></label><div className="border-t border-white/[.08] pt-4"><div className="flex items-center gap-2 text-sm font-bold text-white"><KeyRound size={16} className="text-gold" /> Riot API pro výsledky</div><p className="mt-2 text-xs leading-5 text-slate-500">Klíč se neposílá do GitHubu ani exportu. Vývojový klíč z Riot portálu expiruje po 24 hodinách.</p><input type="password" className="field mt-3" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={riotStatus.hasApiKey ? 'Klíč je uložený — vložením ho nahradíš' : 'RGAPI-…'} autoComplete="off" /><div className="mt-2 flex flex-wrap gap-2"><button type="button" className="btn-blue !min-h-9 !text-xs" onClick={() => void saveApiKey()} disabled={savingApiKey || !apiKey.trim()}>{savingApiKey ? <LoaderCircle size={14} className="animate-spin" /> : <KeyRound size={14} />} Uložit klíč</button>{riotStatus.hasApiKey && <button type="button" className="btn-ghost !min-h-9 !text-xs" onClick={() => void removeApiKey()} disabled={savingApiKey}>Odstranit klíč</button>}<a className="btn-ghost !min-h-9 !text-xs" href="https://developer.riotgames.com/" target="_blank" rel="noreferrer"><Link2 size={14} /> Riot Developer Portal</a></div><p className={`mt-2 text-[.65rem] ${riotStatus.hasApiKey ? 'text-emerald-300/80' : 'text-slate-600'}`}>{riotStatus.hasApiKey ? `Klíč uložen${riotStatus.protectedStorage ? ' a chráněn systémovým úložištěm' : ' lokálně s omezenými právy souboru'}.` : 'Klíč zatím není nastaven.'}</p></div><button type="button" className="btn-ghost !text-xs hover:!border-red-400/30 hover:!text-red-300" onClick={resetApp}><Trash2 size={14} /> Obnovit celou aplikaci</button></div></details></div>
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div><p className="eyebrow">Stálý roster</p><h2 className="section-title mt-1">Kdo dneska intí?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Hráče přidáš jen jednou. Pro dnešní sestavu zaškrtni 1–5 lidí; ostatní zůstanou uložené na příště.</p><p className="mt-2 text-xs text-emerald-300/75">{rosterFile ? rosterFile.gitTrackable ? <>Ukládá se do Git souboru <code className="text-emerald-200">data/players.json</code>.</> : <>Ukládá se do lokálního souboru profilu aplikace. Git synchronizace funguje při spuštění ze zdrojového projektu.</> : 'Připojuji soubor hráčů…'}</p></div><details className="group relative"><summary className="btn-ghost cursor-pointer list-none"><Settings2 size={17} /> Nastavení <ChevronDown size={15} className="transition group-open:rotate-180" /></summary><div className="mt-3 grid gap-4 rounded-lg border border-white/10 bg-[#07101d] p-4 lg:absolute lg:right-0 lg:z-20 lg:w-[30rem] lg:shadow-2xl"><label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Cooldown potvrzených her <small className="block text-slate-600">0–10 her</small></span><input className="field text-center" type="number" min="0" max="10" value={state.settings.cooldownGames} onChange={(event) => updateSettings({ cooldownGames: Math.max(0, Math.min(10, Number(event.target.value))) })} /></label><label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální pick rate <small className="block text-slate-600">v procentech</small></span><input className="field text-center" type="number" min="0" max="100" step="0.1" value={state.settings.minPickRate} onChange={(event) => updateSettings({ minPickRate: Math.max(0, Number(event.target.value)) })} /></label><label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální počet her</span><input className="field text-center" type="number" min="0" step="100" value={state.settings.minGames} onChange={(event) => updateSettings({ minGames: Math.max(0, Number(event.target.value)) })} /></label><div className="border-t border-white/[.08] pt-4"><div className="flex items-center gap-2 text-sm font-bold text-white"><KeyRound size={16} className="text-gold" /> Riot API pro výsledky</div><p className="mt-2 text-xs leading-5 text-slate-500">Klíč se neposílá do GitHubu ani exportu. Vývojový klíč z Riot portálu expiruje po 24 hodinách.</p><input type="password" className="field mt-3" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={riotStatus.hasApiKey ? 'Klíč je uložený — vložením ho nahradíš' : 'RGAPI-…'} autoComplete="off" /><div className="mt-2 flex flex-wrap gap-2"><button type="button" className="btn-blue !min-h-9 !text-xs" onClick={() => void saveApiKey()} disabled={savingApiKey || !apiKey.trim()}>{savingApiKey ? <LoaderCircle size={14} className="animate-spin" /> : <KeyRound size={14} />} Uložit klíč</button>{riotStatus.hasApiKey && <button type="button" className="btn-ghost !min-h-9 !text-xs" onClick={() => void removeApiKey()} disabled={savingApiKey}>Odstranit klíč</button>}<a className="btn-ghost !min-h-9 !text-xs" href="https://developer.riotgames.com/" target="_blank" rel="noreferrer"><Link2 size={14} /> Riot Developer Portal</a></div><p className={`mt-2 text-[.65rem] ${riotStatus.hasApiKey ? 'text-emerald-300/80' : 'text-slate-600'}`}>{riotStatus.hasApiKey ? `Klíč uložen${riotStatus.protectedStorage ? ' a chráněn systémovým úložištěm' : ' lokálně s omezenými právy souboru'}.` : 'Klíč zatím není nastaven.'}</p></div><button type="button" className="btn-ghost !text-xs hover:!border-red-400/30 hover:!text-red-300" onClick={resetApp}><Trash2 size={14} /> Obnovit celou aplikaci</button></div></details></div>
 
               <div className="mt-7 grid gap-2">
                 {state.players.map((player) => { const selected = state.selectedPlayerIds.includes(player.id); return <div key={player.id} className={`grid gap-2 rounded-lg border p-3 transition sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center ${selected ? 'border-cyan/35 bg-cyan/[.06]' : 'border-white/[.07] bg-white/[.02]'}`}><label className="flex cursor-pointer items-center gap-3 text-xs font-bold text-slate-300"><input type="checkbox" className="size-5 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} /><span className="sm:hidden">Hraje</span></label><input className="field !h-10" value={player.name} maxLength={40} onChange={(event) => updatePlayer(player.id, { name: event.target.value })} aria-label="Jméno hráče" /><input className="field !h-10" value={player.riotId} maxLength={81} onChange={(event) => updatePlayer(player.id, { riotId: event.target.value })} placeholder="Riot ID: Jméno#TAG" aria-label={`Riot ID hráče ${player.name}`} /><button type="button" className="btn-ghost !min-h-10 !px-3 hover:!border-red-400/30 hover:!text-red-300" onClick={() => removePlayer(player)} aria-label={`Odebrat ${player.name}`}><Trash2 size={15} /></button></div> })}

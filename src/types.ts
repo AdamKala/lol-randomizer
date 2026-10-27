@@ -28,6 +28,19 @@ export interface Player {
   riotId: string
 }
 
+export interface RosterFile {
+  schemaVersion: 1
+  updatedAt: string
+  players: Player[]
+}
+
+export interface RosterFileResult {
+  players: Player[]
+  path: string
+  gitTrackable: boolean
+  exists: boolean
+}
+
 export type DraftPlayer = Player
 
 export interface DraftSlot {
