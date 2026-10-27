@@ -1,10 +1,15 @@
 import { app, safeStorage } from 'electron'
 import { chmod, readFile, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { MatchParticipantStats, MatchSummary, MatchSyncRequest, MatchSyncResult, RiotApiStatus } from '../src/types'
+import type { MatchParticipantStats, MatchSummary, MatchSyncRequest, MatchSyncResult, RecentMatchesImportRequest, RecentMatchesImportResult, RiotApiStatus } from '../src/types'
 
 const ROUTING = 'europe'
 const SECRET_FILE = 'riot-api-key.json'
+const REQUEST_SPACING_MS = 75
+
+let requestQueue: Promise<void> = Promise.resolve()
+let lastRequestStartedAt = 0
+let blockedUntil = 0
 
 interface StoredSecret {
   protected: boolean
@@ -119,13 +124,54 @@ function validateRequest(value: unknown): asserts value is MatchSyncRequest {
   }
 }
 
-async function riotFetch<T>(path: string, apiKey: string): Promise<T> {
-  const response = await fetch(`https://${ROUTING}.api.riotgames.com${path}`, {
-    headers: { 'X-Riot-Token': apiKey, Accept: 'application/json' },
-    signal: AbortSignal.timeout(20_000),
+function validateImportRequest(value: unknown): asserts value is RecentMatchesImportRequest {
+  if (!value || typeof value !== 'object') throw new Error('Neplatný požadavek na import historie.')
+  const request = value as Partial<RecentMatchesImportRequest>
+  if (!Array.isArray(request.players) || request.players.length < 1 || request.players.length > 10) {
+    throw new Error('Najednou lze načíst historii jednoho až deseti hráčů.')
+  }
+  for (const player of request.players) {
+    if (!player || typeof player.playerId !== 'string' || typeof player.displayName !== 'string' || typeof player.riotId !== 'string') {
+      throw new Error('Neplatná data hráče pro import historie.')
+    }
+    splitRiotId(player.riotId)
+  }
+  if (!Array.isArray(request.excludedMatchIds) || request.excludedMatchIds.some((id) => typeof id !== 'string')) {
+    throw new Error('Neplatný seznam již uložených zápasů.')
+  }
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
+function queuedFetch(url: string, apiKey: string): Promise<Response> {
+  const result = requestQueue.then(async () => {
+    const delay = Math.max(0, blockedUntil - Date.now(), REQUEST_SPACING_MS - (Date.now() - lastRequestStartedAt))
+    if (delay) await wait(delay)
+    lastRequestStartedAt = Date.now()
+    const response = await fetch(url, {
+      headers: { 'X-Riot-Token': apiKey, Accept: 'application/json' },
+      signal: AbortSignal.timeout(20_000),
+    })
+    if (response.status === 429) {
+      const retrySeconds = Math.max(1, Number(response.headers.get('retry-after')) || 1)
+      blockedUntil = Date.now() + retrySeconds * 1000
+    }
+    return response
   })
+  requestQueue = result.then(() => undefined, () => undefined)
+  return result
+}
+
+async function riotFetch<T>(path: string, apiKey: string, attempt = 0): Promise<T> {
+  const response = await queuedFetch(`https://${ROUTING}.api.riotgames.com${path}`, apiKey)
   if (response.ok) return response.json() as Promise<T>
   const retryAfter = response.headers.get('retry-after')
+  if (response.status === 429 && attempt < 2) {
+    await wait(Math.max(1, Number(retryAfter) || 1) * 1000)
+    return riotFetch<T>(path, apiKey, attempt + 1)
+  }
   if (response.status === 401) throw new Error('Riot API klíč chybí nebo nebyl přijat.')
   if (response.status === 403) throw new Error('Riot API klíč je neplatný nebo expiroval. Vývojový klíč platí pouze 24 hodin.')
   if (response.status === 404) throw new Error('Riot ID nebo zápas nebyl nalezen na evropském clusteru.')
@@ -137,16 +183,19 @@ function number(value: number | undefined): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
-function normalizeMatch(match: RiotMatch, request: MatchSyncRequest, accounts: Map<string, RiotAccount>): MatchSummary | null {
+function normalizeMatch(match: RiotMatch, players: MatchSyncRequest['players'], accounts: Map<string, RiotAccount>, requireAllPlayers: boolean): MatchSummary | null {
   const info = match.info
   const participants = info?.participants
   const matchId = match.metadata?.matchId
   if (!info || !participants || !matchId) return null
   const tracked: MatchParticipantStats[] = []
-  for (const player of request.players) {
+  for (const player of players) {
     const account = accounts.get(player.playerId)
     const participant = participants.find((candidate) => candidate.puuid === account?.puuid)
-    if (!account || !participant) return null
+    if (!account || !participant) {
+      if (requireAllPlayers) return null
+      continue
+    }
     tracked.push({
       playerId: player.playerId,
       displayName: player.displayName,
@@ -167,6 +216,7 @@ function normalizeMatch(match: RiotMatch, request: MatchSyncRequest, accounts: M
       win: participant.win === true,
     })
   }
+  if (!tracked.length) return null
   const started = number(info.gameStartTimestamp) || number(info.gameCreation)
   const ended = number(info.gameEndTimestamp) || started + number(info.gameDuration) * 1000
   return {
@@ -215,9 +265,50 @@ export async function syncRiotMatch(value: unknown): Promise<MatchSyncResult> {
     const rawMatch = await riotFetch<RiotMatch>(`/lol/match/v5/matches/${encodeURIComponent(matchId)}`, apiKey)
     const startedAt = number(rawMatch.info?.gameStartTimestamp) || number(rawMatch.info?.gameCreation)
     if (startedAt < confirmedAt - 5 * 60 * 1000 || startedAt > latestAllowedStart) continue
-    const normalized = normalizeMatch(rawMatch, request, accounts)
+    const normalized = normalizeMatch(rawMatch, request.players, accounts, true)
     if (normalized) return { kind: 'matched', match: normalized }
   }
 
   return { kind: 'pending', message: 'Společná dokončená hra zatím v Riot match history není. Aplikace to zkusí znovu automaticky.' }
+}
+
+export async function importRecentRiotMatches(value: unknown): Promise<RecentMatchesImportResult> {
+  validateImportRequest(value)
+  const request = value
+  const apiKey = await readApiKey()
+  if (!apiKey) throw new Error('Nejdřív v nastavení ulož Riot API klíč.')
+
+  const accounts = new Map<string, RiotAccount>()
+  const matchIds = new Set<string>()
+  const excluded = new Set(request.excludedMatchIds)
+
+  for (const player of request.players) {
+    try {
+      const { gameName, tagLine } = splitRiotId(player.riotId)
+      const account = await riotFetch<RiotAccount>(
+        `/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`,
+        apiKey,
+      )
+      if (!account.puuid) throw new Error(`Riot účet ${player.riotId} nevrátil platné PUUID.`)
+      accounts.set(player.playerId, account)
+      const recentIds = await riotFetch<string[]>(
+        `/lol/match/v5/matches/by-puuid/${encodeURIComponent(account.puuid)}/ids?start=0&count=10`,
+        apiKey,
+      )
+      for (const matchId of recentIds) if (!excluded.has(matchId)) matchIds.add(matchId)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Riot účet se nepodařilo načíst.'
+      throw new Error(`${player.displayName} (${player.riotId}): ${message}`)
+    }
+  }
+
+  const matches: MatchSummary[] = []
+  for (const matchId of matchIds) {
+    const rawMatch = await riotFetch<RiotMatch>(`/lol/match/v5/matches/${encodeURIComponent(matchId)}`, apiKey)
+    const normalized = normalizeMatch(rawMatch, request.players, accounts, false)
+    if (normalized) matches.push(normalized)
+  }
+
+  matches.sort((left, right) => Date.parse(left.gameStartedAt) - Date.parse(right.gameStartedAt))
+  return { matches, playerCount: request.players.length }
 }

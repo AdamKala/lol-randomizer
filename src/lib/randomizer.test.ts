@@ -141,6 +141,12 @@ describe('potvrzení a cooldown', () => {
     expect(getBlockedChampionIds(undone, 1).has(42)).toBe(true)
     expect(getBlockedChampionIds(undone, 1).has(43)).toBe(false)
   })
+
+  it('Riot import neovlivní cooldown potvrzených randomizer her', () => {
+    const imported = { ...game('import', 42, 1), origin: 'riot-import' as const }
+    expect(getBlockedChampionIds([imported], 3).has(42)).toBe(false)
+    expect(getCooldownEntries([imported], 3)).toEqual([])
+  })
 })
 
 describe('validace a ukládání', () => {

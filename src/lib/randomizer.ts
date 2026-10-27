@@ -22,13 +22,13 @@ export function shuffle<T>(values: readonly T[], random: RandomSource = Math.ran
 
 export function getBlockedChampionIds(history: ConfirmedGame[], cooldownGames: number): Set<number> {
   if (cooldownGames <= 0) return new Set()
-  return new Set(history.slice(-cooldownGames).flatMap((game) => game.slots.map((slot) => slot.champion.id)))
+  return new Set(history.filter((game) => game.origin !== 'riot-import').slice(-cooldownGames).flatMap((game) => game.slots.map((slot) => slot.champion.id)))
 }
 
 export function getCooldownEntries(history: ConfirmedGame[], cooldownGames: number): CooldownEntry[] {
   if (cooldownGames <= 0) return []
   const result = new Map<number, CooldownEntry>()
-  history.slice(-cooldownGames).forEach((game, offset, recentGames) => {
+  history.filter((game) => game.origin !== 'riot-import').slice(-cooldownGames).forEach((game, offset, recentGames) => {
     const gamesAfter = recentGames.length - 1 - offset
     for (const slot of game.slots) {
       const existing = result.get(slot.champion.id)
@@ -189,6 +189,7 @@ export function confirmDraft(draft: Draft, history: ConfirmedGame[], confirmedAt
     ...draft,
     number,
     confirmedAt,
+    origin: 'confirmed',
     match: null,
     sync: {
       status: canSync ? 'pending' : 'untracked',

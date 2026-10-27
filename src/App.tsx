@@ -32,6 +32,7 @@ import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type 
 import { changePlayerRole, confirmDraft, generateDraft, getCooldownEntries, rerollOneChampion, validatePlayers } from './lib/randomizer'
 import { isDatasetStale, loadBundledDataset, validateMetaDataset } from './lib/meta'
 import { calculatePlayerStats } from './lib/stats'
+import { mergeRecentMatches } from './lib/recentMatches'
 import { createHistoryBackup, DEFAULT_STATE, loadState, saveState, validateHistoryBackup } from './lib/storage'
 
 const ROLE_LABELS: Record<Role, { short: string; title: string; mark: string }> = {
@@ -130,13 +131,13 @@ function ConfirmDialog({ draft, onCancel, onConfirm }: { draft: Draft; onCancel:
 function StatisticsPanel({ history }: { history: ConfirmedGame[] }) {
   const stats = useMemo(() => calculatePlayerStats(history), [history])
   const syncedGames = history.filter((game) => game.match)
-  const wins = syncedGames.filter((game) => game.match?.participants[0]?.win).length
+  const performances = syncedGames.reduce((total, game) => total + (game.match?.participants.length ?? 0), 0)
   if (!syncedGames.length) return (
     <Panel className="p-6 text-center"><BarChart3 className="mx-auto text-slate-700" size={30} /><h2 className="mt-3 font-display text-lg font-bold text-slate-400">Statistiky čekají na první výsledek</h2><p className="mt-2 text-sm text-slate-600">Po synchronizaci hry se tu objeví winrate, KDA, damage, vision i oblíbení šampioni.</p></Panel>
   )
   return (
     <Panel className="overflow-hidden">
-      <div className="flex flex-col gap-3 border-b border-white/[.08] p-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Skutečné výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><BarChart3 size={20} className="text-gold" /> Statistiky</h2></div><p className="text-sm text-slate-400">Tým {wins}W / {syncedGames.length - wins}L · {oneDecimal.format((wins / syncedGames.length) * 100)} %</p></div>
+      <div className="flex flex-col gap-3 border-b border-white/[.08] p-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Skutečné výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><BarChart3 size={20} className="text-gold" /> Statistiky</h2></div><p className="text-sm text-slate-400">{syncedGames.length} zápasů · {performances} výkonů hráčů</p></div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-xs">
           <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Hráč</th><th className="px-3 py-3">Hry</th><th className="px-3 py-3">W/L</th><th className="px-3 py-3">Winrate</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">DMG Ø</th><th className="px-3 py-3">Vision Ø</th><th className="px-5 py-3">Nejhranější</th></tr></thead>
@@ -155,11 +156,13 @@ function SyncBadge({ game }: { game: ConfirmedGame }) {
   return <span className={`rounded-full border px-2.5 py-1 text-[.62rem] font-bold ${styles}`}>{label}</span>
 }
 
-function HistoryPanel({ history, syncingIds, hasApiKey, onSync, onUndo, onClear, onExport, onImport }: {
+function HistoryPanel({ history, syncingIds, hasApiKey, importingRecent, onSync, onImportRecent, onUndo, onClear, onExport, onImport }: {
   history: ConfirmedGame[]
   syncingIds: Set<string>
   hasApiKey: boolean
+  importingRecent: boolean
   onSync: (game: ConfirmedGame) => void
+  onImportRecent: () => void
   onUndo: () => void
   onClear: () => void
   onExport: () => void
@@ -168,8 +171,8 @@ function HistoryPanel({ history, syncingIds, hasApiKey, onSync, onUndo, onClear,
   const importRef = useRef<HTMLInputElement>(null)
   return (
     <Panel className="overflow-hidden">
-      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Potvrzené sestavy a výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><HistoryIcon size={20} className="text-gold" /> Historie</h2></div><span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-semibold text-slate-300">{history.length} {history.length === 1 ? 'hra' : history.length >= 2 && history.length <= 4 ? 'hry' : 'her'}</span></div>
-      <div className="flex flex-wrap gap-2 border-b border-white/[.08] px-5 py-3"><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onUndo} disabled={!history.length}><Undo2 size={14} /> Vrátit poslední</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onExport} disabled={!history.length}><Download size={14} /> Export</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={() => importRef.current?.click()}><Upload size={14} /> Import</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear} disabled={!history.length}><Trash2 size={14} /> Vymazat</button><input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={onImport} /></div>
+      <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Sestavy a Riot výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><HistoryIcon size={20} className="text-gold" /> Historie</h2></div><span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-semibold text-slate-300">{history.length} {history.length === 1 ? 'hra' : history.length >= 2 && history.length <= 4 ? 'hry' : 'her'}</span></div>
+      <div className="flex flex-wrap gap-2 border-b border-white/[.08] px-5 py-3"><button type="button" className="btn-blue !min-h-9 !px-3 !text-xs" onClick={onImportRecent} disabled={importingRecent} title={hasApiKey ? 'Načíst posledních 10 Riot zápasů každého hráče s vyplněným Riot ID' : 'Nejdřív ulož Riot API klíč v nastavení'}>{importingRecent ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importingRecent ? 'Načítám historii…' : 'Posledních 10 / hráč'}</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onUndo} disabled={!history.length}><Undo2 size={14} /> Vrátit poslední</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onExport} disabled={!history.length}><Download size={14} /> Export</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={() => importRef.current?.click()}><Upload size={14} /> Import</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear} disabled={!history.length}><Trash2 size={14} /> Vymazat</button><input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={onImport} /></div>
       {!history.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><HistoryIcon className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">První potvrzená hra se objeví tady.</p></div></div> : (
         <div className="max-h-[52rem] divide-y divide-white/[.07] overflow-y-auto">
           {[...history].reverse().map((game) => {
@@ -177,12 +180,12 @@ function HistoryPanel({ history, syncingIds, hasApiKey, onSync, onUndo, onClear,
             const duration = game.match ? Math.round(game.match.durationSeconds / 60) : null
             return (
               <details key={game.id} className="group px-5 py-4 open:bg-white/[.02]" open={game === history.at(-1)}>
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-display text-sm font-bold text-gold-light">Hra #{game.number}</p><SyncBadge game={game} /></div><p className="mt-1 text-xs text-slate-500">{dateTime.format(new Date(game.confirmedAt))} · patch {game.patch}{game.match ? ` · ${game.match.gameMode} · ${duration} min` : ''}</p></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition group-open:rotate-180" /></summary>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-display text-sm font-bold text-gold-light">Hra #{game.number}</p><SyncBadge game={game} />{game.origin === 'riot-import' && <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-[.62rem] font-bold text-violet-200">RIOT IMPORT</span>}</div><p className="mt-1 text-xs text-slate-500">{dateTime.format(new Date(game.confirmedAt))} · patch {game.patch}{game.match ? ` · ${game.match.gameMode} · ${duration} min` : ''}</p></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition group-open:rotate-180" /></summary>
                 {game.sync.status !== 'synced' && <div className="mt-4 flex flex-col gap-3 rounded-lg border border-white/[.07] bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-slate-400">{game.sync.message ?? 'Výsledek zatím není načten.'}</p><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={() => onSync(game)} disabled={syncing || !hasApiKey}>{syncing ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCcw size={14} />} Načíst výsledek</button></div>}
                 <div className="mt-4 grid gap-2">
                   {orderedByRole(game.slots).map((slot) => {
                     const actual = game.match?.participants.find((participant) => participant.playerId === slot.playerId)
-                    return <div key={`${game.id}-${slot.playerId}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"><ChampionImage champion={slot.champion} className="size-9 rounded object-cover" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-200">{slot.player}</p><p className="truncate text-[.68rem] text-slate-500">Plán: {slot.champion.name}{actual ? ` · Hrál: ${actual.championName}` : ''}</p></div>{actual ? <span className={`text-right text-[.68rem] font-bold ${actual.win ? 'text-emerald-300' : 'text-red-300'}`}>{actual.win ? 'VÝHRA' : 'PROHRA'}<small className="block font-normal text-slate-400">{actual.kills}/{actual.deaths}/{actual.assists}</small></span> : <span className="text-[.62rem] font-bold tracking-wider text-cyan/80">{slot.role}</span>}</div>
+                    return <div key={`${game.id}-${slot.playerId}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"><ChampionImage champion={slot.champion} className="size-9 rounded object-cover" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-200">{slot.player}</p><p className="truncate text-[.68rem] text-slate-500">{game.origin === 'riot-import' ? `Hrál: ${actual?.championName ?? slot.champion.name}` : `Plán: ${slot.champion.name}${actual ? ` · Hrál: ${actual.championName}` : ''}`}</p></div>{actual ? <span className={`text-right text-[.68rem] font-bold ${actual.win ? 'text-emerald-300' : 'text-red-300'}`}>{actual.win ? 'VÝHRA' : 'PROHRA'}<small className="block font-normal text-slate-400">{actual.kills}/{actual.deaths}/{actual.assists}</small></span> : <span className="text-[.62rem] font-bold tracking-wider text-cyan/80">{slot.role}</span>}</div>
                   })}
                 </div>
                 {game.match && <p className="mt-4 break-all border-t border-white/[.06] pt-3 text-[.62rem] text-slate-600">Riot match: {game.match.matchId} · načteno {dateTime.format(new Date(game.match.fetchedAt))}</p>}
@@ -208,6 +211,7 @@ export default function App() {
   const [riotStatus, setRiotStatus] = useState<RiotApiStatus>({ hasApiKey: false, protectedStorage: false })
   const [apiKey, setApiKey] = useState('')
   const [savingApiKey, setSavingApiKey] = useState(false)
+  const [importingRecent, setImportingRecent] = useState(false)
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
   const [rosterFile, setRosterFile] = useState<RosterFileResult | null>(null)
   const [rosterReady, setRosterReady] = useState(() => !window.desktop?.roster)
@@ -307,6 +311,34 @@ export default function App() {
       setSyncingIds((ids) => { const next = new Set(ids); next.delete(game.id); return next })
     }
   }, [])
+
+  const importRecentMatches = async () => {
+    const bridge = window.desktop?.riot
+    if (!bridge || !dataset) return setMessage({ type: 'error', text: 'Import Riot historie funguje pouze v desktopové aplikaci.' })
+    if (!riotStatus.hasApiKey) return setMessage({ type: 'error', text: 'Nejdřív v nastavení ulož Riot API klíč.' })
+    const rosterPlayers = stateRef.current.players.filter((player) => player.riotId.includes('#'))
+    const skipped = stateRef.current.players.length - rosterPlayers.length
+    if (!rosterPlayers.length) return setMessage({ type: 'error', text: 'Alespoň jeden hráč musí mít vyplněné Riot ID ve formátu Jméno#TAG.' })
+    if (rosterPlayers.length > 10) return setMessage({ type: 'error', text: 'Najednou lze načíst historii nejvýše deseti hráčů.' })
+    setImportingRecent(true)
+    setMessage(null)
+    try {
+      const current = stateRef.current
+      const result = await bridge.importRecentMatches({
+        excludedMatchIds: current.history.flatMap((game) => game.match ? [game.match.matchId] : []),
+        players: rosterPlayers.map((player) => ({ playerId: player.id, displayName: player.name, riotId: player.riotId })),
+      })
+      const merged = mergeRecentMatches(stateRef.current.history, result.matches, dataset)
+      setState((value) => ({ ...value, history: merged.history }))
+      const skippedText = skipped ? ` Bez Riot ID (přeskočeno): ${skipped}.` : ''
+      setMessage({ type: 'success', text: merged.added ? `Načteno ${merged.added} nových unikátních zápasů pro ${result.playerCount} hráčů.${skippedText}` : `Poslední zápasy už jsou v historii.${skippedText}` })
+    } catch (error) {
+      const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Import posledních zápasů se nezdařil.'
+      setMessage({ type: 'error', text })
+    } finally {
+      setImportingRecent(false)
+    }
+  }
 
   useEffect(() => {
     if (!riotStatus.hasApiKey || !pendingSignature) return
@@ -471,7 +503,7 @@ export default function App() {
             {state.draft ? <Panel className="overflow-hidden border-gold/20"><div className="flex flex-col gap-3 border-b border-white/[.08] px-5 py-5 sm:flex-row sm:items-end sm:justify-between md:px-7"><div><p className="eyebrow">Nepotvrzený návrh</p><h2 className="section-title mt-1">Tvoje sestava</h2></div><p className="text-xs text-slate-500">Reroll ani individuální změna linky nemění historii a cooldown</p></div><div className="grid grid-cols-5 gap-2 p-3 md:gap-3 md:p-5">{orderedByRole(state.draft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${state.draft!.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
 
             <StatisticsPanel history={state.history} />
-            <HistoryPanel history={state.history} syncingIds={syncingIds} hasApiKey={riotStatus.hasApiKey} onSync={(game) => void syncGame(game)} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
+            <HistoryPanel history={state.history} syncingIds={syncingIds} hasApiKey={riotStatus.hasApiKey} importingRecent={importingRecent} onSync={(game) => void syncGame(game)} onImportRecent={() => void importRecentMatches()} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-6">

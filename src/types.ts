@@ -102,6 +102,7 @@ export interface MatchSyncState {
 export interface ConfirmedGame extends Draft {
   number: number
   confirmedAt: string
+  origin?: 'confirmed' | 'riot-import'
   match: MatchSummary | null
   sync: MatchSyncState
 }
@@ -142,3 +143,13 @@ export interface MatchSyncRequest {
 export type MatchSyncResult =
   | { kind: 'matched'; match: MatchSummary }
   | { kind: 'pending'; message: string }
+
+export interface RecentMatchesImportRequest {
+  excludedMatchIds: string[]
+  players: Array<{ playerId: string; displayName: string; riotId: string }>
+}
+
+export interface RecentMatchesImportResult {
+  matches: MatchSummary[]
+  playerCount: number
+}

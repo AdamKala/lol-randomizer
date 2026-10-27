@@ -1,6 +1,6 @@
 # LoL Randomizer Desktop
 
-Nativně spouštěná desktopová aplikace postavená na Electronu, Reactu, TypeScriptu a Vite. Uchovává stálý roster, z 1–5 zaškrtnutých hráčů náhodně rozdělí role a šampiony, hlídá globální cooldown a přes oficiální Riot API doplní výsledky potvrzených her a dlouhodobé statistiky.
+Nativně spouštěná desktopová aplikace postavená na Electronu, Reactu, TypeScriptu a Vite. Uchovává stálý roster, z 1–5 zaškrtnutých hráčů náhodně rozdělí role a šampiony, hlídá globální cooldown a přes oficiální Riot API doplní výsledky potvrzených her, posledních deset zápasů hráčů a dlouhodobé statistiky.
 
 ## Rychlý start
 
@@ -35,8 +35,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.1.3-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.1.3-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.1.4-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.1.4-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
@@ -50,6 +50,7 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - individuální změna linky na kartě hráče; obsazená linka se prohodí pouze mezi dotčenými dvěma hráči;
 - potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
 - automatické dohledání společného dokončeného zápasu přes oficiální Riot `account-v1` a `match-v5`;
+- jednorázový import posledních 10 zápasů každého hráče s Riot ID, včetně deduplikace společných her;
 - skutečný výsledek, hraný šampion, K/D/A, damage, vision, CS a agregované statistiky hráčů;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
 - vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;
@@ -81,6 +82,9 @@ Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nov�
 3. V aplikaci otevři **Nastavení → Riot API pro výsledky**, vlož klíč a ulož ho.
 4. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
 5. Po dohrání aplikace zápas automaticky dohledá. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
+6. Tlačítko **Posledních 10 / hráč** načte posledních deset zápasů všech uložených hráčů s Riot ID. Společné zápasy uloží jen jednou a hráče bez Riot ID přeskočí.
+
+Importované zápasy jsou v historii označené jako **RIOT IMPORT** a vstupují do statistik, ale neovlivňují cooldown randomizeru.
 
 Vyhledávání používá evropský Riot routing cluster a přijme společnou hru, která začala nejvýše 12 hodin po potvrzení sestavy. Vývojové klíče Riot expirují po 24 hodinách. Pro malou soukromou skupinu je vhodný osobní klíč; pro veřejnou distribuci je podle pravidel Riotu nutné registrovat produkt a použít odpovídající produkční řešení.
 
@@ -112,6 +116,7 @@ src/
 │   ├── randomizer.ts         # čisté losování, cooldown a potvrzení
 │   ├── meta.ts               # načtení a validace role datasetu
 │   ├── stats.ts              # agregace skutečných Riot výsledků
+│   ├── recentMatches.ts      # deduplikace a převod posledních zápasů do historie
 │   └── storage.ts            # migrace, verzované localStorage a zálohy
 └── types.ts
 public/

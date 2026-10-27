@@ -50,9 +50,9 @@ function sanitizePlayers(value: unknown): Player[] {
   return result.slice(0, 50)
 }
 
-function normalizeDraft(value: unknown, players: Player[]): Draft | null {
+function normalizeDraft(value: unknown, players: Player[], maxSlots = 5): Draft | null {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.createdAt !== 'string' || typeof value.patch !== 'string' || !Array.isArray(value.slots)) return null
-  if (value.slots.length < 1 || value.slots.length > 5) return null
+  if (value.slots.length < 1 || value.slots.length > maxSlots) return null
   const slots = value.slots.map((slot, index) => {
     if (!isRecord(slot) || typeof slot.player !== 'string' || !ROLES.includes(slot.role as never) || !isChampion(slot.champion)) return null
     const slotPlayer = slot.player
@@ -112,7 +112,7 @@ function normalizeMatch(value: unknown): MatchSummary | null {
 }
 
 function normalizeGame(value: unknown, players: Player[]): ConfirmedGame | null {
-  const draft = normalizeDraft(value, players)
+  const draft = normalizeDraft(value, players, 10)
   if (!draft || !isRecord(value) || !Number.isInteger(value.number) || typeof value.confirmedAt !== 'string') return null
   const match = normalizeMatch(value.match)
   const syncRecord = isRecord(value.sync) ? value.sync : null
@@ -126,6 +126,7 @@ function normalizeGame(value: unknown, players: Player[]): ConfirmedGame | null 
     ...draft,
     number: value.number as number,
     confirmedAt: value.confirmedAt,
+    origin: value.origin === 'riot-import' ? 'riot-import' : 'confirmed',
     match,
     sync: {
       status,
