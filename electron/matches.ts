@@ -18,7 +18,7 @@ type TrackedPlayer = MatchSyncRequest['players'][number]
 
 const PROFILE_LIMIT_BYTES = 5_000_000
 const DETAIL_LIMIT_BYTES = 8_000_000
-const USER_AGENT = 'LoL-Randomizer/1.4 (+https://github.com/AdamKala/lol-randomizer)'
+const USER_AGENT = 'LoL-Randomizer/1.4.1 (+https://github.com/AdamKala/lol-randomizer)'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

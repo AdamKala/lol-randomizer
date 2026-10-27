@@ -24,6 +24,8 @@ npm start
 
 `npm run build` vytvoří renderer v `dist/` a bezpečné Electron main/preload procesy v `dist-electron/`. `npm start` spustí právě tyto produkční soubory přes stabilní lokální origin `app://bundle`.
 
+Vývojový režim používá vlastní řízený restart Electron procesu. Změny v main/preload kódu tak na Linuxu neukončí `esbuild` proces Vite a renderer může dál používat HMR.
+
 ## Windows `.exe`
 
 Na Windows spusť:
@@ -35,8 +37,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.4.0-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.4.0-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.4.1-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.4.1-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
