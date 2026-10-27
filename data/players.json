@@ -1,5 +1,36 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "1970-01-01T00:00:00.000Z",
-  "players": []
+  "updatedAt": "2026-10-27T08:34:38.536Z",
+  "players": [
+    {
+      "id": "55f5ef49-f72f-4167-a894-d6e9fab9af72",
+      "name": "Kalič",
+      "riotId": "Kalič #XDD"
+    },
+    {
+      "id": "807ac056-f87f-4f0b-8b46-074eff30de10",
+      "name": "Dan",
+      "riotId": "dandasy #EUNE"
+    },
+    {
+      "id": "229ac9fc-9a74-46dd-a954-493cce6e1379",
+      "name": "Alex",
+      "riotId": "Spidling #2302"
+    },
+    {
+      "id": "cf94d65e-7d45-40aa-9c87-904e5a32af42",
+      "name": "Tim",
+      "riotId": "TheLugi #EUNE"
+    },
+    {
+      "id": "272bdf7e-d75f-45ec-855b-d0115babc5e7",
+      "name": "Vojta",
+      "riotId": "krteček #slepý"
+    },
+    {
+      "id": "7327e048-14e3-465a-b68a-2482c1e1e517",
+      "name": "Ada",
+      "riotId": "yzomandias420 #EUNE"
+    }
+  ]
 }
