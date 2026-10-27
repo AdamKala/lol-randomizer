@@ -3,7 +3,12 @@
   "private": true,
   "version": "1.5.0",
   "description": "Desktopový randomizer rolí a šampionů pro League of Legends",
-  "author": "AdamKala",
+  "license": "MIT",
+  "author": {
+    "name": "AdamKala",
+    "email": "AdamKala@users.noreply.github.com"
+  },
+  "desktopName": "lol-randomizer.desktop",
   "repository": "https://github.com/AdamKala/lol-randomizer",
   "type": "module",
   "main": "dist-electron/main.js",
@@ -13,6 +18,8 @@
     "start": "node scripts/start-electron.mjs",
     "pack": "npm run build && electron-builder --dir",
     "dist:win": "npm run build && electron-builder --win nsis portable --x64 --publish never",
+    "dist:linux": "npm run build && electron-builder --linux AppImage deb --x64 --publish never",
+    "dist:mac": "npm run build && electron-builder --mac dmg zip --x64 --arm64 --publish never",
     "assets:download": "node scripts/download-champion-icons.mjs",
     "lint": "eslint .",
     "test": "vitest run",
@@ -85,6 +92,47 @@
     },
     "portable": {
       "artifactName": "LoL-Randomizer-Portable-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Game",
+      "executableName": "lol-randomizer",
+      "syncDesktopName": true,
+      "artifactName": "LoL-Randomizer-${version}-linux-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.games",
+      "identity": null,
+      "artifactName": "LoL-Randomizer-${version}-mac-${arch}.${ext}"
     }
   }
 }

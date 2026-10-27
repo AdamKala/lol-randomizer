@@ -26,9 +26,9 @@ npm start
 
 Vývojový režim používá vlastní řízený restart Electron procesu. Změny v main/preload kódu tak na Linuxu neukončí `esbuild` proces Vite a renderer může dál používat HMR.
 
-## Windows `.exe`
+## Instalace pro Windows, Linux a macOS
 
-Na Windows spusť:
+Windows (x64):
 
 ```bash
 npm ci
@@ -40,7 +40,25 @@ Ve složce `release/` vzniknou:
 - `LoL-Randomizer-Setup-1.5.0-x64.exe` — klasický NSIS instalátor;
 - `LoL-Randomizer-Portable-1.5.0-x64.exe` — portable verze bez instalace.
 
-Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
+Linux (x64):
+
+```bash
+npm ci
+npm run dist:linux
+```
+
+Vznikne přenosný `LoL-Randomizer-1.5.0-linux-x86_64.AppImage` a instalační balíček `LoL-Randomizer-1.5.0-linux-amd64.deb`. AppImage je před prvním spuštěním potřeba označit jako spustitelný (`chmod +x soubor.AppImage`).
+
+macOS (Intel x64 i Apple Silicon arm64):
+
+```bash
+npm ci
+npm run dist:mac
+```
+
+Na macOS vzniknou `.dmg` obrazy a přenosné `.zip` archivy pro obě architektury. macOS balíčky je nutné sestavovat na Macu; automaticky to dělá připravený GitHub Actions runner `macos-latest`.
+
+Všechny výsledky se ukládají do `release/`. Buildy zatím nejsou digitálně podepsané ani notarizované. Windows SmartScreen a macOS Gatekeeper proto mohou u prvního spuštění zobrazit varování neznámého vývojáře.
 
 ## Funkce
 
@@ -154,10 +172,12 @@ npm run assets:download
 Workflow `.github/workflows/desktop.yml`:
 
 - po každém pushi do `main` a v pull requestu spustí testy, lint a produkční build;
-- při ručním `workflow_dispatch` sestaví instalátor i portable `.exe` na `windows-latest` a zveřejní je jako Actions artifact;
-- při publikaci GitHub Release vytvoří stejné `.exe`, nahraje artifact a připojí oba soubory přímo k Release.
+- po úspěšném pushi do `main` navíc automaticky vytvoří balíčky pro všechny tři systémy, takže jsou vždy dostupné u daného workflow runu;
+- při ručním `workflow_dispatch` sestaví Windows instalátor a portable `.exe`, Linux AppImage a DEB i macOS DMG a ZIP pro Intel a Apple Silicon;
+- každou platformu sestavuje na jejím nativním GitHub runneru a zveřejní ji jako samostatný Actions artifact;
+- při publikaci GitHub Release připojí všechny vytvořené instalační a přenosné soubory přímo k vydání.
 
-V repozitáři otevři **Actions → Desktop CI and Windows release → Run workflow**. Po dokončení stáhneš archiv v sekci **Artifacts**.
+V repozitáři otevři **Actions → Desktop CI and multiplatform release → Run workflow**. Po dokončení stáhneš tři archivy v sekci **Artifacts**.
 
 ## GitHub účet AdamKala
 
