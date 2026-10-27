@@ -380,7 +380,7 @@ function RecentGamesPanel({ history, importing, onImport, onClear, onPlayerSelec
             const participants = game.match?.participants ?? []
             const wins = participants.filter((participant) => participant.win).length
             const result = wins === participants.length ? 'Výhra' : wins === 0 ? 'Prohra' : 'Smíšený výsledek'
-            const resultVariant = wins === participants.length ? 'win' : wins === 0 ? 'loss' : 'mixed'
+            const resultVariantClass = wins === participants.length ? 'recent-game--win' : wins === 0 ? 'recent-game--loss' : 'recent-game--mixed'
             const resultSymbol = wins === participants.length ? '✓' : wins === 0 ? '✕' : '◆'
             const resultClass = wins === participants.length ? 'text-emerald-300' : wins === 0 ? 'text-red-300' : 'text-amber-200'
             const detailedParticipants = participants.filter((participant) => participant.detailedStats)
@@ -390,7 +390,7 @@ function RecentGamesPanel({ history, importing, onImport, onClear, onPlayerSelec
             const bestPerformance = [...participants].sort((left, right) => (left.performanceRank || 99) - (right.performanceRank || 99))[0]
             const startedAt = game.match?.gameStartedAt || game.confirmedAt
             const duration = game.match?.durationSeconds ? Math.round(game.match.durationSeconds / 60) : 0
-            return <details key={game.id} className={`recent-game recent-game--${resultVariant} group`}>
+            return <details key={game.id} className={`recent-game ${resultVariantClass} group`}>
               <summary className="recent-game-summary grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 sm:px-6">
                 <span className="recent-result-badge rounded-md border px-3 py-2 text-xs font-extrabold uppercase tracking-wider"><span className="recent-result-symbol" aria-hidden="true">{resultSymbol}</span>{result}</span>
                 <span className="min-w-0"><strong className="recent-game-date block font-display text-base">{dateTime.format(new Date(startedAt))}</strong><small className="mt-1 block truncate text-xs text-slate-500">{game.match?.gameMode || 'League of Legends'}{duration ? ` · ${duration} min` : ''} · našich hráčů: <b className="text-slate-300">{participants.length}</b><span className="hidden md:inline"> · {participants.map((participant) => participant.displayName).join(', ')}</span></small></span>
