@@ -15,6 +15,8 @@ npm run dev
 
 `npm run dev` spustí Vite na interním portu 1420 a otevře samostatné okno Tauri. Samotný frontend pro prohlížeč lze spustit příkazem `npm run dev:web`; některé desktopové funkce v něm záměrně nejsou dostupné.
 
+Spouštěcí skript automaticky najde Cargo nainstalované přes rustup v `~/.cargo/bin`, i když byl terminál otevřený ještě před instalací Rustu. Na Linuxu zároveň odstraní konfliktní GTK/GIO proměnné zděděné ze Snap verze VS Code.
+
 Na Ubuntu/Debianu je před prvním spuštěním potřeba doplnit závislosti Tauri:
 
 ```bash
