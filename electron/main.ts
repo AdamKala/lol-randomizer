@@ -52,8 +52,8 @@ function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1480,
     height: 980,
-    minWidth: 980,
-    minHeight: 680,
+    minWidth: 860,
+    minHeight: 640,
     show: false,
     backgroundColor: '#050a12',
     title: 'LoL Randomizer',
@@ -88,6 +88,8 @@ function createWindow(): BrowserWindow {
   if (process.env.ELECTRON_SMOKE_TEST === '1') {
     window.webContents.once('did-finish-load', async () => {
       try {
+        window.setSize(860, 640)
+        await new Promise((resolve) => setTimeout(resolve, 100))
         const verifyRosterWrite = process.env.ELECTRON_SMOKE_TEST_ROSTER_WRITE === '1'
         const result = await window.webContents.executeJavaScript(`(async () => {
           const dataset = await fetch('./data/champion-roles.v1.json').then((response) => response.json())
@@ -169,6 +171,7 @@ function createWindow(): BrowserWindow {
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
+            responsiveViewport: document.documentElement.scrollWidth <= window.innerWidth,
             tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && statisticsSortingUi && statisticsRowUi && groupInsightsUi && recentPanel && importDialogUi && playerProfileUi),
             tabDiagnostics: {
               generalTab: Boolean(generalTab),
@@ -196,7 +199,7 @@ function createWindow(): BrowserWindow {
           }
         })()`)
         console.log(`[electron-smoke] ${JSON.stringify(result)}`)
-        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.tabsUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true && result.statisticsBridge === true
+        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.responsiveViewport === true && result.tabsUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true && result.statisticsBridge === true
         app.exit(valid ? 0 : 1)
       } catch (error) {
         console.error('[electron-smoke] selhal', error)
