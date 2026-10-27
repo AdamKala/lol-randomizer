@@ -20,12 +20,12 @@ describe('statistiky', () => {
       pending,
     ])
     expect(stats).toHaveLength(1)
-    expect(stats[0]).toMatchObject({ games: 3, wins: 2, losses: 1, kills: 24, deaths: 8, assists: 22, favoriteChampion: 'Ahri' })
+    expect(stats[0]).toMatchObject({ games: 3, wins: 2, losses: 1, kills: 24, deaths: 8, assists: 22, gold: 36000, goldSamples: 3, favoriteChampion: 'Ahri' })
   })
 
   it('u profilového fallbacku nepočítá chybějící damage a vision jako nulu', () => {
     const imported = syncedGame('opgg', participant({ totalDamageDealtToChampions: 0, visionScore: 0, detailedStats: false }))
     imported.match!.source = 'opgg'
-    expect(calculatePlayerStats([imported])[0]).toMatchObject({ damageSamples: 0, visionSamples: 0, cs: 190, performance: 8.4, performanceSamples: 1 })
+    expect(calculatePlayerStats([imported])[0]).toMatchObject({ damageSamples: 0, goldSamples: 0, visionSamples: 0, cs: 190, performance: 8.4, performanceSamples: 1 })
   })
 })

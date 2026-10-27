@@ -54,8 +54,8 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - automatické dohledání společného dokončeného zápasu z veřejných profilů OP.GG bez API klíče;
 - stránkovaný import zvoleného počtu posledních zápasů každého hráče nebo zápasů od data ve formátu `DD/MM/YYYY`, včetně deduplikace společných her;
 - horní záložky **Obecné**, **Statistiky** a **Poslední hry**;
-- poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, K/D/A, KDA, damage, OP.GG hodnocením a damage grafem;
-- samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage a vision;
+- poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, linkou, K/D/A, KDA, damage, damage za minutu, goldy, CS, vision, OP.GG hodnocením a damage grafem;
+- samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage, goldy a vision;
 - tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
 - vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;

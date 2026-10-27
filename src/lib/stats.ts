@@ -11,6 +11,8 @@ export interface PlayerAggregate {
   assists: number
   damage: number
   damageSamples: number
+  gold: number
+  goldSamples: number
   vision: number
   visionSamples: number
   cs: number
@@ -35,6 +37,8 @@ export function calculatePlayerStats(history: ConfirmedGame[]): PlayerAggregate[
         assists: 0,
         damage: 0,
         damageSamples: 0,
+        gold: 0,
+        goldSamples: 0,
         vision: 0,
         visionSamples: 0,
         cs: 0,
@@ -53,6 +57,8 @@ export function calculatePlayerStats(history: ConfirmedGame[]): PlayerAggregate[
       if (participant.detailedStats) {
         current.damage += participant.totalDamageDealtToChampions
         current.damageSamples += 1
+        current.gold += participant.goldEarned
+        current.goldSamples += 1
         current.vision += participant.visionScore
         current.visionSamples += 1
       }
@@ -78,6 +84,8 @@ export function calculatePlayerStats(history: ConfirmedGame[]): PlayerAggregate[
       assists: row.assists,
       damage: row.damage,
       damageSamples: row.damageSamples,
+      gold: row.gold,
+      goldSamples: row.goldSamples,
       vision: row.vision,
       visionSamples: row.visionSamples,
       cs: row.cs,
