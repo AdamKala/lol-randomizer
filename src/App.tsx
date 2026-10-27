@@ -152,11 +152,11 @@ function DraftCard({ slot, index, onReroll, onRoleChange }: { slot: Draft['slots
       <div className="relative px-4 pb-4 pt-3">
         <p className="truncate text-xs font-semibold uppercase tracking-[.16em] text-slate-400" title={slot.player}>{slot.player}</p>
         <h3 className="mt-1 truncate font-display text-xl font-bold text-gold-light" title={slot.champion.name}>{slot.champion.name}</h3>
-        <div className="draft-card-controls mt-3 border-t border-white/[.07] pt-3 text-[.68rem] text-slate-500">
+        <p className="draft-card-meta mt-2 truncate text-[.65rem] text-slate-500" title={`Pickrate ${oneDecimal.format(slot.champion.pickRate)} % · ${integer.format(slot.champion.games)} her`}>Pickrate <strong>{oneDecimal.format(slot.champion.pickRate)} %</strong> · {integer.format(slot.champion.games)} her</p>
+        <div className="draft-card-controls mt-3 border-t border-white/[.07] pt-3">
           <select value={slot.role} onChange={(event) => onRoleChange(event.target.value as Role)} className="draft-role-select min-w-0 rounded border bg-[#07101e] px-1.5 py-1 text-[.62rem] font-bold focus:outline-none" aria-label={`Změnit linku pro ${slot.player}`} title="Změnit linku pouze tomuto hráči">
             {ROLES.map((role) => <option key={role} value={role}>{ROLE_LABELS[role].short}</option>)}
           </select>
-          <span className="draft-card-meta truncate">{slot.champion.pickRate.toFixed(1)} % · {integer.format(slot.champion.games)} her</span>
         </div>
       </div>
     </article>
