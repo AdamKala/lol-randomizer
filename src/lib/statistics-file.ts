@@ -27,7 +27,7 @@ export function mergeMatchSummaries(matches: MatchSummary[]): MatchSummary[] {
   for (const match of matches) {
     const existing = merged.get(match.matchId)
     if (!existing) {
-      merged.set(match.matchId, match)
+      merged.set(match.matchId, { ...match, participants: [...match.participants].sort((left, right) => left.playerId.localeCompare(right.playerId, 'cs')) })
       continue
     }
     const existingTime = Date.parse(existing.fetchedAt)
