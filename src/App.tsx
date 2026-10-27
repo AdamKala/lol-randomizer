@@ -35,7 +35,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type Draft, type MetaDataset, type Player, type RecentMatchesRange, type Role, type RosterFileResult, type Settings } from './types'
+import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type Draft, type MetaDataset, type Player, type RecentMatchesRange, type Role, type Settings } from './types'
 import { changePlayerRole, confirmDraft, generateDraft, getCooldownEntries, rerollOneChampion, validatePlayers } from './lib/randomizer'
 import { isDatasetStale, loadBundledDataset, validateMetaDataset } from './lib/meta'
 import { calculatePlayerStats, type PlayerAggregate } from './lib/stats'
@@ -423,7 +423,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('general')
   const [selectedStatsPlayerId, setSelectedStatsPlayerId] = useState<string | null>(null)
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
-  const [rosterFile, setRosterFile] = useState<RosterFileResult | null>(null)
   const [rosterReady, setRosterReady] = useState(() => !window.desktop?.roster)
   const rosterSnapshot = useRef<string | null>(null)
   const datasetInput = useRef<HTMLInputElement>(null)
@@ -440,10 +439,8 @@ export default function App() {
         const saved = await rosterBridge.save(localPlayers)
         if (!active) return
         rosterSnapshot.current = JSON.stringify(saved.players)
-        setRosterFile(saved)
       } else {
         rosterSnapshot.current = JSON.stringify(loaded.players)
-        setRosterFile(loaded)
         setState((current) => {
           const fileIds = new Set(loaded.players.map((player) => player.id))
           const retainedSelection = current.selectedPlayerIds.filter((id) => fileIds.has(id))
@@ -476,7 +473,6 @@ export default function App() {
     const timer = window.setTimeout(() => {
       rosterBridge.save(state.players).then((saved) => {
         rosterSnapshot.current = JSON.stringify(saved.players)
-        setRosterFile(saved)
       }).catch((error: unknown) => setMessage({ type: 'error', text: error instanceof Error ? `Hráče se nepodařilo uložit do souboru: ${error.message}` : 'Hráče se nepodařilo uložit do souboru.' }))
     }, 300)
     return () => window.clearTimeout(timer)
@@ -684,8 +680,11 @@ export default function App() {
             </div>
           </details>
         </div>
-        <p className="mt-2 text-xs leading-5 text-slate-500">Zaškrtni 1–5 lidí pro dnešní sestavu.</p>
-        <p className="mt-2 text-[.65rem] text-emerald-300/75">{rosterFile ? rosterFile.gitTrackable ? <>Git: <code className="text-emerald-200">data/players.json</code></> : 'Lokální profil aplikace' : 'Připojuji soubor hráčů…'}</p>
+      </div>
+
+      <div className="border-b border-white/[.08] bg-black/10 p-4">
+        <button type="button" className="btn-gold w-full" disabled={!dataset} onClick={() => generate('all')}><Shuffle size={18} /> Vygenerovat sestavu</button>
+        <p className="mt-2 text-center text-xs text-slate-500"><strong className="text-cyan">{selectedPlayers.length}</strong> z {state.players.length} vybráno</p>
       </div>
 
       <div className="grid max-h-[34rem] gap-2 overflow-y-auto p-4">
@@ -699,8 +698,6 @@ export default function App() {
 
       <div className="border-t border-white/[.08] bg-black/10 p-4">
         <div className="grid gap-2"><input className="field !h-10" value={newPlayerName} onChange={(event) => setNewPlayerName(event.target.value)} placeholder="Jméno hráče" maxLength={40} onKeyDown={(event) => { if (event.key === 'Enter') addPlayer() }} /><input className="field !h-10" value={newPlayerRiotId} onChange={(event) => setNewPlayerRiotId(event.target.value)} placeholder="Riot ID / tag (volitelné)" maxLength={81} onKeyDown={(event) => { if (event.key === 'Enter') addPlayer() }} /><button type="button" className="btn-blue !min-h-10" onClick={addPlayer}><Plus size={16} /> Přidat hráče</button></div>
-        <button type="button" className="btn-gold mt-3 w-full" disabled={!dataset} onClick={() => generate('all')}><Shuffle size={18} /> Vygenerovat sestavu</button>
-        <p className="mt-3 text-center text-xs text-slate-500"><strong className="text-cyan">{selectedPlayers.length}</strong> z {state.players.length} vybráno</p>
       </div>
     </Panel>
   )
