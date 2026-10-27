@@ -1,0 +1,24 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Minimální oprávnění hlavního okna LoL Randomizeru",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://op.gg/**" },
+        { "url": "https://www.op.gg/**" },
+        { "url": "https://c-lol-web.op.gg/**" }
+      ]
+    },
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://op.gg/**" },
+        { "url": "https://www.op.gg/**" }
+      ]
+    }
+  ]
+}

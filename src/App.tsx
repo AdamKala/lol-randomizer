@@ -85,6 +85,11 @@ type StatisticsSortKey = 'displayName' | 'games' | 'wins' | 'winRate' | 'kills' 
 type RecentOutcome = 'win' | 'loss' | 'mixed'
 type RecentOutcomeFilter = 'all' | Exclude<RecentOutcome, 'mixed'>
 
+function readableDesktopError(error: unknown, fallback: string): string {
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : fallback
+  return message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+}
+
 function orderedByRole<T extends { role: Role }>(slots: readonly T[]): T[] {
   return [...slots].sort((left, right) => ROLES.indexOf(left.role) - ROLES.indexOf(right.role))
 }
@@ -559,7 +564,7 @@ export default function App() {
     }).catch((error: unknown) => {
       if (!active) return
       setRosterReady(true)
-      setMessage({ type: 'error', text: error instanceof Error ? `Soubor hráčů se nepodařilo načíst: ${error.message}` : 'Soubor hráčů se nepodařilo načíst.' })
+      setMessage({ type: 'error', text: `Soubor hráčů se nepodařilo načíst: ${readableDesktopError(error, 'Neznámá chyba.')}` })
     })
     return () => { active = false }
   }, [])
@@ -581,7 +586,7 @@ export default function App() {
     const timer = window.setTimeout(() => {
       rosterBridge.save(state.players).then((saved) => {
         rosterSnapshot.current = JSON.stringify(saved.players)
-      }).catch((error: unknown) => setMessage({ type: 'error', text: error instanceof Error ? `Hráče se nepodařilo uložit do souboru: ${error.message}` : 'Hráče se nepodařilo uložit do souboru.' }))
+      }).catch((error: unknown) => setMessage({ type: 'error', text: `Hráče se nepodařilo uložit do souboru: ${readableDesktopError(error, 'Neznámá chyba.')}` }))
     }, 300)
     return () => window.clearTimeout(timer)
   }, [rosterReady, state.players])
@@ -600,7 +605,7 @@ export default function App() {
     }).catch((error: unknown) => {
       if (!active) return
       statisticsLoadState.current = 'done'
-      setMessage({ type: 'error', text: error instanceof Error ? `Soubor statistik se nepodařilo načíst: ${error.message}` : 'Soubor statistik se nepodařilo načíst.' })
+      setMessage({ type: 'error', text: `Soubor statistik se nepodařilo načíst: ${readableDesktopError(error, 'Neznámá chyba.')}` })
     })
     return () => {
       active = false
@@ -617,7 +622,7 @@ export default function App() {
     const timer = window.setTimeout(() => {
       statisticsBridge.save(matches).then((saved) => {
         statisticsSnapshot.current = JSON.stringify(saved.matches)
-      }).catch((error: unknown) => setMessage({ type: 'error', text: error instanceof Error ? `Statistiky se nepodařilo uložit do souboru: ${error.message}` : 'Statistiky se nepodařilo uložit do souboru.' }))
+      }).catch((error: unknown) => setMessage({ type: 'error', text: `Statistiky se nepodařilo uložit do souboru: ${readableDesktopError(error, 'Neznámá chyba.')}` }))
     }, 400)
     return () => window.clearTimeout(timer)
   }, [statisticsReady, state.history])
@@ -635,7 +640,7 @@ export default function App() {
   const syncGame = useCallback(async (game: ConfirmedGame, silent = false) => {
     const bridge = window.desktop?.matches
     if (!bridge) {
-      if (!silent) setMessage({ type: 'error', text: 'Načítání OP.GG historie funguje pouze v desktopové Electron aplikaci.' })
+      if (!silent) setMessage({ type: 'error', text: 'Načítání OP.GG historie funguje pouze v desktopové Tauri aplikaci.' })
       return
     }
     const current = stateRef.current
@@ -658,7 +663,7 @@ export default function App() {
       if (result.kind === 'matched') setMessage({ type: 'success', text: `Výsledek hry #${game.number} byl načten a statistiky přepočítány.` })
       else if (!silent) setMessage({ type: 'success', text: result.message })
     } catch (error) {
-      const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Synchronizace se nezdařila.'
+      const text = readableDesktopError(error, 'Synchronizace se nezdařila.')
       setState((value) => ({ ...value, history: value.history.map((item) => item.id === game.id ? { ...item, sync: { status: 'error', lastAttemptAt: new Date().toISOString(), message: text } } : item) }))
       if (!silent) setMessage({ type: 'error', text })
     } finally {
@@ -700,7 +705,7 @@ export default function App() {
       setMessage({ type: 'success', text: `${importText} Damage načten u ${detailedMatches}/${result.matches.length} zápasů.${cacheText}${skippedText}` })
       return true
     } catch (error) {
-      const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Import posledních zápasů se nezdařil.'
+      const text = readableDesktopError(error, 'Import posledních zápasů se nezdařil.')
       setMessage({ type: 'error', text })
       return false
     } finally {

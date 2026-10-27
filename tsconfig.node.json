@@ -9,9 +9,9 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
-    "types": ["node", "electron"],
+    "types": ["node"],
     "noEmit": true,
     "strict": true
   },
-  "include": ["vite.config.ts", "eslint.config.js", "electron"]
+  "include": ["vite.config.ts", "eslint.config.js", "scripts"]
 }

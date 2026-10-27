@@ -1,94 +1,83 @@
 # LoL Randomizer Desktop
 
-Nativně spouštěná desktopová aplikace postavená na Electronu, Reactu, TypeScriptu a Vite. Uchovává stálý roster, z 1–5 zaškrtnutých hráčů náhodně rozdělí role a šampiony, hlídá globální cooldown a bez API klíče doplní z veřejných profilů OP.GG výsledky, nedávné zápasy a dlouhodobé statistiky.
+Lehká desktopová aplikace postavená na Tauri 2, Reactu, TypeScriptu, Vite a Rustu. Uchovává stálý roster, z 1–5 zaškrtnutých hráčů náhodně rozdělí role a šampiony, hlídá globální cooldown a bez API klíče doplní z veřejných profilů OP.GG výsledky, poslední hry a dlouhodobé statistiky.
+
+Tauri používá systémový webview. Aplikace proto nebalí Chromium ani Node.js runtime a Windows instalátor je výrazně menší než původní Electron verze.
 
 ## Rychlý start
 
-Požadován je Node.js 22.
+Potřebuješ Node.js 22, Rust 1.90 nebo novější a systémové závislosti Tauri 2.
 
 ```bash
 npm install
 npm run dev
 ```
 
-`npm run dev` spustí Vite a automaticky otevře samostatné okno Electronu. Nejde o stránku, kterou je potřeba ručně otevírat v prohlížeči.
+`npm run dev` spustí Vite na interním portu 1420 a otevře samostatné okno Tauri. Samotný frontend pro prohlížeč lze spustit příkazem `npm run dev:web`; některé desktopové funkce v něm záměrně nejsou dostupné.
 
-Kontroly a sestavení produkčních souborů:
+Na Ubuntu/Debianu je před prvním spuštěním potřeba doplnit závislosti Tauri:
+
+```bash
+sudo apt update
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+```
+
+Kontroly a produkční sestavení:
 
 ```bash
 npm test
 npm run lint
+npm run build:web
 npm run build
-npm start
 ```
 
-`npm run build` vytvoří renderer v `dist/` a bezpečné Electron main/preload procesy v `dist-electron/`. `npm start` spustí právě tyto produkční soubory přes stabilní lokální origin `app://bundle`.
+`npm run build:web` ověří TypeScript a vytvoří pouze optimalizovaný frontend v `dist/`. `npm run build` sestaví nativní Tauri aplikaci a balíčky pro aktuální operační systém.
 
-Vývojový režim používá vlastní řízený restart Electron procesu. Změny v main/preload kódu tak na Linuxu neukončí `esbuild` proces Vite a renderer může dál používat HMR.
+## Windows `.exe`
 
-## Instalace pro Windows, Linux a macOS
-
-Windows (x64):
+Na Windows x64:
 
 ```bash
 npm ci
 npm run dist:win
 ```
 
-Ve složce `release/` vzniknou:
+Příkaz vytvoří NSIS instalátor a zkopíruje jej do `release/`. Do stejné složky uloží také samostatnou přenosnou binárku:
 
-- `LoL-Randomizer-Setup-1.5.0-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.5.0-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-2.0.0-x64-setup.exe` — instalátor se zástupci a odinstalací;
+- `LoL-Randomizer-Portable-2.0.0-x64.exe` — přímé spuštění bez instalace.
 
-Linux (x64):
+Instalátor používá režim WebView2 `downloadBootstrapper`: nepřibaluje celý runtime a v případě potřeby jej při instalaci stáhne. Portable varianta potřebuje WebView2 již přítomné v systému; na běžných aktuálních Windows 10/11 je součástí systému.
 
-```bash
-npm ci
-npm run dist:linux
-```
-
-Vznikne přenosný `LoL-Randomizer-1.5.0-linux-x86_64.AppImage` a instalační balíček `LoL-Randomizer-1.5.0-linux-amd64.deb`. AppImage je před prvním spuštěním potřeba označit jako spustitelný (`chmod +x soubor.AppImage`).
-
-macOS (Intel x64 i Apple Silicon arm64):
-
-```bash
-npm ci
-npm run dist:mac
-```
-
-Na macOS vzniknou `.dmg` obrazy a přenosné `.zip` archivy pro obě architektury. macOS balíčky je nutné sestavovat na Macu; automaticky to dělá připravený GitHub Actions runner `macos-latest`.
-
-Všechny výsledky se ukládají do `release/`. Buildy zatím nejsou digitálně podepsané ani notarizované. Windows SmartScreen a macOS Gatekeeper proto mohou u prvního spuštění zobrazit varování neznámého vývojáře.
+Buildy nejsou digitálně podepsané. Windows SmartScreen proto může při prvním spuštění zobrazit varování neznámého vydavatele.
 
 ## Funkce
 
 - trvale uložený roster libovolného počtu hráčů s checkboxy pro dnešní sestavu;
-- čistě náhodné losování pro 1–5 zaškrtnutých hráčů a stejný počet unikátních rolí; historie, oblíbené pozice ani statistiky hráče nemají na losování žádný vliv;
-- champion pool podle reálně hrané role v U.GG/OP.GG metě, nikoli podle Riot tříd (například Karthus může být v ADC poolu);
-- rovnoměrný náhodný výběr bez duplicit v sestavě;
-- reroll rolí i šampionů, pouze šampionů nebo jednoho šampiona;
-- individuální změna linky na kartě hráče; obsazená linka se prohodí pouze mezi dotčenými dvěma hráči;
-- potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
-- automatické dohledání společného dokončeného zápasu z veřejných profilů OP.GG bez API klíče;
-- stránkovaný import zvoleného počtu posledních zápasů každého hráče nebo zápasů od data ve formátu `DD/MM/YYYY`, včetně deduplikace společných her;
-- horní záložky **Obecné**, **Statistiky** a **Poslední hry**;
-- poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, linkou, K/D/A, KDA, damage, damage za minutu, goldy, CS, vision, OP.GG hodnocením a damage grafem;
-- samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage, goldy a vision;
-- celý řádek hráče v tabulce statistik otevírá jeho detail;
-- řazení tabulky hráčů podle jména, počtu her, bilance, winratu, KDA, výkonu, CS, damage, goldů, vision i nejhranějšího šampiona;
-- týmový přehled pozic v pevném pořadí TOP, JUNGLE, MID, ADC, SUPPORT, hlavní role a šampiona každého hráče i winratu všech společných dvojic;
-- proklikávací profil každého hráče s aktuální formou, nejlepšími ukazateli, rozdělením rolí, winratem se spoluhráči, posledními hrami a statistikami nejhranějších šampionů;
-- tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
-- globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
-- vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;
-- JSON export/import historie a validovaný import novějších meta dat;
-- plně lokální výchozí dataset i 157 champion ikon.
+- čistě náhodné losování pro 1–5 zaškrtnutých hráčů a stejný počet unikátních rolí;
+- champion pool podle skutečně hraných pozic v U.GG/OP.GG metě, včetně netradičních picků jako Karthus ADC;
+- reroll rolí i šampionů, pouze šampionů nebo jediného šampiona;
+- individuální změna linky a výměna jen dotčených rolí;
+- potvrzení „🎮 Jdeme do hry!“ jako jediný okamžik zápisu randomizer hry do historie;
+- globální cooldown šampionů z posledních potvrzených her, výchozí délka 3;
+- automatické dohledání výsledku a stránkovaný import her z veřejných dat OP.GG;
+- záložky Obecné, Statistiky a Poslední hry, detail hráče, řazení, týmové pozice a společné winraty;
+- damage, K/D/A, KDA, CS, goldy, vision, OP.GG výkon, pořadí a grafy;
+- tmavý i světlý režim, EUNE/EUW, JSON export/import historie a meta datasetu;
+- plně lokální výchozí meta dataset a 157 ikon šampionů.
+
+Statistiky ani oblíbené pozice hráčů nikdy neovlivňují losování. Importované OP.GG hry vstupují do statistik, ale neovlivňují cooldown randomizeru.
 
 ## Offline provoz a ukládání
 
-Výchozí role dataset `public/data/champion-roles.v1.json` včetně pickratu, winratu a největšího counteru pro danou linku a všechny používané ikony jsou součástí aplikace. Po instalaci tedy randomizer, historie i obrázky fungují bez připojení k internetu. Externí odkaz na zdroj dat se pouze na vyžádání otevře ve výchozím systémovém prohlížeči.
+Historie, cooldown, výběr hráčů, nastavení a importovaný dataset zůstávají v persistentním úložišti webview (`localStorage`). Výchozí role dataset a ikony jsou zabalené v aplikaci, takže randomizer funguje offline.
 
-Roster se při spuštění ze zdrojového projektu ukládá do verzovaného souboru `data/players.json`. Stažené detailní výsledky se automaticky deduplikují podle `matchId` a ukládají do `data/statistics.json`. Po běžném `git add`, commitu a pushi je tedy stejný roster i cache statistik součástí repozitáře a načte se na dalším počítači bez opakovaného stahování kompletních zápasů.
+Roster a deduplikovaná cache výsledků se ukládají také do JSON souborů:
+
+- při `npm run dev` přímo do verzovaných `data/players.json` a `data/statistics.json`;
+- v instalované nebo portable aplikaci do uživatelské datové složky Tauri.
+
+Při prvním spuštění release aplikace se použije výchozí cache zakompilovaná v binárce. Po běžném commitu a pushi mohou vývojáři sdílet aktualizovaný roster i už načtené detailní statistiky:
 
 ```bash
 git add data/players.json data/statistics.json
@@ -96,128 +85,71 @@ git commit -m "data: update roster and statistics"
 git push
 ```
 
-Push není prováděn automaticky aplikací. Výběr hráčů, rozpracovaný draft, potvrzené sestavy, nastavení a importovaný dataset zůstávají v persistentním Chromium `localStorage`. Git obsahuje jen roster a deduplikovanou cache skutečných výsledků. Instalovaná či portable aplikace nemá pracovní Git repozitář, a proto používá vlastní `players.json` a `statistics.json` v uživatelském profilu; při prvním spuštění využije cache přibalenou v aplikaci.
+Push aplikace sama nikdy neprovádí. Soubory obsahují jména a Riot ID v čitelné podobě, takže v public repozitáři budou veřejné.
 
-Pozor: `data/players.json` i `data/statistics.json` obsahují jména a Riot ID v čitelné podobě. V public repozitáři budou po pushi veřejná.
+### Přenos dat z Electron verze
 
-Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nový výsledek lze načíst jen s připojením k internetu a dostupným veřejným profilem OP.GG.
+Migrace z Electronu existující data nemaže ani nepřepisuje. Starou aplikaci ponech nainstalovanou, v její historii použij JSON export a stejný soubor importuj v Tauri verzi. Tím se přenesou potvrzené hry i podklady cooldownu bez závislosti na odlišném umístění Chromium/WebView úložiště.
 
-## Automatické výsledky a statistiky
+## OP.GG bez API klíče
 
-1. U každého hráče vyplň Riot ID ve formátu `Jméno#TAG`.
-2. Ve viditelném menu **Nastavení** vyber region EUNE nebo EUW.
-3. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
-4. Po dohrání aplikace společný zápas automaticky dohledá na OP.GG. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
-5. Tlačítko **Načíst hry** v sekci **Poslední hry** otevře dialog. Vyber libovolný kladný počet posledních zápasů každého hráče nebo datum ve formátu `DD/MM/YYYY`, od kterého se má historie načítat. OP.GG se stránkuje po 20 hrách bez pevného limitu aplikace, takže větší import může trvat déle. Společné zápasy se uloží jen jednou, hráči bez Riot ID se přeskočí a detail kompletních zápasů z `statistics.json` se nestahuje znovu.
+Síťové požadavky provádí oficiální Tauri HTTP plugin v Rust backendu, takže nejsou omezené CORS webview. Capability dovoluje přístup pouze k HTTPS hostům OP.GG. Aplikace nestahuje vzdálené skripty do svého UI a nepoužívá soukromý ani autentizovaný endpoint.
 
-Importované zápasy mají vlastní záložku **Poslední hry**, vstupují do statistik, ale neovlivňují historii sestav ani cooldown randomizeru. Jeden společný zápas se zobrazí jako jedna rozbalovací karta s počtem vašich hráčů; uvnitř je jejich damage graf a jednotlivé výkony. Stránkovaný import čte detailní data přímo z veřejné odpovědi OP.GG; automatické párování potvrzené hry doplní veřejným detailem zápasu přesný damage, vision, OP.GG skóre i pořadí hráče. Mezery kolem `#` v Riot ID nevadí. Pokud detail dočasně není dostupný, aplikace zachová K/D/A a CS, zobrazí upozornění a dovolí detail později aktualizovat.
+OP.GG je externí služba a struktura jeho veřejných stránek se může změnit. Parser má testy a při nekompatibilní změně zobrazí chybu místo poškození lokální historie. Již kompletní zápasy z `statistics.json` se při dalším importu nestahují znovu.
 
-Automatické párování přijme společnou hru, která začala nejvýše 12 hodin po potvrzení sestavy. OP.GG je externí web a jeho HTML se může v budoucnu změnit; aplikace proto používá jeho veřejný strukturovaný JSON-LD výstup a při nekompatibilní změně zobrazí konkrétní chybu namísto poškození historie.
+## Bezpečnost a architektura
 
-## Bezpečnost Electronu
-
-- `contextIsolation: true`;
-- `nodeIntegration: false`;
-- Chromium sandbox je zapnutý;
-- renderer nemá přístup k Node.js ani obecnému IPC;
-- preload zveřejňuje jen úzce vymezené operace pro načtení posledních a společných zápasů;
-- renderer nemůže určit libovolnou cílovou URL; Electron main proces komunikuje pouze s veřejnými profily `https://op.gg/lol/summoners/...` a jejich verzovaným klientským skriptem na `https://c-lol-web.op.gg/...`;
-- všechny permission requesty jsou zamítnuté;
-- nové stránky a navigace mimo aplikaci jsou blokované;
-- povolené HTTPS odkazy se otevírají přes systémový prohlížeč;
-- Content Security Policy zakazuje vzdálené skripty, objekty a rámce;
-- produkční soubory se načítají přes omezený `app://bundle` protokol s kontrolou cest.
-
-## Architektura
+- frontend nemá Node.js ani obecný přístup k souborovému systému;
+- Rust vystavuje pouze čtyři příkazy pro načtení a validované uložení rosteru/statistik;
+- zápis používá dočasný soubor a serializovaný přístup;
+- OP.GG a externí odkazy mají omezené Tauri capabilities;
+- Content Security Policy blokuje vzdálené skripty, objekty, rámce a nepovolené připojení;
+- release build používá LTO, `opt-level = "z"`, jedinou codegen jednotku, odstranění symbolů a `panic = "abort"`.
 
 ```text
-electron/
-├── main.ts                   # životní cyklus okna, app:// protokol a security policy
-├── matches.ts                # bezklíčové čtení profilů a detailů veřejných OP.GG zápasů
-├── statistics.ts             # atomické načtení a uložení Git cache statistik
-└── preload.ts                # minimální izolovaný bridge
+src-tauri/
+├── src/lib.rs                # Tauri lifecycle a bezpečné JSON úložiště
+├── capabilities/default.json # přesná síťová a opener oprávnění
+├── tauri.conf.json           # okno, CSP, NSIS a WebView2
+└── Cargo.toml                # minimální Rust závislosti a size profil
 src/
-├── App.tsx                   # React UI
-├── lib/
-│   ├── randomizer.ts         # čisté losování, cooldown a potvrzení
-│   ├── meta.ts               # načtení a validace role datasetu
-│   ├── stats.ts              # agregace skutečných Riot výsledků
-│   ├── playerDetail.ts       # profil, forma, role a champion statistiky hráče
-│   ├── groupInsights.ts      # pozice, preference a společný winrate dvojic
-│   ├── statistics-file.ts    # validace, slučování a pokrytí sdílené match cache
-│   ├── recentMatches.ts      # deduplikace a převod posledních zápasů do historie
-│   └── storage.ts            # migrace, verzované localStorage a zálohy
-└── types.ts
-public/
-├── champions/                # lokální Data Dragon ikony
-└── data/champion-roles.v1.json
+├── App.tsx                   # stávající React UI
+├── tauri-bridge.ts           # úzký kompatibilní desktop bridge
+└── lib/
+    ├── opgg.ts               # veřejná OP.GG historie přes Tauri HTTP
+    ├── randomizer.ts         # losování, cooldown a potvrzení
+    ├── statistics-file.ts    # validace a deduplikace sdílené cache
+    ├── playerDetail.ts       # detail hráče
+    └── storage.ts            # localStorage a JSON zálohy
 ```
-
-Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá samostatnými testy v `src/lib/*.test.ts`.
-
-## Meta data
-
-Výchozí dataset je transparentně označený kombinovaný U.GG/OP.GG snapshot pro patch 26.21. Zařazení šampiona na linku vychází z reálně hraných pozic ve veřejné metě, ne z oficiálních Riot tříd. Jeden šampion proto může být současně v několika rolových poolech. Pickrate, winrate a role-specific counter se ukládají přímo do offline JSONu. Meta snapshot zůstává oddělený od výsledků her a hráčské statistiky nikdy neovlivňují losování rolí ani šampionů. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného obsahu profilových stránek a detailů zápasů OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani autentizovaný endpoint.
-
-Aplikace ukazuje zdroj, patch, datum a stav zastaralosti. Aktuálnější kompatibilní JSON lze importovat přímo v UI. Import kontroluje verzi schématu, stabilní Riot ID, Data Dragon slugy, role, duplicity a statistiky.
-
-Lokální ikony lze po změně výchozího datasetu obnovit příkazem:
-
-```bash
-npm run assets:download
-```
-
-Veřejné role-specific statistiky OP.GG lze znovu načíst do verzovaného offline datasetu příkazem:
-
-```bash
-npm run meta:refresh-opgg
-```
-
-Aktualizátor znovu nestahuje už kompletní položky; úplné obnovení všech hodnot lze vynutit pomocí `npm run meta:refresh-opgg -- --force`. Pro jedinou roli lze přidat například `--role=ADC`.
 
 ## GitHub Actions
 
 Workflow `.github/workflows/desktop.yml`:
 
-- po každém pushi do `main` a v pull requestu spustí testy, lint a produkční build;
-- po úspěšném pushi do `main` navíc automaticky vytvoří balíčky pro všechny tři systémy, takže jsou vždy dostupné u daného workflow runu;
-- při ručním `workflow_dispatch` sestaví Windows instalátor a portable `.exe`, Linux AppImage a DEB i macOS DMG a ZIP pro Intel a Apple Silicon;
-- každou platformu sestavuje na jejím nativním GitHub runneru a zveřejní ji jako samostatný Actions artifact;
-- při publikaci GitHub Release připojí všechny vytvořené instalační a přenosné soubory přímo k vydání.
+- po pushi do `main` a v pull requestu spustí všech 53 testů, lint a produkční frontend build;
+- po pushi do `main`, ručním `workflow_dispatch` a při vydání sestaví na `windows-latest` skutečný Windows x64 Tauri build;
+- vytvoří NSIS instalátor i portable `.exe` a nahraje je jako Actions artifact;
+- změří NSIS instalátor v bajtech i MB a vypíše warning nad limitem 24 900 000 bajtů;
+- při publikaci GitHub Release připojí obě `.exe` přímo k vydání.
 
-V repozitáři otevři **Actions → Desktop CI and multiplatform release → Run workflow**. Po dokončení stáhneš tři archivy v sekci **Artifacts**.
+V repozitáři otevři **Actions → Tauri desktop CI → Run workflow**. Po dokončení stáhneš archiv `lol-randomizer-windows-*` v sekci Artifacts.
 
-## GitHub účet AdamKala
+## GitHub účet
 
-Projekt je určen výhradně pro `AdamKala/lol-randomizer`. Před vytvořením repozitáře ověř účet:
-
-```bash
-gh auth login --hostname github.com --git-protocol ssh --web
-gh auth status
-gh api user --jq .login
-```
-
-Poslední příkaz musí vypsat přesně `AdamKala`. Pokud je přihlášeno více účtů:
+Projekt patří výhradně do `AdamKala/lol-randomizer` a používá SSH remote:
 
 ```bash
-gh auth switch -u AdamKala
-gh api user --jq .login
+git remote -v
+ssh -T git@github.com
+git push origin main
 ```
 
-Teprve potom:
-
-```bash
-git init -b main
-git add .
-git commit -m "feat: add Electron desktop app"
-gh repo create AdamKala/lol-randomizer --public --source=. --remote=origin --push
-```
+GitHub CLI musí před operacemi vracet účet `AdamKala`; účet `DevUnknownAgency` se pro tento projekt nesmí použít.
 
 ## Riot Games disclaimer
 
 LoL Randomizer isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
-
-Champion metadata and images originate from Riot Games Data Dragon. Statistical role combinations are an attributed point-in-time snapshot; their availability and accuracy are not guaranteed by Riot Games.
 
 ## Licence
 

@@ -1,4 +1,4 @@
-name: Desktop CI and multiplatform release
+name: Tauri desktop CI
 
 on:
   push:
@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   verify:
+    name: Test and verify frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,39 +24,13 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run lint
-      - run: npm run build
+      - run: npm run build:web
 
-  desktop-packages:
+  windows-installer:
+    name: Windows x64 NSIS and portable
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
     needs: verify
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: Windows
-            runner: windows-latest
-            command: npm run dist:win
-            artifact_name: lol-randomizer-windows
-            artifact_path: release/*.exe
-            release_pattern: release/*.exe
-          - platform: Linux
-            runner: ubuntu-latest
-            command: npm run dist:linux
-            artifact_name: lol-randomizer-linux
-            artifact_path: |-
-              release/*.AppImage
-              release/*.deb
-            release_pattern: release/*.{AppImage,deb}
-          - platform: macOS
-            runner: macos-latest
-            command: npm run dist:mac
-            artifact_name: lol-randomizer-macos
-            artifact_path: |-
-              release/*.dmg
-              release/*.zip
-            release_pattern: release/*.{dmg,zip}
-    name: Package ${{ matrix.platform }}
-    runs-on: ${{ matrix.runner }}
+    runs-on: windows-latest
     permissions:
       contents: write
     steps:
@@ -64,18 +39,49 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
       - run: npm ci
-      - run: ${{ matrix.command }}
+      - name: Test Rust storage layer
+        run: cargo test --manifest-path src-tauri/Cargo.toml --locked --target x86_64-pc-windows-msvc
+      - run: npm run dist:win
+
+      - name: Measure installer size
+        id: size
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release -Filter "*setup.exe" | Select-Object -First 1
+          if (-not $installer) { throw "NSIS installer nebyl nalezen v release/." }
+          $bytes = $installer.Length
+          $megabytes = [Math]::Round($bytes / 1MB, 2)
+          "installer=$($installer.FullName)" >> $env:GITHUB_OUTPUT
+          "bytes=$bytes" >> $env:GITHUB_OUTPUT
+          "megabytes=$megabytes" >> $env:GITHUB_OUTPUT
+          "### Windows instalátor`n`n- Soubor: ``$($installer.Name)```n- Velikost: **$megabytes MB ($bytes bajtů)**" >> $env:GITHUB_STEP_SUMMARY
+          if ($bytes -gt 24900000) {
+            Write-Output "::warning title=Installer exceeds size target::NSIS installer has $bytes bytes ($megabytes MB), limit is 24900000 bytes."
+          } else {
+            Write-Output "Installer meets the 24,900,000-byte target."
+          }
+
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}-${{ github.ref_name }}
-          path: ${{ matrix.artifact_path }}
+          name: lol-randomizer-windows-${{ github.ref_name }}
+          path: release/*.exe
           if-no-files-found: error
           retention-days: 30
-      - name: Attach packages to GitHub Release
+          compression-level: 0
+
+      - name: Attach executables to GitHub Release
         if: github.event_name == 'release'
-        shell: bash
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" ${{ matrix.release_pattern }} --clobber
+        run: |
+          $files = Get-ChildItem release -Filter "*.exe" | ForEach-Object { $_.FullName }
+          gh release upload $env:RELEASE_TAG @files --clobber

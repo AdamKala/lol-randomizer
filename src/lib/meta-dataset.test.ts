@@ -1,13 +1,12 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import bundledDatasetJson from '../../public/data/champion-roles.v1.json'
 
 interface BundledDataset {
   source: { name: string; methodology: string }
   entries: Array<{ id: number; name: string; role: string; pickRate: number; winRate?: number; counter?: { name: string; winRateAgainst: number; games: number } }>
 }
 
-const bundledDataset = JSON.parse(readFileSync(resolve(process.cwd(), 'public/data/champion-roles.v1.json'), 'utf8')) as BundledDataset
+const bundledDataset = bundledDatasetJson as BundledDataset
 
 describe('výchozí meta dataset', () => {
   it('používá veřejné role U.GG místo Riot tříd', () => {

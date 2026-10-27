@@ -1,0 +1,30 @@
+[package]
+name = "lol-randomizer"
+version = "2.0.0"
+description = "Lehký desktopový randomizer rolí a šampionů pro League of Legends"
+authors = ["AdamKala"]
+license = "MIT"
+repository = "https://github.com/AdamKala/lol-randomizer"
+edition = "2021"
+rust-version = "1.90"
+
+[lib]
+name = "lol_randomizer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+tauri-plugin-http = { version = "=2.7.0", features = ["unsafe-headers"] }
+tauri-plugin-opener = "=2.7.2"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "z"
+strip = true

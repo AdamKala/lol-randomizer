@@ -1,4 +1,5 @@
-import type { MatchParticipantStats, MatchRegion, MatchSummary, MatchSyncRequest, MatchSyncResult, RecentMatchesImportRequest, RecentMatchesImportResult, RecentMatchesRange } from '../src/types'
+import { fetch } from '@tauri-apps/plugin-http'
+import type { MatchParticipantStats, MatchRegion, MatchSummary, MatchSyncRequest, MatchSyncResult, RecentMatchesImportRequest, RecentMatchesImportResult, RecentMatchesRange } from '../types'
 
 interface PublicPlayerMatch {
   rawMatchId: string
@@ -27,7 +28,7 @@ type TrackedPlayer = MatchSyncRequest['players'][number]
 const PROFILE_LIMIT_BYTES = 5_000_000
 const DETAIL_LIMIT_BYTES = 8_000_000
 const ACTION_LIMIT_BYTES = 15_000_000
-const USER_AGENT = 'LoL-Randomizer/1.5.0 (+https://github.com/AdamKala/lol-randomizer)'
+const USER_AGENT = 'LoL-Randomizer/2.0.0 (+https://github.com/AdamKala/lol-randomizer)'
 let cachedGamesAction: { scriptUrl: string; actionId: string } | null = null
 
 function isRecord(value: unknown): value is Record<string, unknown> {

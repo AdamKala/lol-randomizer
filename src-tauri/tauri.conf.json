@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "LoL Randomizer",
+  "version": "2.0.0",
+  "identifier": "cz.adamkala.lolrandomizer",
+  "build": {
+    "beforeDevCommand": "npm run dev:web",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build:web",
+    "frontendDist": "../dist",
+    "removeUnusedCommands": true
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "LoL Randomizer",
+        "width": 1480,
+        "height": 980,
+        "minWidth": 860,
+        "minHeight": 640,
+        "backgroundColor": "#050a12",
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "category": "Game",
+    "shortDescription": "Randomizer rolí a šampionů pro League of Legends",
+    "longDescription": "Lehká desktopová aplikace pro náhodné sestavy, cooldowny, historii a OP.GG statistiky.",
+    "publisher": "AdamKala",
+    "copyright": "Copyright © 2026 AdamKala",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Czech", "English"],
+        "displayLanguageSelector": false,
+        "compression": "lzma",
+        "installerIcon": "icons/icon.ico"
+      }
+    }
+  },
+  "plugins": {
+    "http": {
+      "scopeRedirects": true
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { MatchSummary } from '../src/types'
-import { matchNeedsRefresh, parseOpggGamesActionResponse, parseOpggMatchDetail, parseOpggRecentMatches, selectOpggRecentMatches } from './matches'
+import type { MatchSummary } from '../types'
+import { matchNeedsRefresh, parseOpggGamesActionResponse, parseOpggMatchDetail, parseOpggRecentMatches, selectOpggRecentMatches } from './opgg'
 
 const html = `<!doctype html><html><head><script type="application/ld+json">{
   "@context":"https://schema.org",

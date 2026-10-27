@@ -5,8 +5,8 @@ import type { MatchSummary, MatchSyncRequest, MatchSyncResult, Player, RecentMat
 declare global {
   interface Window {
     desktop?: Readonly<{
-      isElectron: true
-      platform: NodeJS.Platform
+      isTauri: true
+      platform: string
       matches: Readonly<{
         syncGame: (request: MatchSyncRequest) => Promise<MatchSyncResult>
         importRecentMatches: (request: RecentMatchesImportRequest) => Promise<RecentMatchesImportResult>
