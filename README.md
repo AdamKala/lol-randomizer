@@ -45,8 +45,8 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 ## Funkce
 
 - trvale uložený roster libovolného počtu hráčů s checkboxy pro dnešní sestavu;
-- losování pro 1–5 zaškrtnutých hráčů a stejný počet unikátních rolí;
-- champion pool podle reálně hrané role, nikoli podle Riot tříd;
+- čistě náhodné losování pro 1–5 zaškrtnutých hráčů a stejný počet unikátních rolí; historie, oblíbené pozice ani statistiky hráče nemají na losování žádný vliv;
+- champion pool podle reálně hrané role v U.GG/OP.GG metě, nikoli podle Riot tříd (například Karthus může být v ADC poolu);
 - rovnoměrný náhodný výběr bez duplicit v sestavě;
 - reroll rolí i šampionů, pouze šampionů nebo jednoho šampiona;
 - individuální změna linky na kartě hráče; obsazená linka se prohodí pouze mezi dotčenými dvěma hráči;
@@ -136,7 +136,7 @@ Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá samo
 
 ## Meta data
 
-Výchozí dataset je transparentně označený snapshot pro patch 26.21. Meta snapshot zůstává oddělený od výsledků her. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného obsahu profilových stránek a detailů zápasů OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani autentizovaný endpoint.
+Výchozí dataset je transparentně označený U.GG snapshot pro patch 26.21. Zařazení šampiona na linku vychází z reálně hraných pozic ve veřejné metě, ne z oficiálních Riot tříd. Jeden šampion proto může být současně v několika rolových poolech. Meta snapshot zůstává oddělený od výsledků her a hráčské statistiky nikdy neovlivňují losování rolí ani šampionů. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného obsahu profilových stránek a detailů zápasů OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani autentizovaný endpoint.
 
 Aplikace ukazuje zdroj, patch, datum a stav zastaralosti. Aktuálnější kompatibilní JSON lze importovat přímo v UI. Import kontroluje verzi schématu, stabilní Riot ID, Data Dragon slugy, role, duplicity a statistiky.
 

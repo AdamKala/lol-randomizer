@@ -8,7 +8,7 @@
     "name": "U.GG — ručně kurátorovaný snapshot",
     "url": "https://u.gg/lol/tier-list",
     "scope": "Ranked Solo, Emerald+, všechny regiony, patch 26.21",
-    "methodology": "Kombinace s alespoň 0,5 % pick rate nebo výrazným počtem her ve veřejném přehledu. Hodnoty jsou snapshot, ne živé API."
+    "methodology": "Role vycházejí výhradně z veřejných přehledů hraných pozic U.GG, nikoli z Riot tříd šampionů. Kombinace s alespoň 0,5 % pick rate nebo výrazným počtem her; snapshot, ne živé API."
   },
   "defaults": { "minPickRate": 0.5, "minGames": 5000 },
   "entries": [

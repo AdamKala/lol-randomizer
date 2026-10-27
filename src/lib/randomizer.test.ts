@@ -52,6 +52,24 @@ describe('losování sestavy', () => {
     for (const slot of draft.slots) expect(dataset.entries.some((candidate) => candidate.id === slot.champion.id && candidate.role === slot.role)).toBe(true)
   })
 
+  it('historické pozice hráčů nijak neovlivňují náhodné rozdělení rolí', () => {
+    const importedRoleHistory = [{ ...game('profile-history', 900, 1), origin: 'opgg-import' as const }]
+    const withoutHistory = generateDraft(players.slice(0, 5), dataset, settings, [], deterministic)
+    const withHistory = generateDraft(players.slice(0, 5), dataset, settings, importedRoleHistory, deterministic)
+
+    expect(withHistory.slots.map(({ playerId, role }) => ({ playerId, role }))).toEqual(
+      withoutHistory.slots.map(({ playerId, role }) => ({ playerId, role })),
+    )
+  })
+
+  it('použije šampiona na lince uvedené v meta datasetu bez ohledu na Riot třídu', () => {
+    const karthusAdc: ChampionRoleEntry = { id: 30, slug: 'Karthus', name: 'Karthus', role: 'ADC', pickRate: 0.7, games: 6473 }
+    const roleDataset: MetaDataset = { ...dataset, entries: [karthusAdc] }
+    const draft = generateDraft(players.slice(0, 1), roleDataset, settings, [], deterministic, ['ADC'])
+
+    expect(draft.slots[0]).toMatchObject({ role: 'ADC', champion: karthusAdc })
+  })
+
   it('v jedné sestavě neopakuje šampiona', () => {
     const draft = generateDraft(players.slice(0, 5), dataset, settings, [], deterministic)
     expect(new Set(draft.slots.map((slot) => slot.champion.id))).toHaveLength(5)
