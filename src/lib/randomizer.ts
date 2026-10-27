@@ -1,11 +1,13 @@
-import { ROLES, type ChampionRoleEntry, type ConfirmedGame, type CooldownEntry, type Draft, type DraftSlot, type MetaDataset, type Role, type Settings } from '../types'
+import { ROLES, type ChampionRoleEntry, type ConfirmedGame, type CooldownEntry, type Draft, type DraftPlayer, type DraftSlot, type MetaDataset, type Role, type Settings } from '../types'
 
 export type RandomSource = () => number
 
-export function validatePlayers(players: string[]): string | null {
-  if (players.length !== 5 || players.some((name) => !name.trim())) return 'Vyplň přesně pět jmen hráčů.'
-  const normalized = players.map((name) => name.trim().toLocaleLowerCase('cs'))
-  if (new Set(normalized).size !== 5) return 'Každý hráč musí mít unikátní jméno.'
+export function validatePlayers(players: DraftPlayer[]): string | null {
+  if (!players.length) return 'Zaškrtni alespoň jednoho hráče.'
+  if (players.length > ROLES.length) return 'Do jedné sestavy můžeš vybrat nejvýše pět hráčů.'
+  if (players.some((player) => !player.name.trim())) return 'Každý vybraný hráč musí mít jméno.'
+  const normalized = players.map((player) => player.name.trim().toLocaleLowerCase('cs'))
+  if (new Set(normalized).size !== players.length) return 'Každý hráč musí mít unikátní jméno.'
   return null
 }
 
@@ -46,7 +48,7 @@ export function eligibleForRole(dataset: MetaDataset, role: Role, settings: Sett
 }
 
 function assignChampions(
-  playerRoles: Array<{ player: string; role: Role }>,
+  playerRoles: Array<{ player: DraftPlayer; role: Role }>,
   dataset: MetaDataset,
   settings: Settings,
   blocked: Set<number>,
@@ -70,7 +72,13 @@ function assignChampions(
     for (const champion of assignment.candidates) {
       if (used.has(champion.id)) continue
       used.add(champion.id)
-      chosen.set(assignment.originalIndex, { player: assignment.player, role: assignment.role, champion })
+      chosen.set(assignment.originalIndex, {
+        playerId: assignment.player.id,
+        player: assignment.player.name.trim(),
+        riotId: assignment.player.riotId.trim(),
+        role: assignment.role,
+        champion,
+      })
       if (visit(index + 1)) return true
       used.delete(champion.id)
       chosen.delete(assignment.originalIndex)
@@ -88,7 +96,7 @@ function createDraftId(): string {
 }
 
 export function generateDraft(
-  players: string[],
+  players: DraftPlayer[],
   dataset: MetaDataset,
   settings: Settings,
   history: ConfirmedGame[],
@@ -97,11 +105,11 @@ export function generateDraft(
 ): Draft {
   const error = validatePlayers(players)
   if (error) throw new Error(error)
-  if (fixedRoles && (fixedRoles.length !== 5 || new Set(fixedRoles).size !== 5)) {
-    throw new Error('Pevné rozdělení musí obsahovat pět unikátních rolí.')
+  if (fixedRoles && (fixedRoles.length !== players.length || new Set(fixedRoles).size !== players.length)) {
+    throw new Error('Pevné rozdělení musí pro každého hráče obsahovat unikátní roli.')
   }
-  const roles = fixedRoles ?? shuffle(ROLES, random)
-  const assignments = players.map((player, index) => ({ player: player.trim(), role: roles[index] }))
+  const roles = fixedRoles ?? shuffle(ROLES, random).slice(0, players.length)
+  const assignments = players.map((player, index) => ({ player, role: roles[index] }))
   const slots = assignChampions(assignments, dataset, settings, getBlockedChampionIds(history, settings.cooldownGames), random)
   if (!slots) {
     throw new Error('Pro zvolené filtry a cooldown není dost dostupných šampionů. Sniž filtr, zkrať cooldown nebo importuj větší dataset.')
@@ -133,5 +141,16 @@ export function rerollOneChampion(
 export function confirmDraft(draft: Draft, history: ConfirmedGame[], confirmedAt = new Date().toISOString()): ConfirmedGame[] {
   if (history.some((game) => game.id === draft.id)) return history
   const number = history.reduce((max, game) => Math.max(max, game.number), 0) + 1
-  return [...history, { ...draft, number, confirmedAt }]
+  const canSync = draft.slots.every((slot) => slot.riotId.includes('#'))
+  return [...history, {
+    ...draft,
+    number,
+    confirmedAt,
+    match: null,
+    sync: {
+      status: canSync ? 'pending' : 'untracked',
+      lastAttemptAt: null,
+      message: canSync ? 'Čekám, až se hra objeví v Riot match history.' : 'Pro automatické statistiky doplň všem hráčům Riot ID.',
+    },
+  }]
 }

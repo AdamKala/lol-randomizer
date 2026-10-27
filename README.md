@@ -1,6 +1,6 @@
 # LoL Randomizer Desktop
 
-Nativně spouštěná desktopová aplikace pro Windows postavená na Electronu, Reactu, TypeScriptu a Vite. Náhodně rozdělí pětičlenné premade role a šampiony, hlídá globální cooldown a rozlišuje nepotvrzený návrh od skutečně odehrané hry.
+Nativně spouštěná desktopová aplikace postavená na Electronu, Reactu, TypeScriptu a Vite. Uchovává stálý roster, z 1–5 zaškrtnutých hráčů náhodně rozdělí role a šampiony, hlídá globální cooldown a přes oficiální Riot API doplní výsledky potvrzených her a dlouhodobé statistiky.
 
 ## Rychlý start
 
@@ -35,18 +35,21 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.0.0-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.0.0-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.1.0-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.1.0-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
 ## Funkce
 
-- přesně pět unikátních hráčů a pět unikátních rolí;
+- trvale uložený roster libovolného počtu hráčů s checkboxy pro dnešní sestavu;
+- losování pro 1–5 zaškrtnutých hráčů a stejný počet unikátních rolí;
 - champion pool podle reálně hrané role, nikoli podle Riot tříd;
 - rovnoměrný náhodný výběr bez duplicit v sestavě;
 - reroll rolí i šampionů, pouze šampionů nebo jednoho šampiona;
-- potvrzení „🎮 Jdeme do hry!“ jako jediný okamžik zápisu historie;
+- potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
+- automatické dohledání společného dokončeného zápasu přes oficiální Riot `account-v1` a `match-v5`;
+- skutečný výsledek, hraný šampion, K/D/A, damage, vision, CS a agregované statistiky hráčů;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
 - vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;
 - JSON export/import historie a validovaný import novějších meta dat;
@@ -56,7 +59,21 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 
 Výchozí role dataset `public/data/champion-roles.v1.json` a všechny ikony, které používá, jsou součástí aplikace. Po instalaci tedy randomizer, historie i obrázky fungují bez připojení k internetu. Externí odkaz na zdroj dat se pouze na vyžádání otevře ve výchozím systémovém prohlížeči.
 
-Hráči, rozpracovaný draft, historie, nastavení i importovaný dataset se ukládají do persistentního Chromium `localStorage` v uživatelském profilu Electronu. Data přežijí zavření i aktualizaci aplikace. Neexistuje žádný backend, účet ani telemetrie.
+Roster, výběr hráčů, rozpracovaný draft, historie, stažené výsledky, nastavení i importovaný dataset se ukládají do persistentního Chromium `localStorage` v uživatelském profilu Electronu. Data přežijí zavření i aktualizaci aplikace. Neexistuje žádný vlastní backend, účet ani telemetrie.
+
+Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nový výsledek lze přirozeně načíst jen s připojením k internetu a platným Riot API klíčem.
+
+## Automatické výsledky a statistiky
+
+1. U každého hráče vyplň Riot ID ve formátu `Jméno#TAG`.
+2. Na [Riot Developer Portal](https://developer.riotgames.com/) si vytvoř API klíč.
+3. V aplikaci otevři **Nastavení → Riot API pro výsledky**, vlož klíč a ulož ho.
+4. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
+5. Po dohrání aplikace zápas automaticky dohledá. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
+
+Vyhledávání používá evropský Riot routing cluster a přijme společnou hru, která začala nejvýše 12 hodin po potvrzení sestavy. Vývojové klíče Riot expirují po 24 hodinách. Pro malou soukromou skupinu je vhodný osobní klíč; pro veřejnou distribuci je podle pravidel Riotu nutné registrovat produkt a použít odpovídající produkční řešení.
+
+API klíč není součástí zdrojového kódu, `localStorage`, exportu ani Git repozitáře. Ukládá ho Electron v uživatelském profilu aplikace, s oprávněním pouze pro uživatele a se systémovým šifrováním tam, kde je dostupné.
 
 ## Bezpečnost Electronu
 
@@ -64,7 +81,8 @@ Hráči, rozpracovaný draft, historie, nastavení i importovaný dataset se ukl
 - `nodeIntegration: false`;
 - Chromium sandbox je zapnutý;
 - renderer nemá přístup k Node.js ani obecnému IPC;
-- preload zveřejňuje pouze neměnnou informaci o desktopovém prostředí;
+- preload zveřejňuje jen úzce vymezené operace pro stav/uložení API klíče a načtení zápasu;
+- renderer nikdy nedostane uložený API klíč zpět a nemůže určit cílovou URL požadavku;
 - všechny permission requesty jsou zamítnuté;
 - nové stránky a navigace mimo aplikaci jsou blokované;
 - povolené HTTPS odkazy se otevírají přes systémový prohlížeč;
@@ -82,7 +100,8 @@ src/
 ├── lib/
 │   ├── randomizer.ts         # čisté losování, cooldown a potvrzení
 │   ├── meta.ts               # načtení a validace role datasetu
-│   └── storage.ts            # verzované localStorage a zálohy
+│   ├── stats.ts              # agregace skutečných Riot výsledků
+│   └── storage.ts            # migrace, verzované localStorage a zálohy
 └── types.ts
 public/
 ├── champions/                # lokální Data Dragon ikony
@@ -93,7 +112,7 @@ Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá test
 
 ## Meta data
 
-Výchozí dataset je transparentně označený snapshot pro patch 26.21. U.GG neposkytuje veřejné dokumentované API a projekt nepoužívá scraping ani interní endpointy. Riot `match-v5` vyžaduje chráněný API klíč a serverovou agregaci, proto není bezpečné provádět automatickou živou aktualizaci ve frontendové aplikaci.
+Výchozí dataset je transparentně označený snapshot pro patch 26.21. U.GG neposkytuje veřejné dokumentované API a projekt nepoužívá scraping ani interní endpointy. Meta snapshot zůstává oddělený od výsledků her. Ty aplikace načítá přes oficiální Riot `account-v1` a `match-v5` v izolovaném Electron main procesu; uživatel si dodá vlastní lokálně chráněný klíč.
 
 Aplikace ukazuje zdroj, patch, datum a stav zastaralosti. Aktuálnější kompatibilní JSON lze importovat přímo v UI. Import kontroluje verzi schématu, stabilní Riot ID, Data Dragon slugy, role, duplicity a statistiky.
 

@@ -1,6 +1,7 @@
-import { app, BrowserWindow, Menu, net, protocol, session, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, net, protocol, session, shell } from 'electron'
 import { dirname, isAbsolute, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { getRiotApiStatus, setRiotApiKey, syncRiotMatch } from './riot'
 
 const electronRoot = dirname(fileURLToPath(import.meta.url))
 const rendererRoot = resolve(electronRoot, '../dist')
@@ -88,20 +89,26 @@ function createWindow(): BrowserWindow {
         const result = await window.webContents.executeJavaScript(`(async () => {
           const dataset = await fetch('./data/champion-roles.v1.json').then((response) => response.json())
           const iconOk = await fetch('./champions/Aatrox.png').then((response) => response.ok)
+          await new Promise((resolve) => setTimeout(resolve, 150))
           const storageKey = '__lol_randomizer_smoke__'
           const storageBefore = localStorage.getItem(storageKey)
           if (storageBefore === 'persisted') localStorage.removeItem(storageKey)
           else localStorage.setItem(storageKey, 'persisted')
+          const riotStatus = typeof window.desktop?.riot?.getStatus === 'function'
+            ? await window.desktop.riot.getStatus()
+            : null
           return {
             title: document.title,
             heading: document.querySelector('h1')?.textContent ?? '',
             entries: dataset.entries?.length ?? 0,
             iconOk,
             storageBefore,
+            rosterUi: document.body.textContent?.includes('Stálý roster') === true,
+            riotBridge: Boolean(riotStatus && typeof riotStatus.hasApiKey === 'boolean'),
           }
         })()`)
         console.log(`[electron-smoke] ${JSON.stringify(result)}`)
-        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true
+        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.riotBridge === true
         app.exit(valid ? 0 : 1)
       } catch (error) {
         console.error('[electron-smoke] selhal', error)
@@ -124,6 +131,10 @@ app.setAppUserModelId('cz.adamkala.lolrandomizer')
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null)
+
+  ipcMain.handle('riot:get-status', () => getRiotApiStatus())
+  ipcMain.handle('riot:set-api-key', (_event, apiKey: unknown) => setRiotApiKey(apiKey))
+  ipcMain.handle('riot:sync-game', (_event, request: unknown) => syncRiotMatch(request))
 
   if (!developmentUrl) {
     protocol.handle('app', (request) => {
