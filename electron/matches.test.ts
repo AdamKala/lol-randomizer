@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseOpggGamesActionResponse, parseOpggMatchDetail, parseOpggRecentMatches, selectOpggRecentMatches } from './matches'
+import type { MatchSummary } from '../src/types'
+import { matchNeedsRefresh, parseOpggGamesActionResponse, parseOpggMatchDetail, parseOpggRecentMatches, selectOpggRecentMatches } from './matches'
 
 const html = `<!doctype html><html><head><script type="application/ld+json">{
   "@context":"https://schema.org",
@@ -106,5 +107,12 @@ describe('OP.GG veřejná historie', () => {
     const result = parseOpggMatchDetail(detailHtml, 'eune', 'public-match-1', [{ playerId: 'p1', displayName: 'Tester', riotId: 'Test #EUNE' }])
     expect(result).toMatchObject({ durationSeconds: 1800, gameMode: 'Ranked Solo/Duo', gameVersion: '16.21', source: 'opgg' })
     expect(result.participants[0]).toMatchObject({ championName: 'Ahri', kills: 8, deaths: 2, assists: 11, totalDamageDealtToChampions: 28765, visionScore: 24, detailedStats: true, performanceScore: 8.4, performanceRank: 2 })
+  })
+
+  it('neobnovuje zápas, pokud cache obsahuje detail všech nalezených hráčů', () => {
+    const summary = { matchId: 'OPGG_eune_public-match-1', participants: [{ playerId: 'p1' }] } as MatchSummary
+
+    expect(matchNeedsRefresh(summary, { matchId: summary.matchId, detailedPlayerIds: ['p1'] })).toBe(false)
+    expect(matchNeedsRefresh(summary, { matchId: summary.matchId, detailedPlayerIds: [] })).toBe(true)
   })
 })

@@ -56,6 +56,7 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - horní záložky **Obecné**, **Statistiky** a **Poslední hry**;
 - poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, linkou, K/D/A, KDA, damage, damage za minutu, goldy, CS, vision, OP.GG hodnocením a damage grafem;
 - samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage, goldy a vision;
+- celý řádek hráče v tabulce statistik otevírá jeho detail;
 - řazení tabulky hráčů podle jména, počtu her, bilance, winratu, KDA, výkonu, CS, damage, goldů, vision i nejhranějšího šampiona;
 - týmový přehled nejhranějších pozic, hlavní role a šampiona každého hráče i winratu všech společných dvojic;
 - proklikávací profil každého hráče s aktuální formou, nejlepšími ukazateli, rozdělením rolí, winratem se spoluhráči, posledními hrami a statistikami nejhranějších šampionů;
@@ -69,17 +70,17 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 
 Výchozí role dataset `public/data/champion-roles.v1.json` a všechny ikony, které používá, jsou součástí aplikace. Po instalaci tedy randomizer, historie i obrázky fungují bez připojení k internetu. Externí odkaz na zdroj dat se pouze na vyžádání otevře ve výchozím systémovém prohlížeči.
 
-Roster se při spuštění ze zdrojového projektu ukládá do verzovaného souboru `data/players.json`. Přidání hráče, změna jména či Riot ID i odebrání hráče soubor automaticky upraví. Po běžném `git add`, commitu a pushi je tedy stejný roster součástí repozitáře a načte se i na dalším počítači.
+Roster se při spuštění ze zdrojového projektu ukládá do verzovaného souboru `data/players.json`. Stažené detailní výsledky se automaticky deduplikují podle `matchId` a ukládají do `data/statistics.json`. Po běžném `git add`, commitu a pushi je tedy stejný roster i cache statistik součástí repozitáře a načte se na dalším počítači bez opakovaného stahování kompletních zápasů.
 
 ```bash
-git add data/players.json
-git commit -m "data: update player roster"
+git add data/players.json data/statistics.json
+git commit -m "data: update roster and statistics"
 git push
 ```
 
-Push není prováděn automaticky aplikací. Výběr hráčů, rozpracovaný draft, historie, stažené výsledky, nastavení a importovaný dataset zůstávají v persistentním Chromium `localStorage`; nepatří do Gitu. Instalovaná či portable aplikace nemá pracovní Git repozitář, a proto používá vlastní `players.json` v uživatelském profilu. Git synchronizace rosteru funguje při spuštění přes `npm run dev` nebo `npm start` přímo v checkoutu projektu.
+Push není prováděn automaticky aplikací. Výběr hráčů, rozpracovaný draft, potvrzené sestavy, nastavení a importovaný dataset zůstávají v persistentním Chromium `localStorage`. Git obsahuje jen roster a deduplikovanou cache skutečných výsledků. Instalovaná či portable aplikace nemá pracovní Git repozitář, a proto používá vlastní `players.json` a `statistics.json` v uživatelském profilu; při prvním spuštění využije cache přibalenou v aplikaci.
 
-Pozor: `data/players.json` obsahuje jména a případná Riot ID v čitelné podobě. V public repozitáři budou po pushi veřejná.
+Pozor: `data/players.json` i `data/statistics.json` obsahují jména a Riot ID v čitelné podobě. V public repozitáři budou po pushi veřejná.
 
 Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nový výsledek lze načíst jen s připojením k internetu a dostupným veřejným profilem OP.GG.
 
@@ -89,7 +90,7 @@ Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nov�
 2. Ve viditelném menu **Nastavení** vyber region EUNE nebo EUW.
 3. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
 4. Po dohrání aplikace společný zápas automaticky dohledá na OP.GG. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
-5. Tlačítko **Načíst hry** v sekci **Poslední hry** otevře dialog. Vyber libovolný kladný počet posledních zápasů každého hráče nebo datum ve formátu `DD/MM/YYYY`, od kterého se má historie načítat. OP.GG se stránkuje po 20 hrách bez pevného limitu aplikace, takže větší import může trvat déle. Společné zápasy se uloží jen jednou a hráči bez Riot ID se přeskočí.
+5. Tlačítko **Načíst hry** v sekci **Poslední hry** otevře dialog. Vyber libovolný kladný počet posledních zápasů každého hráče nebo datum ve formátu `DD/MM/YYYY`, od kterého se má historie načítat. OP.GG se stránkuje po 20 hrách bez pevného limitu aplikace, takže větší import může trvat déle. Společné zápasy se uloží jen jednou, hráči bez Riot ID se přeskočí a detail kompletních zápasů z `statistics.json` se nestahuje znovu.
 
 Importované zápasy mají vlastní záložku **Poslední hry**, vstupují do statistik, ale neovlivňují historii sestav ani cooldown randomizeru. Jeden společný zápas se zobrazí jako jedna rozbalovací karta s počtem vašich hráčů; uvnitř je jejich damage graf a jednotlivé výkony. Stránkovaný import čte detailní data přímo z veřejné odpovědi OP.GG; automatické párování potvrzené hry doplní veřejným detailem zápasu přesný damage, vision, OP.GG skóre i pořadí hráče. Mezery kolem `#` v Riot ID nevadí. Pokud detail dočasně není dostupný, aplikace zachová K/D/A a CS, zobrazí upozornění a dovolí detail později aktualizovat.
 
@@ -115,6 +116,7 @@ Automatické párování přijme společnou hru, která začala nejvýše 12 hod
 electron/
 ├── main.ts                   # životní cyklus okna, app:// protokol a security policy
 ├── matches.ts                # bezklíčové čtení profilů a detailů veřejných OP.GG zápasů
+├── statistics.ts             # atomické načtení a uložení Git cache statistik
 └── preload.ts                # minimální izolovaný bridge
 src/
 ├── App.tsx                   # React UI
@@ -124,6 +126,7 @@ src/
 │   ├── stats.ts              # agregace skutečných Riot výsledků
 │   ├── playerDetail.ts       # profil, forma, role a champion statistiky hráče
 │   ├── groupInsights.ts      # pozice, preference a společný winrate dvojic
+│   ├── statistics-file.ts    # validace, slučování a pokrytí sdílené match cache
 │   ├── recentMatches.ts      # deduplikace a převod posledních zápasů do historie
 │   └── storage.ts            # migrace, verzované localStorage a zálohy
 └── types.ts

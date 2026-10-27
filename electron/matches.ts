@@ -66,7 +66,12 @@ function validateImportRequest(value: unknown): asserts value is RecentMatchesIm
   if (!isRecord(value)) throw new Error('Neplatný požadavek na import historie.')
   validateRegion(value.region)
   validatePlayers(value.players, 10)
-  if (!Array.isArray(value.excludedMatchIds) || value.excludedMatchIds.some((id) => typeof id !== 'string')) throw new Error('Neplatný seznam uložených zápasů.')
+  if (!Array.isArray(value.cachedMatches) || value.cachedMatches.length > 50_000) throw new Error('Neplatná cache uložených zápasů.')
+  for (const cached of value.cachedMatches) {
+    if (!isRecord(cached) || typeof cached.matchId !== 'string' || !Array.isArray(cached.detailedPlayerIds) || cached.detailedPlayerIds.some((id) => typeof id !== 'string')) {
+      throw new Error('Neplatná cache uložených zápasů.')
+    }
+  }
   if (!isRecord(value.range)) throw new Error('Vyber počet her nebo datum začátku importu.')
   if (value.range.mode === 'count') {
     const count = number(value.range.count)
@@ -521,13 +526,11 @@ function summaryFor(region: MatchRegion, player: TrackedPlayer, match: PublicPla
   }
 }
 
-function mergeProfileMatches(profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }>, region: MatchRegion, excludedMatchIds: string[]): MatchSummary[] {
-  const excluded = new Set(excludedMatchIds)
+function mergeProfileMatches(profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }>, region: MatchRegion): MatchSummary[] {
   const summaries = new Map<string, MatchSummary>()
   for (const profile of profiles) {
     for (const match of profile.matches) {
       const matchId = publicMatchId(region, match.rawMatchId)
-      if (excluded.has(matchId)) continue
       const existing = summaries.get(matchId)
       if (existing) existing.participants.push(participantFor(profile.player, match))
       else summaries.set(matchId, summaryFor(region, profile.player, match))
@@ -536,8 +539,16 @@ function mergeProfileMatches(profiles: Array<{ player: TrackedPlayer; matches: P
   return [...summaries.values()].sort((left, right) => Date.parse(left.gameStartedAt) - Date.parse(right.gameStartedAt))
 }
 
-async function enrichProfileMatches(profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }>, region: MatchRegion, excludedMatchIds: string[]): Promise<MatchSummary[]> {
-  const summaries = mergeProfileMatches(profiles, region, excludedMatchIds)
+export function matchNeedsRefresh(summary: MatchSummary, cached: RecentMatchesImportRequest['cachedMatches'][number] | undefined): boolean {
+  if (!cached) return true
+  const detailedPlayerIds = new Set(cached.detailedPlayerIds)
+  return summary.participants.some((participant) => !detailedPlayerIds.has(participant.playerId))
+}
+
+async function enrichProfileMatches(profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }>, region: MatchRegion, cachedMatches: RecentMatchesImportRequest['cachedMatches']): Promise<{ matches: MatchSummary[]; cachedMatchesSkipped: number }> {
+  const discovered = mergeProfileMatches(profiles, region)
+  const cacheByMatchId = new Map(cachedMatches.map((match) => [match.matchId, match]))
+  const summaries = discovered.filter((summary) => matchNeedsRefresh(summary, cacheByMatchId.get(summary.matchId)))
   const references = new Map<string, { player: TrackedPlayer; match: PublicPlayerMatch }>()
   for (const profile of profiles) for (const match of profile.matches) {
     if (!references.has(match.rawMatchId)) references.set(match.rawMatchId, { player: profile.player, match })
@@ -559,14 +570,15 @@ async function enrichProfileMatches(profiles: Array<{ player: TrackedPlayer; mat
     }
   })
   await Promise.all(workers)
-  return summaries.map((summary) => detailed.get(summary.matchId) ?? summary)
+  return { matches: summaries.map((summary) => detailed.get(summary.matchId) ?? summary), cachedMatchesSkipped: discovered.length - summaries.length }
 }
 
 export async function importRecentPublicMatches(value: unknown): Promise<RecentMatchesImportResult> {
   validateImportRequest(value)
   const profiles: Array<{ player: TrackedPlayer; matches: PublicPlayerMatch[] }> = []
   for (const player of value.players) profiles.push({ player, matches: await fetchPlayerMatchesRange(player, value.region, value.range) })
-  return { matches: await enrichProfileMatches(profiles, value.region, value.excludedMatchIds), playerCount: value.players.length }
+  const enriched = await enrichProfileMatches(profiles, value.region, value.cachedMatches)
+  return { ...enriched, playerCount: value.players.length }
 }
 
 export async function syncPublicMatch(value: unknown): Promise<MatchSyncResult> {
@@ -584,6 +596,6 @@ export async function syncPublicMatch(value: unknown): Promise<MatchSyncResult> 
     .sort((left, right) => left.startedAt - right.startedAt)[0]?.matchId
   if (!matchedId) return { kind: 'pending', message: 'Společná hra zatím na OP.GG není. Aplikace to zkusí znovu automaticky.' }
   const selectedProfiles = profiles.map((profile) => ({ player: profile.player, matches: profile.matches.filter((match) => match.rawMatchId === matchedId) }))
-  const match = (await enrichProfileMatches(selectedProfiles, value.region, []))[0]
+  const match = (await enrichProfileMatches(selectedProfiles, value.region, [])).matches[0]
   return match ? { kind: 'matched', match } : { kind: 'pending', message: 'Společnou hru se z OP.GG nepodařilo sestavit.' }
 }

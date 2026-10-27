@@ -3,6 +3,7 @@ import { dirname, isAbsolute, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { importRecentPublicMatches, syncPublicMatch } from './matches'
 import { loadRosterFile, saveRosterFile } from './roster'
+import { loadStatisticsFile, saveStatisticsFile } from './statistics'
 
 const electronRoot = dirname(fileURLToPath(import.meta.url))
 const rendererRoot = resolve(electronRoot, '../dist')
@@ -99,6 +100,9 @@ function createWindow(): BrowserWindow {
           const rosterStatus = typeof window.desktop?.roster?.load === 'function'
             ? await window.desktop.roster.load()
             : null
+          const statisticsStatus = typeof window.desktop?.statistics?.load === 'function'
+            ? await window.desktop.statistics.load()
+            : null
           const rosterWriteOk = ${verifyRosterWrite ? "Boolean(rosterStatus && (await window.desktop.roster.save(rosterStatus.players)).exists)" : 'true'}
           document.documentElement.dataset.theme = 'light'
           await new Promise((resolve) => requestAnimationFrame(resolve))
@@ -114,6 +118,7 @@ function createWindow(): BrowserWindow {
           const damageSortButton = [...document.querySelectorAll('th button')].find((button) => button.textContent?.trim().startsWith('DMG Ø'))
           let statisticsSortingUi = true
           let groupInsightsUi = true
+          let statisticsRowUi = true
           if (damageSortButton) {
             damageSortButton.click()
             await new Promise((resolve) => requestAnimationFrame(resolve))
@@ -122,6 +127,8 @@ function createWindow(): BrowserWindow {
             await new Promise((resolve) => requestAnimationFrame(resolve))
             statisticsSortingUi = descending && damageSortButton.closest('th')?.getAttribute('aria-sort') === 'ascending'
             groupInsightsUi = document.body.textContent?.includes('Nejhranější pozice') === true && document.body.textContent?.includes('Kdo s kým vyhrává') === true && document.body.textContent?.includes('Kdo kde a co hraje') === true
+            const statisticsRow = document.querySelector('tbody tr[role="link"]')
+            statisticsRowUi = Boolean(statisticsRow && statisticsRow.getAttribute('aria-label')?.startsWith('Otevřít statistiky hráče'))
           }
           recentTab?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
@@ -162,13 +169,14 @@ function createWindow(): BrowserWindow {
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
-            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && statisticsSortingUi && groupInsightsUi && recentPanel && importDialogUi && playerProfileUi),
+            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && statisticsSortingUi && statisticsRowUi && groupInsightsUi && recentPanel && importDialogUi && playerProfileUi),
             tabDiagnostics: {
               generalTab: Boolean(generalTab),
               statisticsTab: Boolean(statisticsTab),
               recentTab: Boolean(recentTab),
               statisticsPanel,
               statisticsSortingUi,
+              statisticsRowUi,
               groupInsightsUi,
               recentPanel,
               importButton: Boolean(importButton),
@@ -184,10 +192,11 @@ function createWindow(): BrowserWindow {
             recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',
             rosterBridge: Boolean(rosterStatus && Array.isArray(rosterStatus.players)),
             rosterWriteOk,
+            statisticsBridge: Boolean(statisticsStatus && Array.isArray(statisticsStatus.matches)),
           }
         })()`)
         console.log(`[electron-smoke] ${JSON.stringify(result)}`)
-        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.tabsUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true
+        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.tabsUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true && result.statisticsBridge === true
         app.exit(valid ? 0 : 1)
       } catch (error) {
         console.error('[electron-smoke] selhal', error)
@@ -215,6 +224,8 @@ app.whenReady().then(() => {
   ipcMain.handle('matches:import-recent', (_event, request: unknown) => importRecentPublicMatches(request))
   ipcMain.handle('roster:load', () => loadRosterFile())
   ipcMain.handle('roster:save', (_event, players: unknown) => saveRosterFile(players))
+  ipcMain.handle('statistics:load', () => loadStatisticsFile())
+  ipcMain.handle('statistics:save', (_event, matches: unknown) => saveStatisticsFile(matches))
 
   if (!developmentUrl) {
     protocol.handle('app', (request) => {

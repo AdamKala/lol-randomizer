@@ -1,4 +1,5 @@
 import { ROLES, type ChampionRoleEntry, type ConfirmedGame, type MatchParticipantStats, type MatchSummary, type MetaDataset, type Role } from '../types'
+import { mergeMatchSummaries } from './statistics-file'
 
 export function roleFromTeamPosition(position: string, fallbackIndex = 0): Role {
   switch (position.toUpperCase()) {
@@ -56,18 +57,23 @@ function importedGame(match: MatchSummary, dataset: MetaDataset): ConfirmedGame 
 export function mergeRecentMatches(history: ConfirmedGame[], matches: MatchSummary[], dataset: MetaDataset): { history: ConfirmedGame[]; added: number; updated: number } {
   const knownMatchIds = new Set(history.flatMap((game) => game.match ? [game.match.matchId] : []))
   const confirmedMatchIds = new Set(history.flatMap((game) => (!game.origin || game.origin === 'confirmed') && game.match ? [game.match.matchId] : []))
-  const uniqueMatches = new Map<string, MatchSummary>()
-  for (const match of matches) {
-    if (!confirmedMatchIds.has(match.matchId)) uniqueMatches.set(match.matchId, match)
-  }
+  const uniqueMatches = new Map(mergeMatchSummaries(matches).map((match) => [match.matchId, match]))
+  const retained = history
+    .filter((game) => !(game.match && (game.origin === 'opgg-import' || game.origin === 'riot-import') && confirmedMatchIds.has(game.match.matchId)))
+    .map((game) => {
+      if (!game.match) return game
+      const incoming = uniqueMatches.get(game.match.matchId)
+      if (!incoming) return game
+      uniqueMatches.delete(game.match.matchId)
+      return { ...game, match: mergeMatchSummaries([game.match, incoming])[0], sync: { status: 'synced' as const, lastAttemptAt: incoming.fetchedAt, message: null } }
+    })
   const importedGames = [...uniqueMatches.values()].map((match) => importedGame(match, dataset))
-  const replacedIds = new Set(uniqueMatches.keys())
-  const retained = history.filter((game) => !(game.match && (game.origin === 'opgg-import' || game.origin === 'riot-import') && replacedIds.has(game.match.matchId)))
   let confirmedNumber = 0
   let importedNumber = 0
   const merged = [...retained, ...importedGames]
     .sort((left, right) => Date.parse(left.confirmedAt) - Date.parse(right.confirmedAt) || left.id.localeCompare(right.id))
     .map((game) => ({ ...game, number: game.origin === 'opgg-import' || game.origin === 'riot-import' ? ++importedNumber : ++confirmedNumber }))
-  const added = [...uniqueMatches.keys()].filter((matchId) => !knownMatchIds.has(matchId)).length
-  return { history: merged, added, updated: importedGames.length - added }
+  const incomingIds = new Set(matches.map((match) => match.matchId))
+  const added = [...incomingIds].filter((matchId) => !knownMatchIds.has(matchId)).length
+  return { history: merged, added, updated: incomingIds.size - added }
 }

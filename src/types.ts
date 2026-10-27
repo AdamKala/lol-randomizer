@@ -99,6 +99,19 @@ export interface MatchSummary {
   participants: MatchParticipantStats[]
 }
 
+export interface StatisticsFile {
+  schemaVersion: 1
+  updatedAt: string
+  matches: MatchSummary[]
+}
+
+export interface StatisticsFileResult {
+  matches: MatchSummary[]
+  path: string
+  gitTrackable: boolean
+  exists: boolean
+}
+
 export interface MatchSyncState {
   status: MatchSyncStatus
   lastAttemptAt: string | null
@@ -153,7 +166,7 @@ export type RecentMatchesRange =
   | { mode: 'since'; since: string }
 
 export interface RecentMatchesImportRequest {
-  excludedMatchIds: string[]
+  cachedMatches: Array<{ matchId: string; detailedPlayerIds: string[] }>
   region: MatchRegion
   players: Array<{ playerId: string; displayName: string; riotId: string }>
   range: RecentMatchesRange
@@ -162,4 +175,5 @@ export interface RecentMatchesImportRequest {
 export interface RecentMatchesImportResult {
   matches: MatchSummary[]
   playerCount: number
+  cachedMatchesSkipped: number
 }

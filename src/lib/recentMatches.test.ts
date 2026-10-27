@@ -59,4 +59,21 @@ describe('import posledních Riot zápasů', () => {
     expect(refreshed.history).toHaveLength(1)
     expect(refreshed.history[0].match?.participants[0]).toMatchObject({ detailedStats: true, totalDamageDealtToChampions: 32100 })
   })
+
+  it('při aktualizaci zachová dříve uložené hráče stejného zápasu', () => {
+    const initial = mergeRecentMatches([], [match('EUN1_1', '2026-10-27T10:00:00.000Z', [participant()])], dataset)
+    const refreshed = mergeRecentMatches(initial.history, [match('EUN1_1', '2026-10-27T10:00:00.000Z', [participant({ playerId: 'p2', displayName: 'Boris', riotId: 'Boris#EUW', puuid: 'puuid-2' })])], dataset)
+
+    expect(refreshed.history).toHaveLength(1)
+    expect(refreshed.history[0].match?.participants.map((item) => item.playerId)).toEqual(['p1', 'p2'])
+  })
+
+  it('doplní cache do potvrzené hry bez vytvoření importovaného duplikátu', () => {
+    const [confirmed] = mergeRecentMatches([], [match('EUN1_1', '2026-10-27T10:00:00.000Z', [participant({ detailedStats: false })])], dataset).history
+    confirmed.origin = 'confirmed'
+    const refreshed = mergeRecentMatches([confirmed], [match('EUN1_1', '2026-10-27T10:00:00.000Z', [participant({ totalDamageDealtToChampions: 34567 })])], dataset)
+
+    expect(refreshed.history).toHaveLength(1)
+    expect(refreshed.history[0]).toMatchObject({ origin: 'confirmed', match: { participants: [expect.objectContaining({ totalDamageDealtToChampions: 34567 })] } })
+  })
 })

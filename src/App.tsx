@@ -42,6 +42,7 @@ import { calculatePlayerStats, type PlayerAggregate } from './lib/stats'
 import { mergeRecentMatches } from './lib/recentMatches'
 import { buildPlayerDetail } from './lib/playerDetail'
 import { buildGroupInsights } from './lib/groupInsights'
+import { cachedMatchCoverage, matchesFromHistory } from './lib/statistics-file'
 import { createHistoryBackup, DEFAULT_STATE, loadState, saveState, validateHistoryBackup } from './lib/storage'
 
 const ROLE_LABELS: Record<Role, { short: string; title: string; mark: string }> = {
@@ -230,7 +231,7 @@ function StatisticsPanel({ history, onPlayerSelect }: { history: ConfirmedGame[]
   return <div className="space-y-6">
     <Panel className="overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-white/[.08] p-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Skutečné výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><BarChart3 size={20} className="text-gold" /> Statistiky hráčů</h2><p className="mt-2 text-xs text-slate-600">Klikni na libovolný nadpis sloupce pro seřazení.</p></div><p className="text-sm text-slate-400">{syncedGames.length} zápasů · {performances} výkonů hráčů</p></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-xs"><thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><SortableHeader label="Hráč" sortKey="displayName" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-5 py-3" /><SortableHeader label="Hry" sortKey="games" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="W/L" sortKey="wins" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Winrate" sortKey="winRate" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="K / D / A" sortKey="kills" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="KDA" sortKey="kda" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Výkon Ø" sortKey="performance" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="CS Ø" sortKey="cs" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="DMG Ø" sortKey="damage" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Goldy Ø" sortKey="gold" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Vision Ø" sortKey="vision" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Nejhranější" sortKey="favoriteChampion" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-5 py-3" /></tr></thead><tbody className="divide-y divide-white/[.06]">{sortedStats.map((row) => <tr key={row.playerId} className="hover:bg-white/[.025]"><td className="px-5 py-3"><button type="button" className="group flex items-center gap-2 font-bold text-white transition hover:text-cyan" onClick={() => onPlayerSelect(row.playerId)}>{row.displayName}<ChevronRight size={14} className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-cyan" /></button></td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 font-bold text-cyan">{row.performanceSamples ? oneDecimal.format(row.performance / row.performanceSamples) : '—'}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.cs / row.games)}</td><td className="px-3 py-3 text-slate-300">{row.damageSamples ? integer.format(Math.round(row.damage / row.damageSamples)) : '—'}</td><td className="px-3 py-3 text-gold-light">{row.goldSamples ? integer.format(Math.round(row.gold / row.goldSamples)) : '—'}</td><td className="px-3 py-3 text-slate-300">{row.visionSamples ? oneDecimal.format(row.vision / row.visionSamples) : '—'}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-xs"><thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><SortableHeader label="Hráč" sortKey="displayName" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-5 py-3" /><SortableHeader label="Hry" sortKey="games" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="W/L" sortKey="wins" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Winrate" sortKey="winRate" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="K / D / A" sortKey="kills" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="KDA" sortKey="kda" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Výkon Ø" sortKey="performance" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="CS Ø" sortKey="cs" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="DMG Ø" sortKey="damage" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Goldy Ø" sortKey="gold" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Vision Ø" sortKey="vision" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-3 py-3" /><SortableHeader label="Nejhranější" sortKey="favoriteChampion" activeKey={sortKey} direction={sortDirection} onSort={sortBy} className="px-5 py-3" /></tr></thead><tbody className="divide-y divide-white/[.06]">{sortedStats.map((row) => <tr key={row.playerId} role="link" tabIndex={0} aria-label={`Otevřít statistiky hráče ${row.displayName}`} className="group cursor-pointer transition hover:bg-white/[.035] focus-visible:bg-cyan/[.05] focus-visible:outline-none" onClick={() => onPlayerSelect(row.playerId)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onPlayerSelect(row.playerId) } }}><td className="px-5 py-3"><span className="flex items-center gap-2 font-bold text-white transition group-hover:text-cyan">{row.displayName}<ChevronRight size={14} className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-cyan" /></span></td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 font-bold text-cyan">{row.performanceSamples ? oneDecimal.format(row.performance / row.performanceSamples) : '—'}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.cs / row.games)}</td><td className="px-3 py-3 text-slate-300">{row.damageSamples ? integer.format(Math.round(row.damage / row.damageSamples)) : '—'}</td><td className="px-3 py-3 text-gold-light">{row.goldSamples ? integer.format(Math.round(row.gold / row.goldSamples)) : '—'}</td><td className="px-3 py-3 text-slate-300">{row.visionSamples ? oneDecimal.format(row.vision / row.visionSamples) : '—'}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}</tbody></table></div>
     </Panel>
 
     <div className="grid gap-6 xl:grid-cols-[minmax(22rem,.75fr)_minmax(0,1.25fr)]">
@@ -425,6 +426,9 @@ export default function App() {
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
   const [rosterReady, setRosterReady] = useState(() => !window.desktop?.roster)
   const rosterSnapshot = useRef<string | null>(null)
+  const [statisticsReady, setStatisticsReady] = useState(() => !window.desktop?.statistics)
+  const statisticsLoadState = useRef<'idle' | 'loading' | 'done'>('idle')
+  const statisticsSnapshot = useRef<string | null>(null)
   const datasetInput = useRef<HTMLInputElement>(null)
   const dataset = state.customDataset ?? bundledDataset
 
@@ -477,6 +481,42 @@ export default function App() {
     }, 300)
     return () => window.clearTimeout(timer)
   }, [rosterReady, state.players])
+
+  useEffect(() => {
+    const statisticsBridge = window.desktop?.statistics
+    if (!dataset || !statisticsBridge || statisticsLoadState.current !== 'idle') return
+    statisticsLoadState.current = 'loading'
+    let active = true
+    statisticsBridge.load().then((loaded) => {
+      if (!active) return
+      statisticsLoadState.current = 'done'
+      statisticsSnapshot.current = JSON.stringify(loaded.matches)
+      setState((current) => ({ ...current, history: mergeRecentMatches(current.history, loaded.matches, dataset).history }))
+      setStatisticsReady(true)
+    }).catch((error: unknown) => {
+      if (!active) return
+      statisticsLoadState.current = 'done'
+      setMessage({ type: 'error', text: error instanceof Error ? `Soubor statistik se nepodařilo načíst: ${error.message}` : 'Soubor statistik se nepodařilo načíst.' })
+    })
+    return () => {
+      active = false
+      if (statisticsLoadState.current === 'loading') statisticsLoadState.current = 'idle'
+    }
+  }, [dataset])
+
+  useEffect(() => {
+    const statisticsBridge = window.desktop?.statistics
+    if (!statisticsReady || !statisticsBridge) return
+    const matches = matchesFromHistory(state.history)
+    const serialized = JSON.stringify(matches)
+    if (serialized === statisticsSnapshot.current) return
+    const timer = window.setTimeout(() => {
+      statisticsBridge.save(matches).then((saved) => {
+        statisticsSnapshot.current = JSON.stringify(saved.matches)
+      }).catch((error: unknown) => setMessage({ type: 'error', text: error instanceof Error ? `Statistiky se nepodařilo uložit do souboru: ${error.message}` : 'Statistiky se nepodařilo uložit do souboru.' }))
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [statisticsReady, state.history])
 
   const selectedPlayers = useMemo(() => state.players.filter((player) => state.selectedPlayerIds.includes(player.id)), [state.players, state.selectedPlayerIds])
   const cooldown = useMemo(() => getCooldownEntries(state.history, state.settings.cooldownGames), [state.history, state.settings.cooldownGames])
@@ -533,13 +573,15 @@ export default function App() {
     try {
       const current = stateRef.current
       const result = await bridge.importRecentMatches({
-        excludedMatchIds: current.history.flatMap((game) => (!game.origin || game.origin === 'confirmed') && game.match ? [game.match.matchId] : []),
+        cachedMatches: cachedMatchCoverage(current.history),
         region: current.settings.matchRegion,
         players: rosterPlayers.map((player) => ({ playerId: player.id, displayName: player.name, riotId: player.riotId })),
         range,
       })
       if (!result.matches.length) {
-        setMessage({ type: 'success', text: 'Ve zvoleném rozsahu nebyly na veřejných profilech OP.GG nalezeny žádné hry.' })
+        setMessage({ type: 'success', text: result.cachedMatchesSkipped
+          ? `Všech ${result.cachedMatchesSkipped} nalezených zápasů už máš kompletně uložených v cache.`
+          : 'Ve zvoleném rozsahu nebyly na veřejných profilech OP.GG nalezeny žádné hry.' })
         return true
       }
       const merged = mergeRecentMatches(stateRef.current.history, result.matches, dataset)
@@ -549,7 +591,8 @@ export default function App() {
       const importText = merged.added
         ? `Z OP.GG načteno ${merged.added} nových a aktualizováno ${merged.updated} dříve uložených zápasů pro ${result.playerCount} hráčů.`
         : `Z OP.GG aktualizováno ${merged.updated} uložených zápasů včetně detailních statistik.`
-      setMessage({ type: 'success', text: `${importText} Damage načten u ${detailedMatches}/${result.matches.length} zápasů.${skippedText}` })
+      const cacheText = result.cachedMatchesSkipped ? ` ${result.cachedMatchesSkipped} kompletních zápasů z cache nebylo stahováno znovu.` : ''
+      setMessage({ type: 'success', text: `${importText} Damage načten u ${detailedMatches}/${result.matches.length} zápasů.${cacheText}${skippedText}` })
       return true
     } catch (error) {
       const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Import posledních zápasů se nezdařil.'

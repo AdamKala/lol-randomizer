@@ -1,6 +1,6 @@
 export {}
 
-import type { MatchSyncRequest, MatchSyncResult, Player, RecentMatchesImportRequest, RecentMatchesImportResult, RosterFileResult } from './types'
+import type { MatchSummary, MatchSyncRequest, MatchSyncResult, Player, RecentMatchesImportRequest, RecentMatchesImportResult, RosterFileResult, StatisticsFileResult } from './types'
 
 declare global {
   interface Window {
@@ -14,6 +14,10 @@ declare global {
       roster: Readonly<{
         load: () => Promise<RosterFileResult>
         save: (players: Player[]) => Promise<RosterFileResult>
+      }>
+      statistics: Readonly<{
+        load: () => Promise<StatisticsFileResult>
+        save: (matches: MatchSummary[]) => Promise<StatisticsFileResult>
       }>
     }>
   }
