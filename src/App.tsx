@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import {
+  ArrowLeft,
   AlertTriangle,
   BarChart3,
   CalendarDays,
   Check,
   ChevronDown,
+  ChevronRight,
+  Coins,
+  Crosshair,
   Database,
   Dice5,
   Download,
   EllipsisVertical,
+  Eye,
   History as HistoryIcon,
   LoaderCircle,
   LockKeyhole,
@@ -22,6 +27,7 @@ import {
   Shuffle,
   Swords,
   Sun,
+  Trophy,
   Trash2,
   Undo2,
   Upload,
@@ -34,6 +40,7 @@ import { changePlayerRole, confirmDraft, generateDraft, getCooldownEntries, rero
 import { isDatasetStale, loadBundledDataset, validateMetaDataset } from './lib/meta'
 import { calculatePlayerStats } from './lib/stats'
 import { mergeRecentMatches } from './lib/recentMatches'
+import { buildPlayerDetail } from './lib/playerDetail'
 import { createHistoryBackup, DEFAULT_STATE, loadState, saveState, validateHistoryBackup } from './lib/storage'
 
 const ROLE_LABELS: Record<Role, { short: string; title: string; mark: string }> = {
@@ -173,7 +180,7 @@ function RecentImportDialog({ importing, onCancel, onImport }: { importing: bool
   )
 }
 
-function StatisticsPanel({ history }: { history: ConfirmedGame[] }) {
+function StatisticsPanel({ history, onPlayerSelect }: { history: ConfirmedGame[]; onPlayerSelect: (playerId: string) => void }) {
   const stats = useMemo(() => calculatePlayerStats(history), [history])
   const syncedGames = history.filter((game) => game.match)
   const performances = syncedGames.reduce((total, game) => total + (game.match?.participants.length ?? 0), 0)
@@ -187,12 +194,62 @@ function StatisticsPanel({ history }: { history: ConfirmedGame[] }) {
         <table className="w-full min-w-[980px] text-left text-xs">
           <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Hráč</th><th className="px-3 py-3">Hry</th><th className="px-3 py-3">W/L</th><th className="px-3 py-3">Winrate</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">Výkon Ø</th><th className="px-3 py-3">CS Ø</th><th className="px-3 py-3">DMG Ø</th><th className="px-3 py-3">Goldy Ø</th><th className="px-3 py-3">Vision Ø</th><th className="px-5 py-3">Nejhranější</th></tr></thead>
           <tbody className="divide-y divide-white/[.06]">
-            {stats.map((row) => <tr key={row.playerId} className="hover:bg-white/[.025]"><td className="px-5 py-3 font-bold text-white">{row.displayName}</td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 font-bold text-cyan">{row.performanceSamples ? oneDecimal.format(row.performance / row.performanceSamples) : '—'}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.cs / row.games)}</td><td className="px-3 py-3 text-slate-300">{row.damageSamples ? integer.format(Math.round(row.damage / row.damageSamples)) : '—'}</td><td className="px-3 py-3 text-gold-light">{row.goldSamples ? integer.format(Math.round(row.gold / row.goldSamples)) : '—'}</td><td className="px-3 py-3 text-slate-300">{row.visionSamples ? oneDecimal.format(row.vision / row.visionSamples) : '—'}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}
+            {stats.map((row) => <tr key={row.playerId} className="hover:bg-white/[.025]"><td className="px-5 py-3"><button type="button" className="group flex items-center gap-2 font-bold text-white transition hover:text-cyan" onClick={() => onPlayerSelect(row.playerId)}>{row.displayName}<ChevronRight size={14} className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-cyan" /></button></td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 font-bold text-cyan">{row.performanceSamples ? oneDecimal.format(row.performance / row.performanceSamples) : '—'}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.cs / row.games)}</td><td className="px-3 py-3 text-slate-300">{row.damageSamples ? integer.format(Math.round(row.damage / row.damageSamples)) : '—'}</td><td className="px-3 py-3 text-gold-light">{row.goldSamples ? integer.format(Math.round(row.gold / row.goldSamples)) : '—'}</td><td className="px-3 py-3 text-slate-300">{row.visionSamples ? oneDecimal.format(row.vision / row.visionSamples) : '—'}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}
           </tbody>
         </table>
       </div>
     </Panel>
   )
+}
+
+function PlayerDetailPanel({ playerId, player, history, onBack }: { playerId: string; player: Player | null; history: ConfirmedGame[]; onBack: () => void }) {
+  let identity: Pick<Player, 'id' | 'name' | 'riotId'> = player ?? { id: playerId, name: 'Neznámý hráč', riotId: '' }
+  if (!player) for (const game of history) {
+    const participant = game.match?.participants.find((item) => item.playerId === playerId)
+    if (participant) { identity = { id: playerId, name: participant.displayName, riotId: participant.riotId }; break }
+  }
+  const detail = buildPlayerDetail(history, identity)
+  const winRate = detail.games ? (detail.wins / detail.games) * 100 : 0
+  const averageKda = (detail.kills + detail.assists) / Math.max(1, detail.deaths)
+  const averageDamage = detail.damageSamples ? detail.damage / detail.damageSamples : 0
+  const averagePerformance = detail.performanceSamples ? detail.performance / detail.performanceSamples : 0
+  const maxRoleGames = Math.max(1, ...detail.roles.map((role) => role.games))
+  const recentForm = detail.matches.slice(0, 10).reverse()
+
+  const strengthIcon = (key: (typeof detail.strengths)[number]['key']) => {
+    if (key === 'form') return Trophy
+    if (key === 'kda') return Swords
+    if (key === 'damage') return Crosshair
+    if (key === 'vision') return Eye
+    if (key === 'performance') return BarChart3
+    return Coins
+  }
+
+  return <div className="space-y-6">
+    <Panel className="overflow-hidden">
+      <div className="flex flex-col gap-5 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between md:p-7">
+        <div className="flex min-w-0 items-center gap-4"><button type="button" className="btn-ghost !min-h-10 !px-3" onClick={onBack}><ArrowLeft size={17} /> Zpět</button><div className="min-w-0"><p className="eyebrow">Profil hráče</p><h2 className="mt-1 truncate font-display text-3xl font-bold text-gold-light">{detail.displayName}</h2>{detail.riotId && <p className="mt-1 truncate text-xs text-slate-500">{detail.riotId}</p>}</div></div>
+        <div className="flex flex-wrap gap-2 text-xs"><span className="rounded-full border border-cyan/20 bg-cyan/[.07] px-3 py-1.5 font-bold text-cyan">{detail.games} {detail.games === 1 ? 'hra' : detail.games >= 2 && detail.games <= 4 ? 'hry' : 'her'}</span>{detail.roles[0] && <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-slate-300">Nejčastěji {ROLE_LABELS[detail.roles[0].role].title}</span>}</div>
+      </div>
+      {!detail.games ? <div className="grid min-h-56 place-items-center p-8 text-center"><div><BarChart3 className="mx-auto text-slate-700" size={34} /><h3 className="mt-3 font-display text-lg font-bold text-slate-400">Zatím bez načtených her</h3><p className="mt-2 text-sm text-slate-600">Načti historii OP.GG a profil se automaticky doplní.</p></div></div> : <div className="grid grid-cols-2 gap-2 p-5 md:grid-cols-3 xl:grid-cols-6 md:p-7">
+        {[{ label: 'Bilance', value: `${detail.wins} / ${detail.losses}`, hint: 'výhry / prohry' }, { label: 'Winrate', value: `${oneDecimal.format(winRate)} %`, hint: `${detail.games} her` }, { label: 'Průměrné KDA', value: oneDecimal.format(averageKda), hint: `${oneDecimal.format(detail.kills / detail.games)} / ${oneDecimal.format(detail.deaths / detail.games)} / ${oneDecimal.format(detail.assists / detail.games)}` }, { label: 'DMG Ø', value: detail.damageSamples ? integer.format(Math.round(averageDamage)) : '—', hint: `${detail.damageSamples} detailních her` }, { label: 'OP.GG Ø', value: detail.performanceSamples ? oneDecimal.format(averagePerformance) : '—', hint: `${detail.mvpCount}× MVP` }, { label: 'TOP 3', value: integer.format(detail.topThreeCount), hint: 'pořadí v zápase' }].map((metric) => <div key={metric.label} className="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><span className="text-[.6rem] font-bold uppercase tracking-wider text-slate-600">{metric.label}</span><strong className="mt-1 block font-display text-2xl text-white">{metric.value}</strong><small className="mt-1 block text-[.65rem] text-slate-600">{metric.hint}</small></div>)}
+      </div>}
+    </Panel>
+
+    {detail.games > 0 && <>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,.65fr)]">
+        <Panel className="p-5 md:p-6"><p className="eyebrow">Nejlepší ukazatele</p><h3 className="section-title mt-1">V čem se hráči daří</h3><p className="mt-2 text-xs text-slate-600">Vyhodnoceno relativně z uložených her; nejde o porovnání s celým žebříčkem.</p><div className="mt-5 grid gap-3 md:grid-cols-3">{detail.strengths.map((strength) => { const Icon = strengthIcon(strength.key); return <div key={strength.key} className="rounded-xl border border-cyan/15 bg-cyan/[.035] p-4"><Icon size={18} className="text-cyan" /><strong className="mt-3 block text-sm text-white">{strength.label}</strong><span className="mt-1 block font-display text-xl font-bold text-gold-light">{strength.value}</span><p className="mt-2 text-xs leading-5 text-slate-500">{strength.description}</p></div> })}</div></Panel>
+        <Panel className="p-5 md:p-6"><p className="eyebrow">Posledních {recentForm.length}</p><h3 className="section-title mt-1">Aktuální forma</h3><div className="mt-5 grid h-32 items-end gap-2" style={{ gridTemplateColumns: `repeat(${Math.max(1, recentForm.length)}, minmax(1.5rem, 1fr))` }}>{recentForm.map((match) => { const score = match.participant.performanceScore; return <div key={match.gameId} className="flex h-full min-w-0 flex-col justify-end" title={`${dateTime.format(new Date(match.startedAt))} · ${match.participant.championName} · ${match.participant.win ? 'Výhra' : 'Prohra'}${score ? ` · ${oneDecimal.format(score)}` : ''}`}><div className={`min-h-3 rounded-t-sm ${match.participant.win ? 'bg-emerald-400/70' : 'bg-red-400/65'}`} style={{ height: `${Math.max(12, Math.min(100, score > 0 ? score * 10 : 35))}%` }} /><span className="mt-1 truncate text-center text-[.55rem] font-bold text-slate-600">{match.participant.championName.slice(0, 3)}</span></div> })}</div><div className="mt-4 flex items-center justify-between text-[.65rem]"><span className="text-emerald-300">■ Výhra</span><span className="text-slate-600">výška = OP.GG skóre</span><span className="text-red-300">■ Prohra</span></div></Panel>
+      </div>
+
+      <Panel className="overflow-hidden"><div className="border-b border-white/[.08] p-5 md:p-6"><p className="eyebrow">Champion pool</p><h3 className="section-title mt-1">Nejhranější šampioni</h3></div><div className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 md:p-6">{detail.champions.slice(0, 12).map((champion) => { const championKda = (champion.kills + champion.assists) / Math.max(1, champion.deaths); const championWinRate = (champion.wins / champion.games) * 100; return <article key={`${champion.championId}-${champion.championName}`} className="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div className="flex items-center gap-3">{champion.champion ? <ChampionImage champion={champion.champion} className="size-12 shrink-0 rounded-lg object-cover" /> : <div className="grid size-12 shrink-0 place-items-center rounded-lg bg-white/[.05] font-display text-xl text-gold">{champion.championName.slice(0, 1)}</div>}<div className="min-w-0 flex-1"><strong className="block truncate text-white">{champion.championName}</strong><p className="mt-1 text-xs text-slate-500">{champion.games} {champion.games === 1 ? 'hra' : champion.games >= 2 && champion.games <= 4 ? 'hry' : 'her'} · <span className={championWinRate >= 50 ? 'text-emerald-300' : 'text-red-300'}>{oneDecimal.format(championWinRate)} % WR</span></p></div></div><dl className="mt-4 grid grid-cols-4 gap-1.5 border-t border-white/[.06] pt-3 text-center">{[{ label: 'KDA', value: oneDecimal.format(championKda) }, { label: 'DMG Ø', value: champion.damageSamples ? integer.format(Math.round(champion.damage / champion.damageSamples)) : '—' }, { label: 'CS Ø', value: oneDecimal.format(champion.cs / champion.games) }, { label: 'OP.GG Ø', value: champion.performanceSamples ? oneDecimal.format(champion.performance / champion.performanceSamples) : '—' }].map((metric) => <div key={metric.label} className="min-w-0"><dt className="truncate text-[.55rem] uppercase text-slate-600">{metric.label}</dt><dd className="mt-1 truncate text-xs font-bold text-slate-200" title={metric.value}>{metric.value}</dd></div>)}</dl></article> })}</div></Panel>
+
+      <div className="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]">
+        <Panel className="p-5 md:p-6"><p className="eyebrow">Rozložení rolí</p><h3 className="section-title mt-1">Kde hráč nastupuje</h3><div className="mt-5 grid gap-4">{detail.roles.map((role) => <div key={role.role}><div className="mb-1.5 flex items-center justify-between gap-3 text-xs"><span className="font-bold text-slate-300">{ROLE_LABELS[role.role].title}</span><span className="text-slate-500">{role.games}× · {oneDecimal.format((role.wins / role.games) * 100)} % WR</span></div><div className="h-2.5 overflow-hidden rounded-full bg-white/[.05]"><div className="h-full rounded-full bg-gradient-to-r from-cyan/45 to-cyan" style={{ width: `${(role.games / maxRoleGames) * 100}%` }} /></div></div>)}</div></Panel>
+        <Panel className="overflow-hidden"><div className="border-b border-white/[.08] p-5 md:p-6"><p className="eyebrow">Historie hráče</p><h3 className="section-title mt-1">Poslední hry</h3></div><div className="max-h-[40rem] overflow-auto"><table className="w-full min-w-[900px] text-left text-xs"><thead className="sticky top-0 z-10 border-b border-white/[.07] bg-[#0b1424] text-[.58rem] uppercase tracking-wider text-slate-600"><tr><th className="px-5 py-3">Datum</th><th className="px-3 py-3">Šampion</th><th className="px-3 py-3">Role</th><th className="px-3 py-3">Výsledek</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">DMG</th><th className="px-3 py-3">Goldy</th><th className="px-3 py-3">CS</th><th className="px-3 py-3">Vision</th><th className="px-5 py-3">OP.GG</th></tr></thead><tbody className="divide-y divide-white/[.06]">{detail.matches.slice(0, 30).map((match) => { const participant = match.participant; const kda = (participant.kills + participant.assists) / Math.max(1, participant.deaths); return <tr key={match.gameId} className="hover:bg-white/[.025]"><td className="whitespace-nowrap px-5 py-3 text-slate-400">{dateTime.format(new Date(match.startedAt))}</td><td className="px-3 py-3 font-bold text-white">{participant.championName}</td><td className="px-3 py-3 text-slate-400">{ROLE_LABELS[match.role].short}</td><td className={`px-3 py-3 font-bold ${participant.win ? 'text-emerald-300' : 'text-red-300'}`}>{participant.win ? 'Výhra' : 'Prohra'}</td><td className="px-3 py-3 text-slate-200">{participant.kills} / {participant.deaths} / {participant.assists}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format(kda)}</td><td className="px-3 py-3 text-cyan">{participant.detailedStats ? integer.format(participant.totalDamageDealtToChampions) : '—'}</td><td className="px-3 py-3 text-gold-light">{participant.detailedStats ? integer.format(participant.goldEarned) : '—'}</td><td className="px-3 py-3 text-slate-300">{integer.format(participant.totalMinionsKilled + participant.neutralMinionsKilled)}</td><td className="px-3 py-3 text-slate-300">{participant.detailedStats ? integer.format(participant.visionScore) : '—'}</td><td className="px-5 py-3 font-bold text-cyan">{participant.performanceScore > 0 ? `${oneDecimal.format(participant.performanceScore)} · #${participant.performanceRank}` : '—'}</td></tr> })}</tbody></table></div></Panel>
+      </div>
+    </>}
+  </div>
 }
 
 function SyncBadge({ game }: { game: ConfirmedGame }) {
@@ -210,7 +267,7 @@ function performanceLabel(score: number, rank: number): string {
   return 'Bez hodnocení'
 }
 
-function RecentGamesPanel({ history, importing, onImport, onClear }: { history: ConfirmedGame[]; importing: boolean; onImport: () => void; onClear: () => void }) {
+function RecentGamesPanel({ history, importing, onImport, onClear, onPlayerSelect }: { history: ConfirmedGame[]; importing: boolean; onImport: () => void; onClear: () => void; onPlayerSelect: (playerId: string) => void }) {
   const games = [...history].sort((left, right) => Date.parse(right.confirmedAt) - Date.parse(left.confirmedAt))
   const missingDetails = games.filter((game) => game.match?.participants.some((participant) => !participant.detailedStats)).length
   return (
@@ -259,7 +316,7 @@ function RecentGamesPanel({ history, importing, onImport, onClear }: { history: 
                       { label: 'Vision', value: participant.detailedStats ? integer.format(participant.visionScore) : '—', className: 'text-slate-200' },
                       { label: 'Pořadí', value: participant.performanceRank > 0 ? `#${participant.performanceRank} / 10` : '—', className: 'text-slate-200' },
                     ]
-                    return <article key={participant.playerId} className="rounded-xl border border-white/[.07] bg-white/[.025] p-3.5 transition hover:border-cyan/20 hover:bg-cyan/[.025]"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-center gap-3">{slot && <ChampionImage champion={slot.champion} className="size-10 shrink-0 rounded-md object-cover" />}<div className="min-w-0"><strong className="block truncate text-sm text-white">{participant.displayName}</strong><p className="mt-0.5 truncate text-xs text-slate-500"><span className={participant.win ? 'text-emerald-300' : 'text-red-300'}>{participant.win ? 'Výhra' : 'Prohra'}</span> · {participant.championName}{slot ? ` · ${ROLE_LABELS[slot.role].short}` : participant.teamPosition ? ` · ${participant.teamPosition}` : ''}</p></div></div><span className="shrink-0 rounded-full border border-cyan/20 bg-cyan/[.08] px-2 py-1 text-[.65rem] font-bold text-cyan">{performanceLabel(participant.performanceScore, participant.performanceRank)}{participant.performanceScore > 0 ? ` · ${oneDecimal.format(participant.performanceScore)}` : ''}</span></div><dl className="mt-3 grid grid-cols-4 gap-1.5 border-t border-white/[.06] pt-3 text-center">{metrics.map((metric) => <div key={metric.label} className="min-w-0 rounded-md bg-black/10 px-1 py-2"><dt className="truncate text-[.56rem] uppercase tracking-wide text-slate-600" title={metric.label}>{metric.label}</dt><dd className={`mt-1 truncate text-xs font-bold ${metric.className}`} title={metric.value}>{metric.value}</dd></div>)}</dl></article>
+                    return <article key={participant.playerId} className="rounded-xl border border-white/[.07] bg-white/[.025] p-3.5 transition hover:border-cyan/20 hover:bg-cyan/[.025]"><div className="flex items-start justify-between gap-3"><button type="button" className="group flex min-w-0 items-center gap-3 text-left" onClick={() => onPlayerSelect(participant.playerId)} title={`Otevřít profil hráče ${participant.displayName}`}>{slot && <ChampionImage champion={slot.champion} className="size-10 shrink-0 rounded-md object-cover" />}<span className="min-w-0"><span className="flex items-center gap-1"><strong className="truncate text-sm text-white transition group-hover:text-cyan">{participant.displayName}</strong><ChevronRight size={13} className="shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-cyan" /></span><span className="mt-0.5 block truncate text-xs text-slate-500"><span className={participant.win ? 'text-emerald-300' : 'text-red-300'}>{participant.win ? 'Výhra' : 'Prohra'}</span> · {participant.championName}{slot ? ` · ${ROLE_LABELS[slot.role].short}` : participant.teamPosition ? ` · ${participant.teamPosition}` : ''}</span></span></button><span className="shrink-0 rounded-full border border-cyan/20 bg-cyan/[.08] px-2 py-1 text-[.65rem] font-bold text-cyan">{performanceLabel(participant.performanceScore, participant.performanceRank)}{participant.performanceScore > 0 ? ` · ${oneDecimal.format(participant.performanceScore)}` : ''}</span></div><dl className="mt-3 grid grid-cols-4 gap-1.5 border-t border-white/[.06] pt-3 text-center">{metrics.map((metric) => <div key={metric.label} className="min-w-0 rounded-md bg-black/10 px-1 py-2"><dt className="truncate text-[.56rem] uppercase tracking-wide text-slate-600" title={metric.label}>{metric.label}</dt><dd className={`mt-1 truncate text-xs font-bold ${metric.className}`} title={metric.value}>{metric.value}</dd></div>)}</dl></article>
                   })}</div></div></div>
               </div>
             </details>
@@ -323,6 +380,7 @@ export default function App() {
   const [importingRecent, setImportingRecent] = useState(false)
   const [recentImportOpen, setRecentImportOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<AppTab>('general')
+  const [selectedStatsPlayerId, setSelectedStatsPlayerId] = useState<string | null>(null)
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
   const [rosterFile, setRosterFile] = useState<RosterFileResult | null>(null)
   const [rosterReady, setRosterReady] = useState(() => !window.desktop?.roster)
@@ -561,6 +619,11 @@ export default function App() {
 
   const confirmedHistory = state.history.filter((game) => !game.origin || game.origin === 'confirmed')
   const recentHistory = state.history.filter((game) => game.origin === 'opgg-import' || game.origin === 'riot-import')
+  const openPlayerDetail = (playerId: string) => {
+    setSelectedStatsPlayerId(playerId)
+    setActiveTab('statistics')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const rosterPanel = (
     <Panel>
@@ -588,7 +651,7 @@ export default function App() {
         {state.players.map((player) => {
           const selected = state.selectedPlayerIds.includes(player.id)
           const editing = editingPlayer?.id === player.id ? editingPlayer : null
-          return <div key={player.id} className={`rounded-lg border p-2.5 transition ${selected ? 'border-cyan/35 bg-cyan/[.06]' : 'border-white/[.07] bg-white/[.02]'}`}>{editing ? <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); saveEditedPlayer() }}><div className="flex items-center gap-2"><input type="checkbox" className="size-5 shrink-0 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} aria-label={`${player.name} hraje`} /><input className="field !h-9 min-w-0 !px-2.5" value={editing.name} maxLength={40} onChange={(event) => setEditingPlayer({ ...editing, name: event.target.value })} aria-label="Jméno hráče" autoFocus /></div><input className="field !h-9 !px-2.5 text-xs" value={editing.riotId} maxLength={81} onChange={(event) => setEditingPlayer({ ...editing, riotId: event.target.value })} placeholder="Riot ID: Jméno#TAG (volitelné)" aria-label={`Riot ID hráče ${player.name}`} /><div className="flex justify-end gap-2"><button type="button" className="btn-ghost !min-h-8 !px-2.5 !text-xs" onClick={() => setEditingPlayer(null)}>Zrušit</button><button type="submit" className="btn-blue !min-h-8 !px-2.5 !text-xs"><Check size={13} /> Uložit</button></div></form> : <div className="flex items-center gap-2"><input type="checkbox" className="size-5 shrink-0 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} aria-label={`${player.name} hraje`} /><span className="min-w-0 flex-1 truncate px-1 text-sm font-semibold text-slate-200" title={player.name}>{player.name}</span><details className="group relative"><summary className="btn-ghost cursor-pointer list-none !min-h-9 !px-2.5" aria-label={`Možnosti hráče ${player.name}`}><EllipsisVertical size={16} /></summary><div className="absolute right-0 z-20 mt-2 grid w-36 gap-1 rounded-lg border border-white/10 bg-[#07101d] p-1.5 shadow-2xl"><button type="button" className="flex items-center gap-2 rounded px-3 py-2 text-left text-xs font-semibold text-slate-300 transition hover:bg-white/[.07] hover:text-white" onClick={() => setEditingPlayer({ id: player.id, name: player.name, riotId: player.riotId })}><Pencil size={14} /> Upravit</button><button type="button" className="flex items-center gap-2 rounded px-3 py-2 text-left text-xs font-semibold text-red-300 transition hover:bg-red-400/10" onClick={() => removePlayer(player)}><Trash2 size={14} /> Smazat</button></div></details></div>}</div>
+          return <div key={player.id} className={`rounded-lg border p-2.5 transition ${selected ? 'border-cyan/35 bg-cyan/[.06]' : 'border-white/[.07] bg-white/[.02]'}`}>{editing ? <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); saveEditedPlayer() }}><div className="flex items-center gap-2"><input type="checkbox" className="size-5 shrink-0 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} aria-label={`${player.name} hraje`} /><input className="field !h-9 min-w-0 !px-2.5" value={editing.name} maxLength={40} onChange={(event) => setEditingPlayer({ ...editing, name: event.target.value })} aria-label="Jméno hráče" autoFocus /></div><input className="field !h-9 !px-2.5 text-xs" value={editing.riotId} maxLength={81} onChange={(event) => setEditingPlayer({ ...editing, riotId: event.target.value })} placeholder="Riot ID: Jméno#TAG (volitelné)" aria-label={`Riot ID hráče ${player.name}`} /><div className="flex justify-end gap-2"><button type="button" className="btn-ghost !min-h-8 !px-2.5 !text-xs" onClick={() => setEditingPlayer(null)}>Zrušit</button><button type="submit" className="btn-blue !min-h-8 !px-2.5 !text-xs"><Check size={13} /> Uložit</button></div></form> : <div className="flex items-center gap-2"><input type="checkbox" className="size-5 shrink-0 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} aria-label={`${player.name} hraje`} /><button type="button" className="group flex min-w-0 flex-1 items-center gap-1 truncate px-1 text-left text-sm font-semibold text-slate-200 transition hover:text-cyan" title={`Otevřít profil hráče ${player.name}`} onClick={() => openPlayerDetail(player.id)}><span className="truncate">{player.name}</span><ChevronRight size={13} className="shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-cyan" /></button><details className="group relative"><summary className="btn-ghost cursor-pointer list-none !min-h-9 !px-2.5" aria-label={`Možnosti hráče ${player.name}`}><EllipsisVertical size={16} /></summary><div className="absolute right-0 z-20 mt-2 grid w-36 gap-1 rounded-lg border border-white/10 bg-[#07101d] p-1.5 shadow-2xl"><button type="button" className="flex items-center gap-2 rounded px-3 py-2 text-left text-xs font-semibold text-slate-300 transition hover:bg-white/[.07] hover:text-white" onClick={() => setEditingPlayer({ id: player.id, name: player.name, riotId: player.riotId })}><Pencil size={14} /> Upravit</button><button type="button" className="flex items-center gap-2 rounded px-3 py-2 text-left text-xs font-semibold text-red-300 transition hover:bg-red-400/10" onClick={() => removePlayer(player)}><Trash2 size={14} /> Smazat</button></div></details></div>}</div>
         })}
         {!state.players.length && <div className="rounded-lg border border-dashed border-white/10 p-5 text-center text-sm text-slate-600">Přidej prvního hráče.</div>}
       </div>
@@ -609,7 +672,7 @@ export default function App() {
         { id: 'general', label: 'Obecné', icon: Dice5 },
         { id: 'statistics', label: 'Statistiky', icon: BarChart3 },
         { id: 'recent', label: 'Poslední hry', icon: HistoryIcon },
-      ] as const).map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => setActiveTab(id)} className={`relative flex min-h-14 shrink-0 items-center gap-2 px-4 text-sm font-bold transition ${activeTab === id ? 'text-cyan' : 'text-slate-500 hover:text-slate-200'}`} aria-current={activeTab === id ? 'page' : undefined}><Icon size={17} /> {label}{activeTab === id && <span className="absolute inset-x-2 bottom-0 h-0.5 bg-cyan shadow-[0_0_12px_rgba(10,200,185,.7)]" />}</button>)}</div></nav>
+      ] as const).map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => { setActiveTab(id); setSelectedStatsPlayerId(null) }} className={`relative flex min-h-14 shrink-0 items-center gap-2 px-4 text-sm font-bold transition ${activeTab === id ? 'text-cyan' : 'text-slate-500 hover:text-slate-200'}`} aria-current={activeTab === id ? 'page' : undefined}><Icon size={17} /> {label}{activeTab === id && <span className="absolute inset-x-2 bottom-0 h-0.5 bg-cyan shadow-[0_0_12px_rgba(10,200,185,.7)]" />}</button>)}</div></nav>
 
       <main className="mx-auto max-w-[1900px] px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
         {message && <div className={`mb-6 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${message.type === 'error' ? 'border-red-400/25 bg-red-500/10 text-red-200' : 'border-emerald-400/25 bg-emerald-500/10 text-emerald-200'}`} role="status"><span className="flex items-center gap-2">{message.type === 'error' ? <AlertTriangle size={17} /> : <Check size={17} />}{message.text}</span><button type="button" onClick={() => setMessage(null)} aria-label="Zavřít zprávu"><X size={16} /></button></div>}
@@ -631,8 +694,8 @@ export default function App() {
             <Panel className="p-5"><p className="eyebrow">Stav skupiny</p><div className="mt-4 grid grid-cols-3 gap-2 text-center"><div className="rounded-lg bg-white/[.035] p-3"><Users className="mx-auto text-cyan/70" size={17} /><strong className="mt-2 block font-display text-lg text-white">{state.players.length}</strong><span className="text-[.62rem] text-slate-500">uloženo</span></div><div className="rounded-lg bg-white/[.035] p-3"><UserRoundCheck className="mx-auto text-emerald-300/70" size={17} /><strong className="mt-2 block font-display text-lg text-white">{selectedPlayers.length}</strong><span className="text-[.62rem] text-slate-500">hraje</span></div><div className="rounded-lg bg-white/[.035] p-3"><Swords className="mx-auto text-gold/80" size={17} /><strong className="mt-2 block font-display text-lg text-white">{state.history.length}</strong><span className="text-[.62rem] text-slate-500">her</span></div></div></Panel>
           </aside>
         </div>}
-        {activeTab === 'statistics' && <StatisticsPanel history={state.history} />}
-        {activeTab === 'recent' && <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => setRecentImportOpen(true)} onClear={clearRecent} />}
+        {activeTab === 'statistics' && (selectedStatsPlayerId ? <PlayerDetailPanel playerId={selectedStatsPlayerId} player={state.players.find((player) => player.id === selectedStatsPlayerId) ?? null} history={state.history} onBack={() => setSelectedStatsPlayerId(null)} /> : <StatisticsPanel history={state.history} onPlayerSelect={openPlayerDetail} />)}
+        {activeTab === 'recent' && <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => setRecentImportOpen(true)} onClear={clearRecent} onPlayerSelect={openPlayerDetail} />}
         <footer className="mt-12 border-t border-white/[.07] py-8 text-xs leading-6 text-slate-600">LoL Randomizer není podporován společností Riot Games a neodráží názory Riot Games ani nikoho, kdo se oficiálně podílí na produkci nebo správě jejích her. Riot Games a všechny související vlastnosti jsou ochranné známky nebo registrované ochranné známky společnosti Riot Games, Inc.</footer>
       </main>
       {confirming && state.draft && <ConfirmDialog draft={state.draft} onCancel={() => setConfirming(false)} onConfirm={confirm} />}

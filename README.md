@@ -56,6 +56,7 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - horní záložky **Obecné**, **Statistiky** a **Poslední hry**;
 - poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, linkou, K/D/A, KDA, damage, damage za minutu, goldy, CS, vision, OP.GG hodnocením a damage grafem;
 - samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage, goldy a vision;
+- proklikávací profil každého hráče s aktuální formou, nejlepšími ukazateli, rozdělením rolí, posledními hrami a statistikami nejhranějších šampionů;
 - tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
 - vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;
@@ -119,6 +120,7 @@ src/
 │   ├── randomizer.ts         # čisté losování, cooldown a potvrzení
 │   ├── meta.ts               # načtení a validace role datasetu
 │   ├── stats.ts              # agregace skutečných Riot výsledků
+│   ├── playerDetail.ts       # profil, forma, role a champion statistiky hráče
 │   ├── recentMatches.ts      # deduplikace a převod posledních zápasů do historie
 │   └── storage.ts            # migrace, verzované localStorage a zálohy
 └── types.ts
@@ -127,7 +129,7 @@ public/
 └── data/champion-roles.v1.json
 ```
 
-Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá testy ve `src/lib/randomizer.test.ts`.
+Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá samostatnými testy v `src/lib/*.test.ts`.
 
 ## Meta data
 

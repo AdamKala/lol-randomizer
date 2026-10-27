@@ -131,6 +131,16 @@ function createWindow(): BrowserWindow {
           await new Promise((resolve) => requestAnimationFrame(resolve))
           generalTab?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
+          const rosterPlayerButton = [...document.querySelectorAll('button')].find((button) => button.getAttribute('title')?.startsWith('Otevřít profil hráče'))
+          rosterPlayerButton?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          const playerProfile = [...document.querySelectorAll('p')].some((paragraph) => paragraph.textContent?.trim() === 'Profil hráče')
+          const playerProfileBack = [...document.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Zpět')
+          const playerProfileUi = Boolean(rosterPlayerButton && playerProfile && playerProfileBack)
+          playerProfileBack?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          generalTab?.click()
+          await new Promise((resolve) => requestAnimationFrame(resolve))
           return {
             title: document.title,
             heading: document.querySelector('h1')?.textContent ?? '',
@@ -140,7 +150,7 @@ function createWindow(): BrowserWindow {
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
-            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && recentPanel && importDialogUi),
+            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && recentPanel && importDialogUi && playerProfileUi),
             tabDiagnostics: {
               generalTab: Boolean(generalTab),
               statisticsTab: Boolean(statisticsTab),
@@ -154,6 +164,7 @@ function createWindow(): BrowserWindow {
               dateModeButton: Boolean(dateModeButton),
               dateInput: Boolean(dateInput),
               dateInputFormat,
+              playerProfileUi,
             },
             matchSyncBridge: typeof window.desktop?.matches?.syncGame === 'function',
             recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',
