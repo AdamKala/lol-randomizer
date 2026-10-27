@@ -12,7 +12,7 @@
     "build": "tsc -b && vite build",
     "start": "electron .",
     "pack": "npm run build && electron-builder --dir",
-    "dist:win": "npm run build && electron-builder --win nsis portable --x64",
+    "dist:win": "npm run build && electron-builder --win nsis portable --x64 --publish never",
     "assets:download": "node scripts/download-champion-icons.mjs",
     "lint": "eslint .",
     "test": "vitest run",
