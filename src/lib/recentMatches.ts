@@ -16,7 +16,7 @@ export function roleFromTeamPosition(position: string, fallbackIndex = 0): Role 
 }
 
 function championFor(participant: MatchParticipantStats, role: Role, dataset: MetaDataset): ChampionRoleEntry {
-  const candidates = dataset.entries.filter((entry) => entry.id === participant.championId)
+  const candidates = dataset.entries.filter((entry) => entry.id === participant.championId || entry.name.toLocaleLowerCase('en') === participant.championName.toLocaleLowerCase('en'))
   const known = candidates.find((entry) => entry.role === role) ?? candidates[0]
   if (known) return { ...known, role }
   return {
@@ -37,7 +37,7 @@ function importedGame(match: MatchSummary, dataset: MetaDataset): ConfirmedGame 
     confirmedAt: startedAt,
     patch: match.gameVersion.split('.').slice(0, 2).join('.') || dataset.patch,
     number: 0,
-    origin: 'riot-import',
+    origin: 'opgg-import',
     slots: match.participants.map((participant, index) => {
       const role = roleFromTeamPosition(participant.teamPosition, index)
       return {

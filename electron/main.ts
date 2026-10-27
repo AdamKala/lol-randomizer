@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, net, protocol, session, shell } from 'electron'
 import { dirname, isAbsolute, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { getRiotApiStatus, importRecentRiotMatches, setRiotApiKey, syncRiotMatch } from './riot'
+import { importRecentPublicMatches, syncPublicMatch } from './matches'
 import { loadRosterFile, saveRosterFile } from './roster'
 
 const electronRoot = dirname(fileURLToPath(import.meta.url))
@@ -96,13 +96,14 @@ function createWindow(): BrowserWindow {
           const storageBefore = localStorage.getItem(storageKey)
           if (storageBefore === 'persisted') localStorage.removeItem(storageKey)
           else localStorage.setItem(storageKey, 'persisted')
-          const riotStatus = typeof window.desktop?.riot?.getStatus === 'function'
-            ? await window.desktop.riot.getStatus()
-            : null
           const rosterStatus = typeof window.desktop?.roster?.load === 'function'
             ? await window.desktop.roster.load()
             : null
           const rosterWriteOk = ${verifyRosterWrite ? "Boolean(rosterStatus && (await window.desktop.roster.save(rosterStatus.players)).exists)" : 'true'}
+          document.documentElement.dataset.theme = 'light'
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          const lightTheme = getComputedStyle(document.documentElement).colorScheme === 'light'
+            && getComputedStyle(document.body).backgroundColor === 'rgb(233, 239, 245)'
           return {
             title: document.title,
             heading: document.querySelector('h1')?.textContent ?? '',
@@ -110,15 +111,17 @@ function createWindow(): BrowserWindow {
             iconOk,
             storageBefore,
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
+            settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
+            lightTheme,
             recentMatchesUi: document.body.textContent?.includes('Posledních 10 / hráč') === true,
-            riotBridge: Boolean(riotStatus && typeof riotStatus.hasApiKey === 'boolean'),
-            riotImportBridge: typeof window.desktop?.riot?.importRecentMatches === 'function',
+            matchSyncBridge: typeof window.desktop?.matches?.syncGame === 'function',
+            recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',
             rosterBridge: Boolean(rosterStatus && Array.isArray(rosterStatus.players)),
             rosterWriteOk,
           }
         })()`)
         console.log(`[electron-smoke] ${JSON.stringify(result)}`)
-        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.recentMatchesUi === true && result.riotBridge === true && result.riotImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true
+        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.recentMatchesUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true
         app.exit(valid ? 0 : 1)
       } catch (error) {
         console.error('[electron-smoke] selhal', error)
@@ -142,10 +145,8 @@ app.setAppUserModelId('cz.adamkala.lolrandomizer')
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null)
 
-  ipcMain.handle('riot:get-status', () => getRiotApiStatus())
-  ipcMain.handle('riot:set-api-key', (_event, apiKey: unknown) => setRiotApiKey(apiKey))
-  ipcMain.handle('riot:sync-game', (_event, request: unknown) => syncRiotMatch(request))
-  ipcMain.handle('riot:import-recent-matches', (_event, request: unknown) => importRecentRiotMatches(request))
+  ipcMain.handle('matches:sync-game', (_event, request: unknown) => syncPublicMatch(request))
+  ipcMain.handle('matches:import-recent', (_event, request: unknown) => importRecentPublicMatches(request))
   ipcMain.handle('roster:load', () => loadRosterFile())
   ipcMain.handle('roster:save', (_event, players: unknown) => saveRosterFile(players))
 

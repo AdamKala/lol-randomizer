@@ -4,7 +4,7 @@ import { ROLES } from '../types'
 import { changePlayerRole, confirmDraft, generateDraft, getBlockedChampionIds, getCooldownEntries, rerollOneChampion, validatePlayers } from './randomizer'
 import { loadState, saveState, STORAGE_KEY } from './storage'
 
-const settings: Settings = { cooldownGames: 3, minPickRate: 0.5, minGames: 100 }
+const settings: Settings = { cooldownGames: 3, minPickRate: 0.5, minGames: 100, theme: 'dark', matchRegion: 'eune' }
 const players: Player[] = ['Anna', 'Borek', 'Cyril', 'Dana', 'Erik', 'Filip'].map((name, index) => ({ id: `p${index + 1}`, name, riotId: `${name}#EUW` }))
 
 function entry(id: number, role: Role, offset = 0): ChampionRoleEntry {
@@ -107,7 +107,7 @@ describe('losování sestavy', () => {
 })
 
 describe('potvrzení a cooldown', () => {
-  it('potvrzení zapíše právě jeden záznam a nastaví čekání na Riot data', () => {
+  it('potvrzení zapíše právě jeden záznam a nastaví čekání na OP.GG data', () => {
     const draft = generateDraft(players.slice(0, 5), dataset, settings, [], deterministic)
     const once = confirmDraft(draft, [], '2026-10-27T12:00:00.000Z')
     const twice = confirmDraft(draft, once, '2026-10-27T12:00:01.000Z')
@@ -146,6 +146,11 @@ describe('potvrzení a cooldown', () => {
     const imported = { ...game('import', 42, 1), origin: 'riot-import' as const }
     expect(getBlockedChampionIds([imported], 3).has(42)).toBe(false)
     expect(getCooldownEntries([imported], 3)).toEqual([])
+  })
+
+  it('OP.GG import neovlivní cooldown potvrzených randomizer her', () => {
+    const imported = { ...game('opgg-import', 43, 1), origin: 'opgg-import' as const }
+    expect(getBlockedChampionIds([imported], 3).has(43)).toBe(false)
   })
 })
 

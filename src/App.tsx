@@ -9,10 +9,9 @@ import {
   Download,
   EllipsisVertical,
   History as HistoryIcon,
-  KeyRound,
-  Link2,
   LoaderCircle,
   LockKeyhole,
+  Moon,
   Pencil,
   Plus,
   RefreshCcw,
@@ -21,6 +20,7 @@ import {
   Shield,
   Shuffle,
   Swords,
+  Sun,
   Trash2,
   Undo2,
   Upload,
@@ -28,7 +28,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type Draft, type MetaDataset, type Player, type RiotApiStatus, type Role, type RosterFileResult, type Settings } from './types'
+import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type Draft, type MetaDataset, type Player, type Role, type RosterFileResult, type Settings } from './types'
 import { changePlayerRole, confirmDraft, generateDraft, getCooldownEntries, rerollOneChampion, validatePlayers } from './lib/randomizer'
 import { isDatasetStale, loadBundledDataset, validateMetaDataset } from './lib/meta'
 import { calculatePlayerStats } from './lib/stats'
@@ -139,10 +139,10 @@ function StatisticsPanel({ history }: { history: ConfirmedGame[] }) {
     <Panel className="overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-white/[.08] p-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Skutečné výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><BarChart3 size={20} className="text-gold" /> Statistiky</h2></div><p className="text-sm text-slate-400">{syncedGames.length} zápasů · {performances} výkonů hráčů</p></div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-xs">
-          <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Hráč</th><th className="px-3 py-3">Hry</th><th className="px-3 py-3">W/L</th><th className="px-3 py-3">Winrate</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">DMG Ø</th><th className="px-3 py-3">Vision Ø</th><th className="px-5 py-3">Nejhranější</th></tr></thead>
+        <table className="w-full min-w-[820px] text-left text-xs">
+          <thead className="border-b border-white/[.07] bg-black/10 text-[.62rem] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Hráč</th><th className="px-3 py-3">Hry</th><th className="px-3 py-3">W/L</th><th className="px-3 py-3">Winrate</th><th className="px-3 py-3">K / D / A</th><th className="px-3 py-3">KDA</th><th className="px-3 py-3">CS Ø</th><th className="px-3 py-3">DMG Ø</th><th className="px-3 py-3">Vision Ø</th><th className="px-5 py-3">Nejhranější</th></tr></thead>
           <tbody className="divide-y divide-white/[.06]">
-            {stats.map((row) => <tr key={row.playerId} className="hover:bg-white/[.025]"><td className="px-5 py-3 font-bold text-white">{row.displayName}</td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 text-slate-300">{integer.format(Math.round(row.damage / row.games))}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.vision / row.games)}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}
+            {stats.map((row) => <tr key={row.playerId} className="hover:bg-white/[.025]"><td className="px-5 py-3 font-bold text-white">{row.displayName}</td><td className="px-3 py-3 text-slate-300">{row.games}</td><td className="px-3 py-3 text-slate-300">{row.wins}/{row.losses}</td><td className="px-3 py-3 text-cyan">{oneDecimal.format((row.wins / row.games) * 100)} %</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.kills / row.games)} / {oneDecimal.format(row.deaths / row.games)} / {oneDecimal.format(row.assists / row.games)}</td><td className="px-3 py-3 text-gold-light">{oneDecimal.format((row.kills + row.assists) / Math.max(1, row.deaths))}</td><td className="px-3 py-3 text-slate-300">{oneDecimal.format(row.cs / row.games)}</td><td className="px-3 py-3 text-slate-300">{row.damageSamples ? integer.format(Math.round(row.damage / row.damageSamples)) : '—'}</td><td className="px-3 py-3 text-slate-300">{row.visionSamples ? oneDecimal.format(row.vision / row.visionSamples) : '—'}</td><td className="px-5 py-3 text-slate-300">{row.favoriteChampion}</td></tr>)}
           </tbody>
         </table>
       </div>
@@ -156,10 +156,9 @@ function SyncBadge({ game }: { game: ConfirmedGame }) {
   return <span className={`rounded-full border px-2.5 py-1 text-[.62rem] font-bold ${styles}`}>{label}</span>
 }
 
-function HistoryPanel({ history, syncingIds, hasApiKey, importingRecent, onSync, onImportRecent, onUndo, onClear, onExport, onImport }: {
+function HistoryPanel({ history, syncingIds, importingRecent, onSync, onImportRecent, onUndo, onClear, onExport, onImport }: {
   history: ConfirmedGame[]
   syncingIds: Set<string>
-  hasApiKey: boolean
   importingRecent: boolean
   onSync: (game: ConfirmedGame) => void
   onImportRecent: () => void
@@ -172,7 +171,7 @@ function HistoryPanel({ history, syncingIds, hasApiKey, importingRecent, onSync,
   return (
     <Panel className="overflow-hidden">
       <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Sestavy a Riot výsledky</p><h2 className="section-title mt-1 flex items-center gap-2"><HistoryIcon size={20} className="text-gold" /> Historie</h2></div><span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-semibold text-slate-300">{history.length} {history.length === 1 ? 'hra' : history.length >= 2 && history.length <= 4 ? 'hry' : 'her'}</span></div>
-      <div className="flex flex-wrap gap-2 border-b border-white/[.08] px-5 py-3"><button type="button" className="btn-blue !min-h-9 !px-3 !text-xs" onClick={onImportRecent} disabled={importingRecent} title={hasApiKey ? 'Načíst posledních 10 Riot zápasů každého hráče s vyplněným Riot ID' : 'Nejdřív ulož Riot API klíč v nastavení'}>{importingRecent ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importingRecent ? 'Načítám historii…' : 'Posledních 10 / hráč'}</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onUndo} disabled={!history.length}><Undo2 size={14} /> Vrátit poslední</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onExport} disabled={!history.length}><Download size={14} /> Export</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={() => importRef.current?.click()}><Upload size={14} /> Import</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear} disabled={!history.length}><Trash2 size={14} /> Vymazat</button><input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={onImport} /></div>
+      <div className="flex flex-wrap gap-2 border-b border-white/[.08] px-5 py-3"><button type="button" className="btn-blue !min-h-9 !px-3 !text-xs" onClick={onImportRecent} disabled={importingRecent} title="Načíst posledních 10 zápasů každého hráče z veřejných profilů OP.GG — bez API klíče">{importingRecent ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importingRecent ? 'Načítám z OP.GG…' : 'Posledních 10 / hráč'}</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onUndo} disabled={!history.length}><Undo2 size={14} /> Vrátit poslední</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={onExport} disabled={!history.length}><Download size={14} /> Export</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs" onClick={() => importRef.current?.click()}><Upload size={14} /> Import</button><button type="button" className="btn-ghost !min-h-9 !px-3 !text-xs hover:!border-red-400/40 hover:!text-red-300" onClick={onClear} disabled={!history.length}><Trash2 size={14} /> Vymazat</button><input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={onImport} /></div>
       {!history.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><HistoryIcon className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">První potvrzená hra se objeví tady.</p></div></div> : (
         <div className="max-h-[52rem] divide-y divide-white/[.07] overflow-y-auto">
           {[...history].reverse().map((game) => {
@@ -180,15 +179,15 @@ function HistoryPanel({ history, syncingIds, hasApiKey, importingRecent, onSync,
             const duration = game.match ? Math.round(game.match.durationSeconds / 60) : null
             return (
               <details key={game.id} className="group px-5 py-4 open:bg-white/[.02]" open={game === history.at(-1)}>
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-display text-sm font-bold text-gold-light">Hra #{game.number}</p><SyncBadge game={game} />{game.origin === 'riot-import' && <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-[.62rem] font-bold text-violet-200">RIOT IMPORT</span>}</div><p className="mt-1 text-xs text-slate-500">{dateTime.format(new Date(game.confirmedAt))} · patch {game.patch}{game.match ? ` · ${game.match.gameMode} · ${duration} min` : ''}</p></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition group-open:rotate-180" /></summary>
-                {game.sync.status !== 'synced' && <div className="mt-4 flex flex-col gap-3 rounded-lg border border-white/[.07] bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-slate-400">{game.sync.message ?? 'Výsledek zatím není načten.'}</p><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={() => onSync(game)} disabled={syncing || !hasApiKey}>{syncing ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCcw size={14} />} Načíst výsledek</button></div>}
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-display text-sm font-bold text-gold-light">Hra #{game.number}</p><SyncBadge game={game} />{game.origin === 'opgg-import' && <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-[.62rem] font-bold text-violet-200">OP.GG IMPORT</span>}</div><p className="mt-1 text-xs text-slate-500">{dateTime.format(new Date(game.confirmedAt))} · patch {game.patch}{game.match ? ` · ${game.match.gameMode}${duration ? ` · ${duration} min` : ''}` : ''}</p></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition group-open:rotate-180" /></summary>
+                {game.sync.status !== 'synced' && <div className="mt-4 flex flex-col gap-3 rounded-lg border border-white/[.07] bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-slate-400">{game.sync.message ?? 'Výsledek zatím není načten.'}</p><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={() => onSync(game)} disabled={syncing}>{syncing ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCcw size={14} />} Načíst z OP.GG</button></div>}
                 <div className="mt-4 grid gap-2">
                   {orderedByRole(game.slots).map((slot) => {
                     const actual = game.match?.participants.find((participant) => participant.playerId === slot.playerId)
-                    return <div key={`${game.id}-${slot.playerId}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"><ChampionImage champion={slot.champion} className="size-9 rounded object-cover" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-200">{slot.player}</p><p className="truncate text-[.68rem] text-slate-500">{game.origin === 'riot-import' ? `Hrál: ${actual?.championName ?? slot.champion.name}` : `Plán: ${slot.champion.name}${actual ? ` · Hrál: ${actual.championName}` : ''}`}</p></div>{actual ? <span className={`text-right text-[.68rem] font-bold ${actual.win ? 'text-emerald-300' : 'text-red-300'}`}>{actual.win ? 'VÝHRA' : 'PROHRA'}<small className="block font-normal text-slate-400">{actual.kills}/{actual.deaths}/{actual.assists}</small></span> : <span className="text-[.62rem] font-bold tracking-wider text-cyan/80">{slot.role}</span>}</div>
+                    return <div key={`${game.id}-${slot.playerId}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"><ChampionImage champion={slot.champion} className="size-9 rounded object-cover" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-200">{slot.player}</p><p className="truncate text-[.68rem] text-slate-500">{game.origin === 'opgg-import' || game.origin === 'riot-import' ? `Hrál: ${actual?.championName ?? slot.champion.name}` : `Plán: ${slot.champion.name}${actual ? ` · Hrál: ${actual.championName}` : ''}`}</p></div>{actual ? <span className={`text-right text-[.68rem] font-bold ${actual.win ? 'text-emerald-300' : 'text-red-300'}`}>{actual.win ? 'VÝHRA' : 'PROHRA'}<small className="block font-normal text-slate-400">{actual.kills}/{actual.deaths}/{actual.assists}</small></span> : <span className="text-[.62rem] font-bold tracking-wider text-cyan/80">{slot.role}</span>}</div>
                   })}
                 </div>
-                {game.match && <p className="mt-4 break-all border-t border-white/[.06] pt-3 text-[.62rem] text-slate-600">Riot match: {game.match.matchId} · načteno {dateTime.format(new Date(game.match.fetchedAt))}</p>}
+                {game.match && <p className="mt-4 break-all border-t border-white/[.06] pt-3 text-[.62rem] text-slate-600">{game.match.source === 'opgg' ? 'OP.GG' : 'Riot'} match: {game.match.matchId} · načteno {dateTime.format(new Date(game.match.fetchedAt))}</p>}
               </details>
             )
           })}
@@ -208,9 +207,6 @@ export default function App() {
   const [newPlayerName, setNewPlayerName] = useState('')
   const [newPlayerRiotId, setNewPlayerRiotId] = useState('')
   const [editingPlayer, setEditingPlayer] = useState<Pick<Player, 'id' | 'name' | 'riotId'> | null>(null)
-  const [riotStatus, setRiotStatus] = useState<RiotApiStatus>({ hasApiKey: false, protectedStorage: false })
-  const [apiKey, setApiKey] = useState('')
-  const [savingApiKey, setSavingApiKey] = useState(false)
   const [importingRecent, setImportingRecent] = useState(false)
   const [syncingIds, setSyncingIds] = useState<Set<string>>(() => new Set())
   const [rosterFile, setRosterFile] = useState<RosterFileResult | null>(null)
@@ -222,7 +218,6 @@ export default function App() {
   useEffect(() => {
     let active = true
     loadBundledDataset().then((data) => { if (active) setBundledDataset(data) }).catch((error: unknown) => { if (active) setLoadingError(error instanceof Error ? error.message : 'Dataset se nepodařilo načíst.') })
-    window.desktop?.riot.getStatus().then((status) => { if (active) setRiotStatus(status) }).catch(() => undefined)
     const rosterBridge = window.desktop?.roster
     if (rosterBridge) rosterBridge.load().then(async (loaded) => {
       if (!active) return
@@ -253,6 +248,10 @@ export default function App() {
   useEffect(() => { stateRef.current = state; saveState(state) }, [state])
 
   useEffect(() => {
+    document.documentElement.dataset.theme = state.settings.theme
+  }, [state.settings.theme])
+
+  useEffect(() => {
     const rosterBridge = window.desktop?.roster
     if (!rosterReady || !rosterBridge) return
     const serialized = JSON.stringify(state.players)
@@ -279,9 +278,9 @@ export default function App() {
   }, [dataset, state.settings.minGames, state.settings.minPickRate])
 
   const syncGame = useCallback(async (game: ConfirmedGame, silent = false) => {
-    const bridge = window.desktop?.riot
+    const bridge = window.desktop?.matches
     if (!bridge) {
-      if (!silent) setMessage({ type: 'error', text: 'Synchronizace Riot API funguje pouze v desktopové Electron aplikaci.' })
+      if (!silent) setMessage({ type: 'error', text: 'Načítání OP.GG historie funguje pouze v desktopové Electron aplikaci.' })
       return
     }
     const current = stateRef.current
@@ -296,7 +295,7 @@ export default function App() {
     }
     setSyncingIds((ids) => new Set(ids).add(game.id))
     try {
-      const result = await bridge.syncGame({ gameId: game.id, confirmedAt: game.confirmedAt, players, excludedMatchIds: current.history.flatMap((item) => item.match ? [item.match.matchId] : []) })
+      const result = await bridge.syncGame({ gameId: game.id, confirmedAt: game.confirmedAt, region: current.settings.matchRegion, players, excludedMatchIds: current.history.flatMap((item) => item.match ? [item.match.matchId] : []) })
       const attemptedAt = new Date().toISOString()
       setState((value) => ({ ...value, history: value.history.map((item) => item.id !== game.id ? item : result.kind === 'matched'
         ? { ...item, match: result.match, sync: { status: 'synced', lastAttemptAt: attemptedAt, message: null } }
@@ -313,9 +312,8 @@ export default function App() {
   }, [])
 
   const importRecentMatches = async () => {
-    const bridge = window.desktop?.riot
-    if (!bridge || !dataset) return setMessage({ type: 'error', text: 'Import Riot historie funguje pouze v desktopové aplikaci.' })
-    if (!riotStatus.hasApiKey) return setMessage({ type: 'error', text: 'Nejdřív v nastavení ulož Riot API klíč.' })
+    const bridge = window.desktop?.matches
+    if (!bridge || !dataset) return setMessage({ type: 'error', text: 'Import OP.GG historie funguje pouze v desktopové aplikaci.' })
     const rosterPlayers = stateRef.current.players.filter((player) => player.riotId.includes('#'))
     const skipped = stateRef.current.players.length - rosterPlayers.length
     if (!rosterPlayers.length) return setMessage({ type: 'error', text: 'Alespoň jeden hráč musí mít vyplněné Riot ID ve formátu Jméno#TAG.' })
@@ -326,12 +324,13 @@ export default function App() {
       const current = stateRef.current
       const result = await bridge.importRecentMatches({
         excludedMatchIds: current.history.flatMap((game) => game.match ? [game.match.matchId] : []),
+        region: current.settings.matchRegion,
         players: rosterPlayers.map((player) => ({ playerId: player.id, displayName: player.name, riotId: player.riotId })),
       })
       const merged = mergeRecentMatches(stateRef.current.history, result.matches, dataset)
       setState((value) => ({ ...value, history: merged.history }))
       const skippedText = skipped ? ` Bez Riot ID (přeskočeno): ${skipped}.` : ''
-      setMessage({ type: 'success', text: merged.added ? `Načteno ${merged.added} nových unikátních zápasů pro ${result.playerCount} hráčů.${skippedText}` : `Poslední zápasy už jsou v historii.${skippedText}` })
+      setMessage({ type: 'success', text: merged.added ? `Z OP.GG načteno ${merged.added} nových unikátních zápasů pro ${result.playerCount} hráčů.${skippedText}` : `Poslední OP.GG zápasy už jsou v historii.${skippedText}` })
     } catch (error) {
       const text = error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Import posledních zápasů se nezdařil.'
       setMessage({ type: 'error', text })
@@ -341,14 +340,14 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!riotStatus.hasApiKey || !pendingSignature) return
+    if (!pendingSignature) return
     const runPending = () => {
       for (const game of stateRef.current.history.filter((item) => item.sync.status === 'pending')) void syncGame(game, true)
     }
     const initial = window.setTimeout(runPending, 4_000)
     const interval = window.setInterval(runPending, 3 * 60_000)
     return () => { window.clearTimeout(initial); window.clearInterval(interval) }
-  }, [pendingSignature, riotStatus.hasApiKey, syncGame])
+  }, [pendingSignature, syncGame])
 
   const updateSettings = (patch: Partial<Settings>) => setState((current) => ({ ...current, settings: { ...current.settings, ...patch } }))
 
@@ -415,25 +414,6 @@ export default function App() {
     if (editingPlayer?.id === player.id) setEditingPlayer(null)
   }
 
-  const saveApiKey = async () => {
-    if (!window.desktop?.riot) return setMessage({ type: 'error', text: 'API klíč lze uložit jen v desktopové aplikaci.' })
-    setSavingApiKey(true)
-    try {
-      const status = await window.desktop.riot.setApiKey(apiKey)
-      setRiotStatus(status); setApiKey('')
-      setState((current) => ({ ...current, history: current.history.map((game) => game.sync.status === 'error' && !game.match ? { ...game, sync: { ...game.sync, status: 'pending' } } : game) }))
-      setMessage({ type: 'success', text: 'Riot API klíč byl uložen pouze v lokálním profilu aplikace.' })
-    } catch (error) { setMessage({ type: 'error', text: error instanceof Error ? error.message : 'API klíč se nepodařilo uložit.' }) }
-    finally { setSavingApiKey(false) }
-  }
-
-  const removeApiKey = async () => {
-    if (!window.desktop?.riot) return
-    setSavingApiKey(true)
-    try { setRiotStatus(await window.desktop.riot.setApiKey('')); setApiKey(''); setMessage({ type: 'success', text: 'Riot API klíč byl z počítače odstraněn.' }) }
-    finally { setSavingApiKey(false) }
-  }
-
   const importDataset = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; event.target.value = ''; if (!file) return
     try { const imported = validateMetaDataset(JSON.parse(await file.text())); setState((current) => ({ ...current, customDataset: imported, settings: { ...current.settings, minPickRate: imported.defaults.minPickRate, minGames: imported.defaults.minGames } })); setMessage({ type: 'success', text: `Dataset pro patch ${imported.patch} byl ověřen a aktivován.` }) }
@@ -448,7 +428,7 @@ export default function App() {
 
   const undo = () => { const last = state.history.at(-1); if (!last || !window.confirm(`Vrátit hru #${last.number}? Cooldown i statistiky se přepočítají.`)) return; setState((current) => ({ ...current, history: current.history.slice(0, -1) })) }
   const clear = () => { if (!window.confirm('Opravdu vymazat celou historii? Tuto akci nelze vrátit.')) return; setState((current) => ({ ...current, history: [] })); setMessage({ type: 'success', text: 'Historie byla vymazána.' }) }
-  const resetApp = () => { if (!window.confirm('Obnovit celou aplikaci do výchozího stavu včetně rosteru a historie? Riot API klíč se nemaže.')) return; setState(DEFAULT_STATE) }
+  const resetApp = () => { if (!window.confirm('Obnovit celou aplikaci do výchozího stavu včetně rosteru a historie?')) return; setState(DEFAULT_STATE) }
 
   if (loadingError && !dataset) return <main className="grid min-h-screen place-items-center p-6"><Panel className="max-w-lg p-8 text-center"><AlertTriangle className="mx-auto text-red-300" /><h1 className="mt-4 font-display text-2xl text-gold-light">Data se nenačetla</h1><p className="mt-3 text-sm text-slate-400">{loadingError}</p></Panel></main>
 
@@ -458,12 +438,14 @@ export default function App() {
         <div className="flex items-start justify-between gap-3">
           <div><p className="eyebrow">Stálý roster</p><h2 className="section-title mt-1">Hráči</h2></div>
           <details className="group relative">
-            <summary className="btn-ghost cursor-pointer list-none !min-h-9 !px-3"><Settings2 size={15} /><span className="sr-only">Nastavení</span><ChevronDown size={14} className="transition group-open:rotate-180" /></summary>
+            <summary className="btn-ghost cursor-pointer list-none !min-h-9 !px-2.5 !text-xs"><Settings2 size={15} /> Nastavení <ChevronDown size={14} className="transition group-open:rotate-180" /></summary>
             <div className="absolute right-0 z-30 mt-3 grid w-[min(30rem,calc(100vw-3rem))] gap-4 rounded-lg border border-white/10 bg-[#07101d] p-4 shadow-2xl xl:left-0 xl:right-auto xl:w-[30rem]">
+              <div className="grid grid-cols-[1fr_auto] items-center gap-4 text-sm text-slate-300"><span>Vzhled aplikace</span><div className="flex rounded-md border border-white/10 bg-black/10 p-1"><button type="button" className={`inline-flex min-h-8 items-center gap-1.5 rounded px-2.5 text-xs font-bold transition ${state.settings.theme === 'dark' ? 'bg-cyan/15 text-cyan' : 'text-slate-500 hover:text-slate-200'}`} onClick={() => updateSettings({ theme: 'dark' })}><Moon size={14} /> Tmavý</button><button type="button" className={`inline-flex min-h-8 items-center gap-1.5 rounded px-2.5 text-xs font-bold transition ${state.settings.theme === 'light' ? 'bg-gold/20 text-gold-light' : 'text-slate-500 hover:text-slate-200'}`} onClick={() => updateSettings({ theme: 'light' })}><Sun size={14} /> Světlý</button></div></div>
+              <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Region historie <small className="block text-slate-600">pro veřejné profily OP.GG</small></span><select className="field !h-10 !px-3" value={state.settings.matchRegion} onChange={(event) => updateSettings({ matchRegion: event.target.value as Settings['matchRegion'] })}><option value="eune">EUNE</option><option value="euw">EUW</option></select></label>
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Cooldown potvrzených her <small className="block text-slate-600">0–10 her</small></span><input className="field text-center" type="number" min="0" max="10" value={state.settings.cooldownGames} onChange={(event) => updateSettings({ cooldownGames: Math.max(0, Math.min(10, Number(event.target.value))) })} /></label>
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální pick rate <small className="block text-slate-600">v procentech</small></span><input className="field text-center" type="number" min="0" max="100" step="0.1" value={state.settings.minPickRate} onChange={(event) => updateSettings({ minPickRate: Math.max(0, Number(event.target.value)) })} /></label>
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální počet her</span><input className="field text-center" type="number" min="0" step="100" value={state.settings.minGames} onChange={(event) => updateSettings({ minGames: Math.max(0, Number(event.target.value)) })} /></label>
-              <div className="border-t border-white/[.08] pt-4"><div className="flex items-center gap-2 text-sm font-bold text-white"><KeyRound size={16} className="text-gold" /> Riot API pro výsledky</div><p className="mt-2 text-xs leading-5 text-slate-500">Klíč se neposílá do GitHubu ani exportu. Vývojový klíč z Riot portálu expiruje po 24 hodinách.</p><input type="password" className="field mt-3" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={riotStatus.hasApiKey ? 'Klíč je uložený — vložením ho nahradíš' : 'RGAPI-…'} autoComplete="off" /><div className="mt-2 flex flex-wrap gap-2"><button type="button" className="btn-blue !min-h-9 !text-xs" onClick={() => void saveApiKey()} disabled={savingApiKey || !apiKey.trim()}>{savingApiKey ? <LoaderCircle size={14} className="animate-spin" /> : <KeyRound size={14} />} Uložit klíč</button>{riotStatus.hasApiKey && <button type="button" className="btn-ghost !min-h-9 !text-xs" onClick={() => void removeApiKey()} disabled={savingApiKey}>Odstranit klíč</button>}<a className="btn-ghost !min-h-9 !text-xs" href="https://developer.riotgames.com/" target="_blank" rel="noreferrer"><Link2 size={14} /> Riot Portal</a></div><p className={`mt-2 text-[.65rem] ${riotStatus.hasApiKey ? 'text-emerald-300/80' : 'text-slate-600'}`}>{riotStatus.hasApiKey ? `Klíč uložen${riotStatus.protectedStorage ? ' a chráněn systémovým úložištěm' : ' lokálně s omezenými právy souboru'}.` : 'Klíč zatím není nastaven.'}</p></div>
+              <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] p-3"><div className="flex items-center gap-2 text-sm font-bold text-emerald-200"><Check size={16} /> Bez API klíče</div><p className="mt-1.5 text-xs leading-5 text-slate-500">Výsledky a posledních 10 her aplikace čte z veřejných profilů OP.GG. Stačí správné Riot ID a zvolený region.</p></div>
               <button type="button" className="btn-ghost !text-xs hover:!border-red-400/30 hover:!text-red-300" onClick={resetApp}><Trash2 size={14} /> Obnovit celou aplikaci</button>
             </div>
           </details>
@@ -503,7 +485,7 @@ export default function App() {
             {state.draft ? <Panel className="overflow-hidden border-gold/20"><div className="flex flex-col gap-3 border-b border-white/[.08] px-5 py-5 sm:flex-row sm:items-end sm:justify-between md:px-7"><div><p className="eyebrow">Nepotvrzený návrh</p><h2 className="section-title mt-1">Tvoje sestava</h2></div><p className="text-xs text-slate-500">Reroll ani individuální změna linky nemění historii a cooldown</p></div><div className="grid grid-cols-5 gap-2 p-3 md:gap-3 md:p-5">{orderedByRole(state.draft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${state.draft!.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
 
             <StatisticsPanel history={state.history} />
-            <HistoryPanel history={state.history} syncingIds={syncingIds} hasApiKey={riotStatus.hasApiKey} importingRecent={importingRecent} onSync={(game) => void syncGame(game)} onImportRecent={() => void importRecentMatches()} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
+            <HistoryPanel history={state.history} syncingIds={syncingIds} importingRecent={importingRecent} onSync={(game) => void syncGame(game)} onImportRecent={() => void importRecentMatches()} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-6">

@@ -1,6 +1,6 @@
 # LoL Randomizer Desktop
 
-Nativně spouštěná desktopová aplikace postavená na Electronu, Reactu, TypeScriptu a Vite. Uchovává stálý roster, z 1–5 zaškrtnutých hráčů náhodně rozdělí role a šampiony, hlídá globální cooldown a přes oficiální Riot API doplní výsledky potvrzených her, posledních deset zápasů hráčů a dlouhodobé statistiky.
+Nativně spouštěná desktopová aplikace postavená na Electronu, Reactu, TypeScriptu a Vite. Uchovává stálý roster, z 1–5 zaškrtnutých hráčů náhodně rozdělí role a šampiony, hlídá globální cooldown a bez API klíče doplní z veřejných profilů OP.GG výsledky, posledních deset zápasů a dlouhodobé statistiky.
 
 ## Rychlý start
 
@@ -35,8 +35,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.1.4-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.1.4-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.2.0-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.2.0-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
@@ -49,9 +49,10 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - reroll rolí i šampionů, pouze šampionů nebo jednoho šampiona;
 - individuální změna linky na kartě hráče; obsazená linka se prohodí pouze mezi dotčenými dvěma hráči;
 - potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
-- automatické dohledání společného dokončeného zápasu přes oficiální Riot `account-v1` a `match-v5`;
+- automatické dohledání společného dokončeného zápasu z veřejných profilů OP.GG bez API klíče;
 - jednorázový import posledních 10 zápasů každého hráče s Riot ID, včetně deduplikace společných her;
-- skutečný výsledek, hraný šampion, K/D/A, damage, vision, CS a agregované statistiky hráčů;
+- skutečný výsledek, hraný šampion, K/D/A, CS a agregované statistiky hráčů;
+- tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
 - vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;
 - JSON export/import historie a validovaný import novějších meta dat;
@@ -71,24 +72,21 @@ git push
 
 Push není prováděn automaticky aplikací. Výběr hráčů, rozpracovaný draft, historie, stažené výsledky, nastavení a importovaný dataset zůstávají v persistentním Chromium `localStorage`; nepatří do Gitu. Instalovaná či portable aplikace nemá pracovní Git repozitář, a proto používá vlastní `players.json` v uživatelském profilu. Git synchronizace rosteru funguje při spuštění přes `npm run dev` nebo `npm start` přímo v checkoutu projektu.
 
-Pozor: `data/players.json` obsahuje jména a případná Riot ID v čitelné podobě. V public repozitáři budou po pushi veřejná. Riot API klíč se do tohoto souboru nikdy nezapisuje.
+Pozor: `data/players.json` obsahuje jména a případná Riot ID v čitelné podobě. V public repozitáři budou po pushi veřejná.
 
-Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nový výsledek lze přirozeně načíst jen s připojením k internetu a platným Riot API klíčem.
+Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nový výsledek lze načíst jen s připojením k internetu a dostupným veřejným profilem OP.GG.
 
 ## Automatické výsledky a statistiky
 
 1. U každého hráče vyplň Riot ID ve formátu `Jméno#TAG`.
-2. Na [Riot Developer Portal](https://developer.riotgames.com/) si vytvoř API klíč.
-3. V aplikaci otevři **Nastavení → Riot API pro výsledky**, vlož klíč a ulož ho.
-4. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
-5. Po dohrání aplikace zápas automaticky dohledá. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
-6. Tlačítko **Posledních 10 / hráč** načte posledních deset zápasů všech uložených hráčů s Riot ID. Společné zápasy uloží jen jednou a hráče bez Riot ID přeskočí.
+2. Ve viditelném menu **Nastavení** vyber region EUNE nebo EUW.
+3. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
+4. Po dohrání aplikace společný zápas automaticky dohledá na OP.GG. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
+5. Tlačítko **Posledních 10 / hráč** načte posledních deset zápasů všech uložených hráčů s Riot ID. Společné zápasy uloží jen jednou a hráče bez Riot ID přeskočí.
 
-Importované zápasy jsou v historii označené jako **RIOT IMPORT** a vstupují do statistik, ale neovlivňují cooldown randomizeru.
+Importované zápasy jsou v historii označené jako **OP.GG IMPORT** a vstupují do statistik, ale neovlivňují cooldown randomizeru. Veřejný OP.GG profil poskytuje výsledek, šampiona, K/D/A a CS. Damage a vision v něm nejsou, proto aplikace u těchto hodnot místo zavádějící nuly zobrazí pomlčku.
 
-Vyhledávání používá evropský Riot routing cluster a přijme společnou hru, která začala nejvýše 12 hodin po potvrzení sestavy. Vývojové klíče Riot expirují po 24 hodinách. Pro malou soukromou skupinu je vhodný osobní klíč; pro veřejnou distribuci je podle pravidel Riotu nutné registrovat produkt a použít odpovídající produkční řešení.
-
-API klíč není součástí zdrojového kódu, `localStorage`, exportu ani Git repozitáře. Ukládá ho Electron v uživatelském profilu aplikace, s oprávněním pouze pro uživatele a se systémovým šifrováním tam, kde je dostupné.
+Automatické párování přijme společnou hru, která začala nejvýše 12 hodin po potvrzení sestavy. OP.GG je externí web a jeho HTML se může v budoucnu změnit; aplikace proto používá jeho veřejný strukturovaný JSON-LD výstup a při nekompatibilní změně zobrazí konkrétní chybu namísto poškození historie.
 
 ## Bezpečnost Electronu
 
@@ -96,8 +94,8 @@ API klíč není součástí zdrojového kódu, `localStorage`, exportu ani Git 
 - `nodeIntegration: false`;
 - Chromium sandbox je zapnutý;
 - renderer nemá přístup k Node.js ani obecnému IPC;
-- preload zveřejňuje jen úzce vymezené operace pro stav/uložení API klíče a načtení zápasu;
-- renderer nikdy nedostane uložený API klíč zpět a nemůže určit cílovou URL požadavku;
+- preload zveřejňuje jen úzce vymezené operace pro načtení posledních a společných zápasů;
+- renderer nemůže určit libovolnou cílovou URL; Electron main proces komunikuje pouze s veřejnými profily `https://op.gg/lol/summoners/...`;
 - všechny permission requesty jsou zamítnuté;
 - nové stránky a navigace mimo aplikaci jsou blokované;
 - povolené HTTPS odkazy se otevírají přes systémový prohlížeč;
@@ -109,6 +107,7 @@ API klíč není součástí zdrojového kódu, `localStorage`, exportu ani Git 
 ```text
 electron/
 ├── main.ts                   # životní cyklus okna, app:// protokol a security policy
+├── matches.ts                # bezklíčové čtení veřejné OP.GG historie
 └── preload.ts                # minimální izolovaný bridge
 src/
 ├── App.tsx                   # React UI
@@ -128,7 +127,7 @@ Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá test
 
 ## Meta data
 
-Výchozí dataset je transparentně označený snapshot pro patch 26.21. U.GG neposkytuje veřejné dokumentované API a projekt nepoužívá scraping ani interní endpointy. Meta snapshot zůstává oddělený od výsledků her. Ty aplikace načítá přes oficiální Riot `account-v1` a `match-v5` v izolovaném Electron main procesu; uživatel si dodá vlastní lokálně chráněný klíč.
+Výchozí dataset je transparentně označený snapshot pro patch 26.21. Meta snapshot zůstává oddělený od výsledků her. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného JSON-LD na profilových stránkách OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani interní OP.GG endpoint.
 
 Aplikace ukazuje zdroj, patch, datum a stav zastaralosti. Aktuálnější kompatibilní JSON lze importovat přímo v UI. Import kontroluje verzi schématu, stabilní Riot ID, Data Dragon slugy, role, duplicity a statistiky.
 

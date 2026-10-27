@@ -1,10 +1,10 @@
-import { ROLES, type AppState, type ConfirmedGame, type Draft, type MatchParticipantStats, type MatchSummary, type MetaDataset, type Player, type Settings } from '../types'
+import { MATCH_REGIONS, ROLES, type AppState, type ConfirmedGame, type Draft, type MatchParticipantStats, type MatchSummary, type MetaDataset, type Player, type Settings } from '../types'
 import { validateMetaDataset } from './meta'
 
 export const STORAGE_KEY = 'lol-randomizer:state:v3'
 const LEGACY_STORAGE_KEY = 'lol-randomizer:state:v2'
 
-export const DEFAULT_SETTINGS: Settings = { cooldownGames: 3, minPickRate: 0.5, minGames: 5000 }
+export const DEFAULT_SETTINGS: Settings = { cooldownGames: 3, minPickRate: 0.5, minGames: 5000, theme: 'dark', matchRegion: 'eune' }
 
 export const DEFAULT_STATE: AppState = {
   schemaVersion: 3,
@@ -107,6 +107,7 @@ function normalizeMatch(value: unknown): MatchSummary | null {
     queueId: finite(value.queueId),
     mapId: finite(value.mapId),
     gameVersion: text(value.gameVersion),
+    source: value.source === 'opgg' ? 'opgg' : 'riot-api',
     participants: participants as MatchParticipantStats[],
   }
 }
@@ -126,7 +127,7 @@ function normalizeGame(value: unknown, players: Player[]): ConfirmedGame | null 
     ...draft,
     number: value.number as number,
     confirmedAt: value.confirmedAt,
-    origin: value.origin === 'riot-import' ? 'riot-import' : 'confirmed',
+    origin: value.origin === 'opgg-import' ? 'opgg-import' : value.origin === 'riot-import' ? 'riot-import' : 'confirmed',
     match,
     sync: {
       status,
@@ -148,6 +149,8 @@ export function sanitizeState(value: unknown): AppState {
     cooldownGames: Math.round(clampNumber(settingsRecord.cooldownGames, 0, 10, 3)),
     minPickRate: clampNumber(settingsRecord.minPickRate, 0, 100, 0.5),
     minGames: Math.round(clampNumber(settingsRecord.minGames, 0, 10_000_000, 5000)),
+    theme: settingsRecord.theme === 'light' ? 'light' : 'dark',
+    matchRegion: MATCH_REGIONS.includes(settingsRecord.matchRegion as never) ? settingsRecord.matchRegion as Settings['matchRegion'] : 'eune',
   }
   let customDataset: MetaDataset | null = null
   if (value.customDataset) {

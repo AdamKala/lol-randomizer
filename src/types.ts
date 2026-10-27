@@ -1,6 +1,8 @@
 export const ROLES = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] as const
+export const MATCH_REGIONS = ['eune', 'euw'] as const
 
 export type Role = (typeof ROLES)[number]
+export type MatchRegion = (typeof MATCH_REGIONS)[number]
 
 export interface ChampionRoleEntry {
   id: number
@@ -90,6 +92,7 @@ export interface MatchSummary {
   queueId: number
   mapId: number
   gameVersion: string
+  source?: 'riot-api' | 'opgg'
   participants: MatchParticipantStats[]
 }
 
@@ -102,7 +105,7 @@ export interface MatchSyncState {
 export interface ConfirmedGame extends Draft {
   number: number
   confirmedAt: string
-  origin?: 'confirmed' | 'riot-import'
+  origin?: 'confirmed' | 'riot-import' | 'opgg-import'
   match: MatchSummary | null
   sync: MatchSyncState
 }
@@ -111,6 +114,8 @@ export interface Settings {
   cooldownGames: number
   minPickRate: number
   minGames: number
+  theme: 'dark' | 'light'
+  matchRegion: MatchRegion
 }
 
 export interface AppState {
@@ -128,15 +133,11 @@ export interface CooldownEntry {
   remainingGames: number
 }
 
-export interface RiotApiStatus {
-  hasApiKey: boolean
-  protectedStorage: boolean
-}
-
 export interface MatchSyncRequest {
   gameId: string
   confirmedAt: string
   excludedMatchIds: string[]
+  region: MatchRegion
   players: Array<{ playerId: string; displayName: string; riotId: string }>
 }
 
@@ -146,6 +147,7 @@ export type MatchSyncResult =
 
 export interface RecentMatchesImportRequest {
   excludedMatchIds: string[]
+  region: MatchRegion
   players: Array<{ playerId: string; displayName: string; riotId: string }>
 }
 

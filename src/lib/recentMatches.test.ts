@@ -39,7 +39,7 @@ describe('import posledních Riot zápasů', () => {
     expect(result.added).toBe(2)
     expect(result.history.map((game) => game.match?.matchId)).toEqual(['EUN1_1', 'EUN1_2'])
     expect(result.history.map((game) => game.number)).toEqual([1, 2])
-    expect(result.history[1].origin).toBe('riot-import')
+    expect(result.history[1].origin).toBe('opgg-import')
     expect(result.history[1].slots).toHaveLength(2)
   })
 
@@ -49,6 +49,6 @@ describe('import posledních Riot zápasů', () => {
     const restored = sanitizeState({ ...DEFAULT_STATE, history: imported })
     expect(restored.history).toHaveLength(1)
     expect(restored.history[0].slots).toHaveLength(6)
-    expect(restored.history[0].origin).toBe('riot-import')
+    expect(restored.history[0].origin).toBe('opgg-import')
   })
 })

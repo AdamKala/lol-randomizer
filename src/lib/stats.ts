@@ -10,7 +10,9 @@ export interface PlayerAggregate {
   deaths: number
   assists: number
   damage: number
+  damageSamples: number
   vision: number
+  visionSamples: number
   cs: number
   favoriteChampion: string
 }
@@ -30,7 +32,9 @@ export function calculatePlayerStats(history: ConfirmedGame[]): PlayerAggregate[
         deaths: 0,
         assists: 0,
         damage: 0,
+        damageSamples: 0,
         vision: 0,
+        visionSamples: 0,
         cs: 0,
         favoriteChampion: participant.championName,
         champions: new Map<string, number>(),
@@ -42,8 +46,12 @@ export function calculatePlayerStats(history: ConfirmedGame[]): PlayerAggregate[
       current.kills += participant.kills
       current.deaths += participant.deaths
       current.assists += participant.assists
-      current.damage += participant.totalDamageDealtToChampions
-      current.vision += participant.visionScore
+      if (game.match.source !== 'opgg') {
+        current.damage += participant.totalDamageDealtToChampions
+        current.damageSamples += 1
+        current.vision += participant.visionScore
+        current.visionSamples += 1
+      }
       current.cs += participant.totalMinionsKilled + participant.neutralMinionsKilled
       current.champions.set(participant.championName, (current.champions.get(participant.championName) ?? 0) + 1)
       current.favoriteChampion = [...current.champions.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0]
@@ -61,7 +69,9 @@ export function calculatePlayerStats(history: ConfirmedGame[]): PlayerAggregate[
       deaths: row.deaths,
       assists: row.assists,
       damage: row.damage,
+      damageSamples: row.damageSamples,
       vision: row.vision,
+      visionSamples: row.visionSamples,
       cs: row.cs,
       favoriteChampion: row.favoriteChampion,
     }))
