@@ -58,7 +58,7 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage, goldy a vision;
 - celý řádek hráče v tabulce statistik otevírá jeho detail;
 - řazení tabulky hráčů podle jména, počtu her, bilance, winratu, KDA, výkonu, CS, damage, goldů, vision i nejhranějšího šampiona;
-- týmový přehled nejhranějších pozic, hlavní role a šampiona každého hráče i winratu všech společných dvojic;
+- týmový přehled pozic v pevném pořadí TOP, JUNGLE, MID, ADC, SUPPORT, hlavní role a šampiona každého hráče i winratu všech společných dvojic;
 - proklikávací profil každého hráče s aktuální formou, nejlepšími ukazateli, rozdělením rolí, winratem se spoluhráči, posledními hrami a statistikami nejhranějších šampionů;
 - tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);

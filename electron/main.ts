@@ -126,7 +126,7 @@ function createWindow(): BrowserWindow {
             damageSortButton.click()
             await new Promise((resolve) => requestAnimationFrame(resolve))
             statisticsSortingUi = descending && damageSortButton.closest('th')?.getAttribute('aria-sort') === 'ascending'
-            groupInsightsUi = document.body.textContent?.includes('Nejhranější pozice') === true && document.body.textContent?.includes('Kdo s kým vyhrává') === true && document.body.textContent?.includes('Kdo kde a co hraje') === true
+            groupInsightsUi = document.body.textContent?.includes('Přehled pozic') === true && document.body.textContent?.includes('Kdo s kým vyhrává') === true && document.body.textContent?.includes('Kdo kde a co hraje') === true
             const statisticsRow = document.querySelector('tbody tr[role="link"]')
             statisticsRowUi = Boolean(statisticsRow && statisticsRow.getAttribute('aria-label')?.startsWith('Otevřít statistiky hráče'))
           }

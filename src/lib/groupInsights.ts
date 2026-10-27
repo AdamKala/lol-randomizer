@@ -103,7 +103,7 @@ export function buildGroupInsights(history: ConfirmedGame[]): GroupInsights {
       const stats = roles.get(role) ?? { games: 0, wins: 0, players: new Map<string, { name: string; games: number }>() }
       const topPlayer = [...stats.players.entries()].sort((left, right) => right[1].games - left[1].games || left[1].name.localeCompare(right[1].name, 'cs'))[0]
       return { role, games: stats.games, wins: stats.wins, topPlayerId: topPlayer?.[0] ?? '', topPlayerName: topPlayer?.[1].name ?? '—', topPlayerGames: topPlayer?.[1].games ?? 0 }
-    }).sort((left, right) => right.games - left.games || ROLES.indexOf(left.role) - ROLES.indexOf(right.role)),
+    }),
     players: [...players.values()].map((player) => {
       const roleList = [...player.roles.entries()].map(([role, stats]) => ({ role, ...stats })).sort((left, right) => right.games - left.games || ROLES.indexOf(left.role) - ROLES.indexOf(right.role))
       const favoriteChampion = [...player.champions.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'cs'))[0]

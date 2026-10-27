@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ConfirmedGame, MatchParticipantStats, Role } from '../types'
+import { ROLES, type ConfirmedGame, type MatchParticipantStats, type Role } from '../types'
 import { buildGroupInsights } from './groupInsights'
 
 function participant(playerId: string, displayName: string, championName: string, position: string, win: boolean): MatchParticipantStats {
@@ -19,6 +19,7 @@ describe('týmové statistiky', () => {
     expect(insights.players.find((player) => player.playerId === 'p1')).toMatchObject({ primaryRole: 'MID', primaryRoleGames: 3, favoriteChampion: 'Ahri', favoriteChampionGames: 3 })
     expect(insights.players.find((player) => player.playerId === 'p2')).toMatchObject({ primaryRole: 'JUNGLE', favoriteChampion: 'Vi' })
     expect(insights.roles.find((role) => role.role === 'MID')).toMatchObject({ games: 3, topPlayerName: 'Anna', topPlayerGames: 3 })
+    expect(insights.roles.map((role) => role.role)).toEqual(ROLES)
   })
 
   it('řadí dvojice nejdřív podle winratu a až potom podle počtu her', () => {
