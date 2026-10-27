@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MatchSummary } from '../types'
-import { matchNeedsRefresh, parseOpggGamesActionResponse, parseOpggMatchDetail, parseOpggRecentMatches, selectOpggRecentMatches } from './opgg'
+import { createOpggGamesActionHeaders, matchNeedsRefresh, parseOpggGamesActionResponse, parseOpggMatchDetail, parseOpggRecentMatches, selectOpggRecentMatches } from './opgg'
 
 const html = `<!doctype html><html><head><script type="application/ld+json">{
   "@context":"https://schema.org",
@@ -32,6 +32,16 @@ const html = `<!doctype html><html><head><script type="application/ld+json">{
 }</script></head></html>`
 
 describe('OP.GG veřejná historie', () => {
+  it('použije pro serverovou akci OP.GG původ profilu místo Tauri webview', () => {
+    const profileUrl = 'https://op.gg/lol/summoners/eune/Test-EUNE'
+
+    expect(createOpggGamesActionHeaders('action-id', profileUrl)).toMatchObject({
+      'Next-Action': 'action-id',
+      Origin: 'https://op.gg',
+      Referer: profileUrl,
+    })
+  })
+
   it('načte strukturovaný JSON-LD bez API klíče', () => {
     expect(parseOpggRecentMatches(html)).toEqual([{
       rawMatchId: 'public-match-1',

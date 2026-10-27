@@ -31,6 +31,18 @@ const ACTION_LIMIT_BYTES = 15_000_000
 const USER_AGENT = 'LoL-Randomizer/2.0.0 (+https://github.com/AdamKala/lol-randomizer)'
 let cachedGamesAction: { scriptUrl: string; actionId: string } | null = null
 
+export function createOpggGamesActionHeaders(actionId: string, profileUrl: string): Record<string, string> {
+  return {
+    Accept: 'text/x-component',
+    'Accept-Language': 'en-US,en;q=0.8',
+    'Content-Type': 'text/plain;charset=UTF-8',
+    'Next-Action': actionId,
+    Origin: new URL(profileUrl).origin,
+    Referer: profileUrl,
+    'User-Agent': USER_AGENT,
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -304,7 +316,7 @@ async function fetchPlayerMatchesRange(player: TrackedPlayer, region: MatchRegio
     while (matches.length < target) {
       const response = await fetch(profileUrl, {
         method: 'POST',
-        headers: { Accept: 'text/x-component', 'Content-Type': 'text/plain;charset=UTF-8', 'Next-Action': actionId, 'User-Agent': USER_AGENT },
+        headers: createOpggGamesActionHeaders(actionId, profileUrl),
         body: JSON.stringify([{ locale: 'en', region, puuid, gameType: 'total', endedAt, champion: '' }]),
         redirect: 'follow',
         signal: AbortSignal.timeout(30_000),
