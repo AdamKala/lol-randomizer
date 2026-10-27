@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChampionRoleEntry, ConfirmedGame, Draft, MetaDataset, Player, Role, Settings } from '../types'
 import { ROLES } from '../types'
-import { confirmDraft, generateDraft, getBlockedChampionIds, getCooldownEntries, rerollOneChampion, validatePlayers } from './randomizer'
+import { changePlayerRole, confirmDraft, generateDraft, getBlockedChampionIds, getCooldownEntries, rerollOneChampion, validatePlayers } from './randomizer'
 import { loadState, saveState, STORAGE_KEY } from './storage'
 
 const settings: Settings = { cooldownGames: 3, minPickRate: 0.5, minGames: 100 }
@@ -73,6 +73,31 @@ describe('losování sestavy', () => {
     expect(history).toEqual(beforeHistory)
     expect(draft).toEqual(beforeDraft)
     expect(rerolled.slots[0].champion.id).not.toBe(draft.slots[0].champion.id)
+  })
+
+  it('změna na obsazenou linku prohodí jen dva hráče a jejich šampiony', () => {
+    const history = [game('old', 900, 1)]
+    const draft = generateDraft(players.slice(0, 5), dataset, settings, history, deterministic)
+    const beforeDraft = structuredClone(draft)
+    const beforeHistory = structuredClone(history)
+    const firstRole = draft.slots[0].role
+    const secondRole = draft.slots[1].role
+    const changed = changePlayerRole(draft, 0, secondRole, dataset, settings, history, () => 0)
+    expect(changed.slots[0].role).toBe(secondRole)
+    expect(changed.slots[1].role).toBe(firstRole)
+    expect(changed.slots.slice(2).map((slot) => slot.role)).toEqual(draft.slots.slice(2).map((slot) => slot.role))
+    expect(new Set(changed.slots.map((slot) => slot.champion.id))).toHaveLength(5)
+    for (const slot of changed.slots) expect(dataset.entries.some((candidate) => candidate.id === slot.champion.id && candidate.role === slot.role)).toBe(true)
+    expect(draft).toEqual(beforeDraft)
+    expect(history).toEqual(beforeHistory)
+  })
+
+  it('změna na volnou linku upraví pouze zvoleného hráče', () => {
+    const draft = generateDraft(players.slice(0, 3), dataset, settings, [], deterministic)
+    const freeRole = ROLES.find((role) => !draft.slots.some((slot) => slot.role === role))!
+    const changed = changePlayerRole(draft, 0, freeRole, dataset, settings, [], () => 0)
+    expect(changed.slots[0].role).toBe(freeRole)
+    expect(changed.slots.slice(1)).toEqual(draft.slots.slice(1))
   })
 
   it('bezpečně odmítne nedostatečný pool', () => {

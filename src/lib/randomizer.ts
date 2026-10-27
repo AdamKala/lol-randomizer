@@ -53,6 +53,7 @@ function assignChampions(
   settings: Settings,
   blocked: Set<number>,
   random: RandomSource,
+  reservedChampionIds: Set<number> = new Set(),
 ): DraftSlot[] | null {
   const candidates = playerRoles.map((assignment, originalIndex) => ({
     ...assignment,
@@ -64,7 +65,7 @@ function assignChampions(
   }))
   candidates.sort((a, b) => a.candidates.length - b.candidates.length)
   const chosen = new Map<number, DraftSlot>()
-  const used = new Set<number>()
+  const used = new Set(reservedChampionIds)
 
   const visit = (index: number): boolean => {
     if (index === candidates.length) return true
@@ -136,6 +137,48 @@ export function rerollOneChampion(
   const champion = candidates[Math.floor(random() * candidates.length)]
   const slots = draft.slots.map((item, index) => (index === slotIndex ? { ...item, champion } : item))
   return { ...draft, id: createDraftId(), createdAt: new Date().toISOString(), slots }
+}
+
+export function changePlayerRole(
+  draft: Draft,
+  slotIndex: number,
+  nextRole: Role,
+  dataset: MetaDataset,
+  settings: Settings,
+  history: ConfirmedGame[],
+  random: RandomSource = Math.random,
+): Draft {
+  const slot = draft.slots[slotIndex]
+  if (!slot) throw new Error('Hráč v návrhu neexistuje.')
+  if (slot.role === nextRole) return draft
+
+  const swappedIndex = draft.slots.findIndex((candidate, index) => index !== slotIndex && candidate.role === nextRole)
+  const changedIndices = swappedIndex >= 0 ? [slotIndex, swappedIndex] : [slotIndex]
+  const assignments = changedIndices.map((index) => {
+    const current = draft.slots[index]
+    return {
+      player: { id: current.playerId, name: current.player, riotId: current.riotId },
+      role: index === slotIndex ? nextRole : slot.role,
+    }
+  })
+  const reserved = new Set(draft.slots.filter((_, index) => !changedIndices.includes(index)).map((item) => item.champion.id))
+  const replacements = assignChampions(
+    assignments,
+    dataset,
+    settings,
+    getBlockedChampionIds(history, settings.cooldownGames),
+    random,
+    reserved,
+  )
+  if (!replacements) throw new Error('Pro změnu linek není dost dostupných šampionů. Zkus snížit filtry nebo cooldown.')
+
+  const replacementByIndex = new Map(changedIndices.map((index, assignmentIndex) => [index, replacements[assignmentIndex]]))
+  return {
+    ...draft,
+    id: createDraftId(),
+    createdAt: new Date().toISOString(),
+    slots: draft.slots.map((current, index) => replacementByIndex.get(index) ?? current),
+  }
 }
 
 export function confirmDraft(draft: Draft, history: ConfirmedGame[], confirmedAt = new Date().toISOString()): ConfirmedGame[] {

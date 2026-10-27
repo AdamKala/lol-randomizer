@@ -35,8 +35,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.1.2-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.1.2-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.1.3-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.1.3-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
@@ -47,6 +47,7 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - champion pool podle reálně hrané role, nikoli podle Riot tříd;
 - rovnoměrný náhodný výběr bez duplicit v sestavě;
 - reroll rolí i šampionů, pouze šampionů nebo jednoho šampiona;
+- individuální změna linky na kartě hráče; obsazená linka se prohodí pouze mezi dotčenými dvěma hráči;
 - potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
 - automatické dohledání společného dokončeného zápasu přes oficiální Riot `account-v1` a `match-v5`;
 - skutečný výsledek, hraný šampion, K/D/A, damage, vision, CS a agregované statistiky hráčů;
