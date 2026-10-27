@@ -144,6 +144,26 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .draft-card-stats > .draft-card-counter {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .15rem;
+    margin-top: .15rem;
+  }
+  .draft-card-counter dd {
+    width: 100%;
+    text-align: left;
+  }
+  .draft-card-counter small {
+    display: block;
+    overflow: hidden;
+    margin-top: .08rem;
+    color: rgb(100 116 139);
+    font-size: .55rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .stats-panel {
     background-image:
       radial-gradient(circle at 6% 0%, rgba(10, 200, 185, .085), transparent 22rem),

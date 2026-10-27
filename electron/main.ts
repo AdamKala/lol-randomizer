@@ -161,7 +161,8 @@ function createWindow(): BrowserWindow {
           const draftMetaUi = Boolean(
             draftStats?.textContent?.includes('Pickrate')
             && draftStats.textContent.includes('Winrate')
-            && draftStats.textContent.includes('Největší counter'),
+            && draftStats.textContent.includes('Největší counter')
+            && draftStats.querySelector('.draft-card-counter small'),
           )
           const rosterPlayerButton = [...document.querySelectorAll('button')].find((button) => button.getAttribute('title')?.startsWith('Otevřít profil hráče'))
           rosterPlayerButton?.click()

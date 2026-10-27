@@ -1,4 +1,4 @@
-import { ROLES, type ChampionRoleEntry, type MetaDataset, type Role } from '../types'
+import { ROLES, type ChampionRoleEntry, type Draft, type MetaDataset, type Role } from '../types'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -110,4 +110,16 @@ export async function loadBundledDataset(): Promise<MetaDataset> {
   const response = await fetch(url)
   if (!response.ok) throw new Error('Výchozí role data se nepodařilo načíst.')
   return validateMetaDataset(await response.json())
+}
+
+export function refreshDraftMetadata(draft: Draft, dataset: MetaDataset): Draft {
+  const entries = new Map(dataset.entries.map((entry) => [`${entry.role}:${entry.id}`, entry]))
+  let changed = draft.patch !== dataset.patch
+  const slots = draft.slots.map((slot) => {
+    const current = entries.get(`${slot.role}:${slot.champion.id}`)
+    if (!current || current === slot.champion) return slot
+    changed = true
+    return { ...slot, champion: current }
+  })
+  return changed ? { ...draft, patch: dataset.patch, slots } : draft
 }

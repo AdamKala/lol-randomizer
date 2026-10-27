@@ -38,7 +38,7 @@ import {
 } from 'lucide-react'
 import { ROLES, type AppState, type ChampionRoleEntry, type ConfirmedGame, type Draft, type MetaDataset, type Player, type RecentMatchesRange, type Role, type Settings } from './types'
 import { changePlayerRole, confirmDraft, generateDraft, getCooldownEntries, rerollOneChampion, validatePlayers } from './lib/randomizer'
-import { isDatasetStale, loadBundledDataset, validateMetaDataset } from './lib/meta'
+import { isDatasetStale, loadBundledDataset, refreshDraftMetadata, validateMetaDataset } from './lib/meta'
 import { calculatePlayerStats, type PlayerAggregate } from './lib/stats'
 import { mergeRecentMatches } from './lib/recentMatches'
 import { buildPlayerDetail } from './lib/playerDetail'
@@ -155,7 +155,7 @@ function DraftCard({ slot, index, onReroll, onRoleChange }: { slot: Draft['slots
         <dl className="draft-card-stats mt-3">
           <div><dt>Pickrate</dt><dd>{oneDecimal.format(slot.champion.pickRate)} %</dd></div>
           <div><dt>Winrate</dt><dd>{slot.champion.winRate === undefined ? '—' : `${oneDecimal.format(slot.champion.winRate)} %`}</dd></div>
-          <div title={slot.champion.counter ? `${slot.champion.name} proti ${slot.champion.counter.name}: ${oneDecimal.format(slot.champion.counter.winRateAgainst)} % winrate · ${integer.format(slot.champion.counter.games)} her` : 'Counter není v datasetu dostupný'}><dt>Největší counter</dt><dd>{slot.champion.counter?.name ?? '—'}</dd></div>
+          <div className="draft-card-counter" title={slot.champion.counter ? `${slot.champion.name} proti ${slot.champion.counter.name}: ${oneDecimal.format(slot.champion.counter.winRateAgainst)} % winrate · ${integer.format(slot.champion.counter.games)} her` : 'Counter není v datasetu dostupný'}><dt>Největší counter</dt><dd><span>{slot.champion.counter?.name ?? '—'}</span>{slot.champion.counter && <small>{oneDecimal.format(slot.champion.counter.winRateAgainst)} % · {integer.format(slot.champion.counter.games)} her</small>}</dd></div>
         </dl>
         <div className="draft-card-controls mt-3 border-t border-white/[.07] pt-3">
           <select value={slot.role} onChange={(event) => onRoleChange(event.target.value as Role)} className="draft-role-select min-w-0 rounded border bg-[#07101e] px-1.5 py-1 text-[.62rem] font-bold focus:outline-none" aria-label={`Změnit linku pro ${slot.player}`} title="Změnit linku pouze tomuto hráči">
@@ -623,6 +623,7 @@ export default function App() {
   }, [statisticsReady, state.history])
 
   const selectedPlayers = useMemo(() => state.players.filter((player) => state.selectedPlayerIds.includes(player.id)), [state.players, state.selectedPlayerIds])
+  const activeDraft = useMemo(() => state.draft && dataset ? refreshDraftMetadata(state.draft, dataset) : state.draft, [dataset, state.draft])
   const cooldown = useMemo(() => getCooldownEntries(state.history, state.settings.cooldownGames), [state.history, state.settings.cooldownGames])
   const pendingSignature = state.history.filter((game) => game.sync.status === 'pending').map((game) => game.id).join('|')
 
@@ -728,17 +729,17 @@ export default function App() {
     if (!dataset) return
     const playerError = validatePlayers(selectedPlayers)
     if (playerError) return setMessage({ type: 'error', text: playerError })
-    const sameLineup = state.draft && state.draft.slots.length === selectedPlayers.length && state.draft.slots.every((slot, index) => slot.playerId === selectedPlayers[index].id)
-    const fixedRoles = mode === 'champions' && sameLineup && state.draft ? state.draft.slots.map((slot) => slot.role) : undefined
+    const sameLineup = activeDraft && activeDraft.slots.length === selectedPlayers.length && activeDraft.slots.every((slot, index) => slot.playerId === selectedPlayers[index].id)
+    const fixedRoles = mode === 'champions' && sameLineup && activeDraft ? activeDraft.slots.map((slot) => slot.role) : undefined
     run(() => generateDraft(selectedPlayers, dataset, state.settings, state.history, Math.random, fixedRoles))
   }
 
-  const rerollOne = (index: number) => { if (dataset && state.draft) run(() => rerollOneChampion(state.draft!, index, dataset, state.settings, state.history)) }
-  const changeRole = (index: number, role: Role) => { if (dataset && state.draft) run(() => changePlayerRole(state.draft!, index, role, dataset, state.settings, state.history)) }
+  const rerollOne = (index: number) => { if (dataset && activeDraft) run(() => rerollOneChampion(activeDraft, index, dataset, state.settings, state.history)) }
+  const changeRole = (index: number, role: Role) => { if (dataset && activeDraft) run(() => changePlayerRole(activeDraft, index, role, dataset, state.settings, state.history)) }
 
   const confirm = () => {
-    if (!state.draft) return
-    setState((current) => current.draft ? { ...current, history: confirmDraft(current.draft, current.history), draft: null } : current)
+    if (!activeDraft) return
+    setState((current) => ({ ...current, history: confirmDraft(activeDraft, current.history), draft: null }))
     setConfirming(false)
     setMessage({ type: 'success', text: 'Hra je uložená. Po dohrání se výsledek načte automaticky.' })
   }
@@ -866,7 +867,7 @@ export default function App() {
           <aside className="xl:sticky xl:top-6 xl:row-span-2 min-[1780px]:row-span-1">{rosterPanel}</aside>
           <div className="space-y-6">
 
-            {state.draft ? <Panel className="overflow-hidden border-gold/20"><div className="flex flex-col gap-3 border-b border-white/[.08] px-5 py-5 sm:flex-row sm:items-end sm:justify-between md:px-7"><div><p className="eyebrow">Nepotvrzený návrh</p><h2 className="section-title mt-1">Tvoje sestava</h2></div><p className="max-w-md text-xs leading-5 text-slate-500 sm:text-right">Reroll ani individuální změna linky nemění historii a cooldown</p></div><div className="overflow-x-auto"><div className="grid gap-2 p-3 md:gap-3 md:p-5" style={{ gridTemplateColumns: `repeat(${state.draft.slots.length}, minmax(8.5rem, 1fr))`, minWidth: `${state.draft.slots.length * 8.5}rem` }}>{orderedByRole(state.draft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${state.draft!.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div></div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
+            {activeDraft ? <Panel className="overflow-hidden border-gold/20"><div className="flex flex-col gap-3 border-b border-white/[.08] px-5 py-5 sm:flex-row sm:items-end sm:justify-between md:px-7"><div><p className="eyebrow">Nepotvrzený návrh</p><h2 className="section-title mt-1">Tvoje sestava</h2></div><p className="max-w-md text-xs leading-5 text-slate-500 sm:text-right">Reroll ani individuální změna linky nemění historii a cooldown</p></div><div className="overflow-x-auto"><div className="grid gap-2 p-3 md:gap-3 md:p-5" style={{ gridTemplateColumns: `repeat(${activeDraft.slots.length}, minmax(8.5rem, 1fr))`, minWidth: `${activeDraft.slots.length * 8.5}rem` }}>{orderedByRole(activeDraft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${activeDraft.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div></div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
 
             <HistoryPanel history={confirmedHistory} syncingIds={syncingIds} onSync={(game) => void syncGame(game)} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
           </div>
@@ -883,7 +884,7 @@ export default function App() {
         {activeTab === 'recent' && <RecentGamesPanel history={recentHistory} importing={importingRecent} onImport={() => setRecentImportOpen(true)} onClear={clearRecent} onPlayerSelect={openPlayerDetail} />}
         <footer className="mt-12 border-t border-white/[.07] py-8 text-xs leading-6 text-slate-600">LoL Randomizer není podporován společností Riot Games a neodráží názory Riot Games ani nikoho, kdo se oficiálně podílí na produkci nebo správě jejích her. Riot Games a všechny související vlastnosti jsou ochranné známky nebo registrované ochranné známky společnosti Riot Games, Inc.</footer>
       </main>
-      {confirming && state.draft && <ConfirmDialog draft={state.draft} onCancel={() => setConfirming(false)} onConfirm={confirm} />}
+      {confirming && activeDraft && <ConfirmDialog draft={activeDraft} onCancel={() => setConfirming(false)} onConfirm={confirm} />}
       {recentImportOpen && <RecentImportDialog importing={importingRecent} onCancel={() => setRecentImportOpen(false)} onImport={importRecentMatches} />}
     </div>
   )
