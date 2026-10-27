@@ -62,6 +62,14 @@ const ROLE_TONES: Record<Role, { text: string; border: string; background: strin
   SUPPORT: { text: 'text-sky-300', border: 'border-sky-400/20', background: 'bg-sky-400/[.07]', bar: 'bg-gradient-to-r from-sky-500/55 to-sky-300' },
 }
 
+const DRAFT_CARD_VARIANTS: Record<Role, string> = {
+  TOP: 'draft-card--top',
+  JUNGLE: 'draft-card--jungle',
+  MID: 'draft-card--mid',
+  ADC: 'draft-card--adc',
+  SUPPORT: 'draft-card--support',
+}
+
 function winRateTone(winRate: number): string {
   if (winRate >= 55) return 'border-emerald-400/25 bg-emerald-400/[.09] text-emerald-300'
   if (winRate >= 50) return 'border-cyan/25 bg-cyan/[.08] text-cyan'
@@ -107,9 +115,9 @@ function createId(): string {
 function RoleBadge({ role }: { role: Role }) {
   const data = ROLE_LABELS[role]
   return (
-    <span className="inline-flex items-center gap-2 text-[.68rem] font-bold tracking-[.18em] text-cyan">
-      <span className="grid size-7 place-items-center border border-cyan/30 bg-cyan/10 font-display text-xs text-[#76eee6] [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]">{data.mark}</span>
-      <span>{data.short}</span>
+    <span className="draft-role-badge">
+      <span className="draft-role-mark">{data.mark}</span>
+      <span className="min-w-0"><small className="draft-role-kicker">{data.short}</small><strong className="draft-role-name">{data.title}</strong></span>
     </span>
   )
 }
@@ -135,12 +143,11 @@ function downloadJson(filename: string, value: unknown) {
 
 function DraftCard({ slot, index, onReroll, onRoleChange }: { slot: Draft['slots'][number]; index: number; onReroll: () => void; onRoleChange: (role: Role) => void }) {
   return (
-    <article className="group relative min-w-0 overflow-hidden rounded-xl border border-white/10 bg-[#091322] shadow-xl transition duration-300 hover:-translate-y-1 hover:border-gold/35 hover:shadow-gold" style={{ animationDelay: `${index * 65}ms` }}>
-      <div className="relative aspect-[5/4] overflow-hidden bg-[#070d17]">
-        <ChampionImage champion={slot.champion} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#091322] via-transparent to-transparent" />
-        <div className="absolute left-3 top-3"><RoleBadge role={slot.role} /></div>
-        <button type="button" onClick={onReroll} className="absolute right-3 top-3 grid size-10 place-items-center rounded-full border border-white/15 bg-[#050a12]/80 text-slate-200 backdrop-blur transition hover:rotate-180 hover:border-cyan/60 hover:text-cyan" aria-label={`Přelosovat šampiona pro ${slot.player}`} title="Přelosovat pouze tohoto šampiona"><RotateCw size={17} /></button>
+    <article className={`draft-card ${DRAFT_CARD_VARIANTS[slot.role]} group relative min-w-0 overflow-hidden rounded-xl border bg-[#091322] shadow-xl transition duration-300 hover:-translate-y-1`} style={{ animationDelay: `${index * 65}ms` }}>
+      <div className="draft-card-media relative aspect-[6/5] overflow-hidden bg-[#070d17]">
+        <ChampionImage champion={slot.champion} className="h-full w-full scale-[1.02] object-cover transition duration-500 group-hover:scale-[1.08]" />
+        <div className="absolute left-3 right-14 top-3 z-[2]"><RoleBadge role={slot.role} /></div>
+        <button type="button" onClick={onReroll} className="draft-reroll-button absolute right-3 top-3 z-[2] grid size-10 place-items-center rounded-full border backdrop-blur transition hover:rotate-180" aria-label={`Přelosovat šampiona pro ${slot.player}`} title="Přelosovat pouze tohoto šampiona"><RotateCw size={17} /></button>
       </div>
       <div className="relative -mt-3 px-4 pb-4">
         <p className="truncate text-xs font-semibold uppercase tracking-[.16em] text-slate-400" title={slot.player}>{slot.player}</p>
@@ -855,7 +862,7 @@ export default function App() {
           <aside className="xl:sticky xl:top-6">{rosterPanel}</aside>
           <div className="space-y-6">
 
-            {state.draft ? <Panel className="overflow-hidden border-gold/20"><div className="draft-heading"><div className="relative flex min-w-0 items-center gap-4"><span className="draft-heading-icon"><Swords size={22} /></span><div className="min-w-0"><p className="eyebrow">Nepotvrzený návrh</p><h2 className="draft-title">Vylosovaná <span>sestava</span></h2><div className="mt-2 flex flex-wrap items-center gap-2"><span className="draft-heading-stat"><Users size={12} /> {state.draft.slots.length} {state.draft.slots.length === 1 ? 'hráč' : state.draft.slots.length >= 2 && state.draft.slots.length <= 4 ? 'hráči' : 'hráčů'}</span><span className="draft-heading-stat"><Shuffle size={12} /> {state.draft.slots.length} {state.draft.slots.length === 1 ? 'role' : state.draft.slots.length >= 2 && state.draft.slots.length <= 4 ? 'role' : 'rolí'}</span></div></div></div><div className="draft-heading-note"><Shield size={18} /><span><strong>Návrh bez závazku</strong><small>Reroll ani změna linky nemění historii a cooldown</small></span></div></div><div className="grid grid-cols-5 gap-2 p-3 md:gap-3 md:p-5">{orderedByRole(state.draft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${state.draft!.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
+            {state.draft ? <Panel className="overflow-hidden border-gold/20"><div className="flex flex-col gap-3 border-b border-white/[.08] px-5 py-5 sm:flex-row sm:items-end sm:justify-between md:px-7"><div><p className="eyebrow">Nepotvrzený návrh</p><h2 className="section-title mt-1">Tvoje sestava</h2></div><p className="text-xs text-slate-500">Reroll ani individuální změna linky nemění historii a cooldown</p></div><div className="grid grid-cols-5 gap-2 p-3 md:gap-3 md:p-5">{orderedByRole(state.draft.slots.map((slot, originalIndex) => ({ slot, originalIndex, role: slot.role }))).map(({ slot, originalIndex }, displayIndex) => <DraftCard key={`${state.draft!.id}-${slot.playerId}`} slot={slot} index={displayIndex} onReroll={() => rerollOne(originalIndex)} onRoleChange={(role) => changeRole(originalIndex, role)} />)}</div><div className="grid gap-3 border-t border-white/[.08] bg-black/10 p-4 sm:grid-cols-3 md:p-6"><button type="button" className="btn-ghost" onClick={() => generate('all')}><Shuffle size={17} /> Role i šampioni</button><button type="button" className="btn-blue" onClick={() => generate('champions')}><RefreshCcw size={17} /> Jen šampioni</button><button type="button" className="btn-gold !min-h-14" onClick={() => setConfirming(true)}><Swords size={20} /> 🎮 Jdeme do hry!</button></div></Panel> : <div className="grid min-h-[22rem] place-items-center rounded-xl border border-dashed border-white/10 bg-white/[.015] p-8 text-center"><div><Dice5 className="mx-auto text-slate-700" size={42} /><h2 className="mt-4 font-display text-xl font-bold text-slate-400">Zatím žádný návrh</h2><p className="mt-2 text-sm text-slate-600">Zaškrtni 1–5 uložených hráčů a nech náhodu rozhodnout.</p></div></div>}
 
             <HistoryPanel history={confirmedHistory} syncingIds={syncingIds} onSync={(game) => void syncGame(game)} onUndo={undo} onClear={clear} onExport={() => downloadJson(`lol-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`, createHistoryBackup(state.history))} onImport={importHistory} />
           </div>
