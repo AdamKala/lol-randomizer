@@ -1,0 +1,88 @@
+{
+  "name": "lol-randomizer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Desktopový randomizer rolí a šampionů pro League of Legends",
+  "author": "AdamKala",
+  "repository": "https://github.com/AdamKala/lol-randomizer",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "start": "electron .",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:win": "npm run build && electron-builder --win nsis portable --x64",
+    "assets:download": "node scripts/download-champion-icons.mjs",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "lucide-react": "^0.548.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.9.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9.38.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.4.0",
+    "jsdom": "^27.0.1",
+    "tailwindcss": "^3.4.18",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.2",
+    "vite": "^7.1.7",
+    "vite-plugin-electron": "^0.29.0",
+    "vitest": "^5.0.5"
+  },
+  "build": {
+    "appId": "cz.adamkala.lolrandomizer",
+    "productName": "LoL Randomizer",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "LoL-Randomizer-Setup-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LoL Randomizer"
+    },
+    "portable": {
+      "artifactName": "LoL-Randomizer-Portable-${version}-${arch}.${ext}"
+    }
+  }
+}
