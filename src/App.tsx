@@ -7,11 +7,13 @@ import {
   Database,
   Dice5,
   Download,
+  EllipsisVertical,
   History as HistoryIcon,
   KeyRound,
   Link2,
   LoaderCircle,
   LockKeyhole,
+  Pencil,
   Plus,
   RefreshCcw,
   RotateCw,
@@ -202,6 +204,7 @@ export default function App() {
   const [confirming, setConfirming] = useState(false)
   const [newPlayerName, setNewPlayerName] = useState('')
   const [newPlayerRiotId, setNewPlayerRiotId] = useState('')
+  const [editingPlayer, setEditingPlayer] = useState<Pick<Player, 'id' | 'name' | 'riotId'> | null>(null)
   const [riotStatus, setRiotStatus] = useState<RiotApiStatus>({ hasApiKey: false, protectedStorage: false })
   const [apiKey, setApiKey] = useState('')
   const [savingApiKey, setSavingApiKey] = useState(false)
@@ -354,6 +357,18 @@ export default function App() {
 
   const updatePlayer = (id: string, patch: Partial<Pick<Player, 'name' | 'riotId'>>) => setState((current) => ({ ...current, players: current.players.map((player) => player.id === id ? { ...player, ...patch } : player) }))
 
+  const saveEditedPlayer = () => {
+    if (!editingPlayer) return
+    const name = editingPlayer.name.trim()
+    const riotId = editingPlayer.riotId.trim()
+    if (!name) return setMessage({ type: 'error', text: 'Hráč musí mít jméno.' })
+    if (state.players.some((player) => player.id !== editingPlayer.id && player.name.toLocaleLowerCase('cs') === name.toLocaleLowerCase('cs'))) return setMessage({ type: 'error', text: 'Hráč s tímto jménem už v rosteru je.' })
+    if (riotId && !riotId.includes('#')) return setMessage({ type: 'error', text: 'Riot ID musí mít formát Jméno#TAG.' })
+    updatePlayer(editingPlayer.id, { name, riotId })
+    setEditingPlayer(null)
+    setMessage({ type: 'success', text: `${name} byl upraven.` })
+  }
+
   const togglePlayer = (id: string) => {
     setState((current) => {
       if (current.selectedPlayerIds.includes(id)) return { ...current, selectedPlayerIds: current.selectedPlayerIds.filter((playerId) => playerId !== id) }
@@ -365,6 +380,7 @@ export default function App() {
   const removePlayer = (player: Player) => {
     if (!window.confirm(`Odebrat hráče ${player.name} z rosteru? Stará historie zůstane zachovaná.`)) return
     setState((current) => ({ ...current, players: current.players.filter((item) => item.id !== player.id), selectedPlayerIds: current.selectedPlayerIds.filter((id) => id !== player.id) }))
+    if (editingPlayer?.id === player.id) setEditingPlayer(null)
   }
 
   const saveApiKey = async () => {
@@ -427,13 +443,14 @@ export default function App() {
       <div className="grid max-h-[34rem] gap-2 overflow-y-auto p-4">
         {state.players.map((player) => {
           const selected = state.selectedPlayerIds.includes(player.id)
-          return <div key={player.id} className={`rounded-lg border p-2.5 transition ${selected ? 'border-cyan/35 bg-cyan/[.06]' : 'border-white/[.07] bg-white/[.02]'}`}><div className="flex items-center gap-2"><input type="checkbox" className="size-5 shrink-0 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} aria-label={`${player.name} hraje`} /><input className="field !h-9 min-w-0 !px-2.5" value={player.name} maxLength={40} onChange={(event) => updatePlayer(player.id, { name: event.target.value })} aria-label="Jméno hráče" /><button type="button" className="btn-ghost !min-h-9 !px-2.5 hover:!border-red-400/30 hover:!text-red-300" onClick={() => removePlayer(player)} aria-label={`Odebrat ${player.name}`}><Trash2 size={14} /></button></div><input className="field mt-2 !h-9 !px-2.5 text-xs" value={player.riotId} maxLength={81} onChange={(event) => updatePlayer(player.id, { riotId: event.target.value })} placeholder="Riot ID: Jméno#TAG" aria-label={`Riot ID hráče ${player.name}`} /></div>
+          const editing = editingPlayer?.id === player.id ? editingPlayer : null
+          return <div key={player.id} className={`rounded-lg border p-2.5 transition ${selected ? 'border-cyan/35 bg-cyan/[.06]' : 'border-white/[.07] bg-white/[.02]'}`}>{editing ? <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); saveEditedPlayer() }}><div className="flex items-center gap-2"><input type="checkbox" className="size-5 shrink-0 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} aria-label={`${player.name} hraje`} /><input className="field !h-9 min-w-0 !px-2.5" value={editing.name} maxLength={40} onChange={(event) => setEditingPlayer({ ...editing, name: event.target.value })} aria-label="Jméno hráče" autoFocus /></div><input className="field !h-9 !px-2.5 text-xs" value={editing.riotId} maxLength={81} onChange={(event) => setEditingPlayer({ ...editing, riotId: event.target.value })} placeholder="Riot ID: Jméno#TAG (volitelné)" aria-label={`Riot ID hráče ${player.name}`} /><div className="flex justify-end gap-2"><button type="button" className="btn-ghost !min-h-8 !px-2.5 !text-xs" onClick={() => setEditingPlayer(null)}>Zrušit</button><button type="submit" className="btn-blue !min-h-8 !px-2.5 !text-xs"><Check size={13} /> Uložit</button></div></form> : <div className="flex items-center gap-2"><input type="checkbox" className="size-5 shrink-0 accent-[#0ac8b9]" checked={selected} onChange={() => togglePlayer(player.id)} aria-label={`${player.name} hraje`} /><span className="min-w-0 flex-1 truncate px-1 text-sm font-semibold text-slate-200" title={player.name}>{player.name}</span><details className="group relative"><summary className="btn-ghost cursor-pointer list-none !min-h-9 !px-2.5" aria-label={`Možnosti hráče ${player.name}`}><EllipsisVertical size={16} /></summary><div className="absolute right-0 z-20 mt-2 grid w-36 gap-1 rounded-lg border border-white/10 bg-[#07101d] p-1.5 shadow-2xl"><button type="button" className="flex items-center gap-2 rounded px-3 py-2 text-left text-xs font-semibold text-slate-300 transition hover:bg-white/[.07] hover:text-white" onClick={() => setEditingPlayer({ id: player.id, name: player.name, riotId: player.riotId })}><Pencil size={14} /> Upravit</button><button type="button" className="flex items-center gap-2 rounded px-3 py-2 text-left text-xs font-semibold text-red-300 transition hover:bg-red-400/10" onClick={() => removePlayer(player)}><Trash2 size={14} /> Smazat</button></div></details></div>}</div>
         })}
         {!state.players.length && <div className="rounded-lg border border-dashed border-white/10 p-5 text-center text-sm text-slate-600">Přidej prvního hráče.</div>}
       </div>
 
       <div className="border-t border-white/[.08] bg-black/10 p-4">
-        <div className="grid gap-2"><input className="field !h-10" value={newPlayerName} onChange={(event) => setNewPlayerName(event.target.value)} placeholder="Jméno hráče" maxLength={40} onKeyDown={(event) => { if (event.key === 'Enter') addPlayer() }} /><input className="field !h-10" value={newPlayerRiotId} onChange={(event) => setNewPlayerRiotId(event.target.value)} placeholder="Riot ID (volitelné)" maxLength={81} onKeyDown={(event) => { if (event.key === 'Enter') addPlayer() }} /><button type="button" className="btn-blue !min-h-10" onClick={addPlayer}><Plus size={16} /> Přidat hráče</button></div>
+        <div className="grid gap-2"><input className="field !h-10" value={newPlayerName} onChange={(event) => setNewPlayerName(event.target.value)} placeholder="Jméno hráče" maxLength={40} onKeyDown={(event) => { if (event.key === 'Enter') addPlayer() }} /><input className="field !h-10" value={newPlayerRiotId} onChange={(event) => setNewPlayerRiotId(event.target.value)} placeholder="Riot ID / tag (volitelné)" maxLength={81} onKeyDown={(event) => { if (event.key === 'Enter') addPlayer() }} /><button type="button" className="btn-blue !min-h-10" onClick={addPlayer}><Plus size={16} /> Přidat hráče</button></div>
         <button type="button" className="btn-gold mt-3 w-full" disabled={!dataset} onClick={() => generate('all')}><Shuffle size={18} /> Vygenerovat sestavu</button>
         <p className="mt-3 text-center text-xs text-slate-500"><strong className="text-cyan">{selectedPlayers.length}</strong> z {state.players.length} vybráno</p>
       </div>
