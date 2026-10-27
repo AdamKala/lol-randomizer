@@ -74,6 +74,8 @@ const integer = new Intl.NumberFormat('cs-CZ')
 const oneDecimal = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
 type AppTab = 'general' | 'statistics' | 'recent'
 type StatisticsSortKey = 'displayName' | 'games' | 'wins' | 'winRate' | 'kills' | 'kda' | 'performance' | 'cs' | 'damage' | 'gold' | 'vision' | 'favoriteChampion'
+type RecentOutcome = 'win' | 'loss' | 'mixed'
+type RecentOutcomeFilter = 'all' | Exclude<RecentOutcome, 'mixed'>
 
 function orderedByRole<T extends { role: Role }>(slots: readonly T[]): T[] {
   return [...slots].sort((left, right) => ROLES.indexOf(left.role) - ROLES.indexOf(right.role))
@@ -81,6 +83,19 @@ function orderedByRole<T extends { role: Role }>(slots: readonly T[]): T[] {
 
 function normalizeSearch(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('cs-CZ').trim()
+}
+
+function recentGamePlayerNames(game: ConfirmedGame): string[] {
+  return [...(game.match?.participants.map((participant) => participant.displayName) ?? []), ...game.slots.map((slot) => slot.player)]
+}
+
+function recentGameOutcome(game: ConfirmedGame): RecentOutcome {
+  const participants = game.match?.participants ?? []
+  if (!participants.length) return 'mixed'
+  const wins = participants.filter((participant) => participant.win).length
+  if (wins === participants.length) return 'win'
+  if (wins === 0) return 'loss'
+  return 'mixed'
 }
 
 function createId(): string {
@@ -374,31 +389,33 @@ function performanceLabel(score: number, rank: number): string {
 
 function RecentGamesPanel({ history, importing, onImport, onClear, onPlayerSelect }: { history: ConfirmedGame[]; importing: boolean; onImport: () => void; onClear: () => void; onPlayerSelect: (playerId: string) => void }) {
   const [playerFilter, setPlayerFilter] = useState('')
+  const [outcomeFilter, setOutcomeFilter] = useState<RecentOutcomeFilter>('all')
   const games = [...history].sort((left, right) => Date.parse(right.confirmedAt) - Date.parse(left.confirmedAt))
   const normalizedFilter = normalizeSearch(playerFilter)
-  const filteredGames = normalizedFilter
-    ? games.filter((game) => {
-        const participantNames = game.match?.participants.map((participant) => participant.displayName) ?? []
-        const plannedNames = game.slots.map((slot) => slot.player)
-        return [...participantNames, ...plannedNames].some((name) => normalizeSearch(name).includes(normalizedFilter))
-      })
+  const playerFilteredGames = normalizedFilter
+    ? games.filter((game) => recentGamePlayerNames(game).some((name) => normalizeSearch(name).includes(normalizedFilter)))
     : games
-  const playerNames = [...new Set(games.flatMap((game) => [...(game.match?.participants.map((participant) => participant.displayName) ?? []), ...game.slots.map((slot) => slot.player)]))].sort((left, right) => left.localeCompare(right, 'cs-CZ'))
+  const filteredGames = outcomeFilter === 'all' ? playerFilteredGames : playerFilteredGames.filter((game) => recentGameOutcome(game) === outcomeFilter)
+  const playerNames = [...new Set(games.flatMap(recentGamePlayerNames))].sort((left, right) => left.localeCompare(right, 'cs-CZ'))
+  const gameCountForPlayer = (name: string) => games.filter((game) => recentGamePlayerNames(game).some((candidate) => normalizeSearch(candidate) === normalizeSearch(name))).length
+  const winCount = playerFilteredGames.filter((game) => recentGameOutcome(game) === 'win').length
+  const lossCount = playerFilteredGames.filter((game) => recentGameOutcome(game) === 'loss').length
+  const hasActiveFilter = Boolean(normalizedFilter) || outcomeFilter !== 'all'
   const missingDetails = filteredGames.filter((game) => game.match?.participants.some((participant) => !participant.detailedStats)).length
   return (
     <Panel className="overflow-hidden">
       <div className="flex flex-col gap-4 border-b border-white/[.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="eyebrow">Veřejná data OP.GG</p><h2 className="section-title mt-1 flex items-center gap-2"><Swords size={20} className="text-gold" /> Poslední hry</h2><p className="mt-2 text-xs text-slate-500">Každý zápas je jedna karta. Rozklikni ji pro damage graf a výkony celé vaší skupiny.</p></div><button type="button" className="btn-blue shrink-0 !min-h-9 !px-3 !text-xs" onClick={onImport} disabled={importing} title="Vybrat počet her nebo datum začátku importu z OP.GG">{importing ? <LoaderCircle size={14} className="animate-spin" /> : <Download size={14} />} {importing ? 'Načítám detaily…' : 'Načíst hry'}</button></div>
-      {games.length > 0 && <div className="flex flex-col gap-3 border-b border-white/[.08] bg-black/10 px-5 py-3 sm:flex-row sm:items-center sm:px-6"><label className="relative block min-w-0 flex-1"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cyan/70" /><input type="search" className="field !h-10 !pl-10 !pr-10" value={playerFilter} onChange={(event) => setPlayerFilter(event.target.value)} placeholder="Vyhledat hráče v posledních hrách…" aria-label="Filtrovat poslední hry podle hráče" list="recent-player-suggestions" autoComplete="off" />{playerFilter && <button type="button" className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded text-slate-500 transition hover:bg-white/[.07] hover:text-white" onClick={() => setPlayerFilter('')} aria-label="Zrušit filtr hráče"><X size={14} /></button>}<datalist id="recent-player-suggestions">{playerNames.map((name) => <option key={name} value={name} />)}</datalist></label><span className="shrink-0 text-xs text-slate-500"><strong className="text-cyan">{filteredGames.length}</strong> z {games.length} {games.length === 1 ? 'zápasu' : 'zápasů'}</span></div>}
+      {games.length > 0 && <div className="border-b border-white/[.08] bg-black/10 px-5 py-4 sm:px-6"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><label className="relative block min-w-0 flex-1"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cyan" /><input type="search" className="field !h-10 !border-cyan/20 !bg-cyan/[.035] !pl-10 !pr-10 focus:!border-cyan/70" value={playerFilter} onChange={(event) => setPlayerFilter(event.target.value)} placeholder="Napiš jméno hráče…" aria-label="Filtrovat poslední hry podle hráče" autoComplete="off" />{playerFilter && <button type="button" className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded text-slate-500 transition hover:bg-white/[.08] hover:text-white" onClick={() => setPlayerFilter('')} aria-label="Zrušit filtr hráče"><X size={14} /></button>}</label><div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrovat podle výsledku"><span className="mr-1 text-[.62rem] font-bold uppercase tracking-wider text-slate-600">Výsledek</span><button type="button" className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${outcomeFilter === 'all' ? 'border-cyan/45 bg-cyan/15 text-cyan shadow-[0_0_14px_rgba(10,200,185,.1)]' : 'border-white/10 bg-white/[.025] text-slate-400 hover:border-white/20 hover:text-slate-200'}`} onClick={() => setOutcomeFilter('all')} aria-pressed={outcomeFilter === 'all'}>Vše <span className="ml-1 opacity-60">{playerFilteredGames.length}</span></button><button type="button" className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${outcomeFilter === 'win' ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,.12)]' : 'border-white/10 bg-white/[.025] text-slate-400 hover:border-emerald-400/30 hover:text-emerald-300'}`} onClick={() => setOutcomeFilter('win')} aria-pressed={outcomeFilter === 'win'}>✓ Výhry <span className="ml-1 opacity-60">{winCount}</span></button><button type="button" className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${outcomeFilter === 'loss' ? 'border-rose-400/60 bg-rose-400/15 text-rose-300 shadow-[0_0_14px_rgba(251,113,133,.12)]' : 'border-white/10 bg-white/[.025] text-slate-400 hover:border-rose-400/30 hover:text-rose-300'}`} onClick={() => setOutcomeFilter('loss')} aria-pressed={outcomeFilter === 'loss'}>✕ Prohry <span className="ml-1 opacity-60">{lossCount}</span></button></div></div><div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Rychlý filtr hráče"><button type="button" className={`shrink-0 rounded-md border px-3 py-2 text-xs font-bold transition ${!normalizedFilter ? 'border-cyan/50 bg-cyan/15 text-cyan' : 'border-white/10 bg-white/[.025] text-slate-400 hover:border-white/25 hover:text-white'}`} onClick={() => setPlayerFilter('')} aria-pressed={!normalizedFilter}>Všichni hráči</button>{playerNames.map((name) => { const active = normalizeSearch(name) === normalizedFilter; return <button key={name} type="button" className={`shrink-0 rounded-md border px-3 py-2 text-xs font-bold transition ${active ? 'border-cyan/60 bg-cyan/20 text-[#8bfff6] shadow-[0_0_16px_rgba(10,200,185,.12)]' : 'border-white/10 bg-white/[.025] text-slate-300 hover:border-cyan/30 hover:bg-cyan/[.06] hover:text-cyan'}`} onClick={() => setPlayerFilter(active ? '' : name)} aria-pressed={active}>{name}<span className="ml-2 rounded bg-black/20 px-1.5 py-0.5 text-[.6rem] opacity-65">{gameCountForPlayer(name)}</span></button>})}</div><div className="mt-3 flex min-h-7 items-center justify-between gap-3 border-t border-white/[.06] pt-3"><span className="text-xs text-slate-500">Zobrazeno <strong className="text-cyan">{filteredGames.length}</strong> z {games.length} {games.length === 1 ? 'zápasu' : 'zápasů'}</span>{hasActiveFilter && <button type="button" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 transition hover:text-white" onClick={() => { setPlayerFilter(''); setOutcomeFilter('all') }}><X size={13} /> Zrušit všechny filtry</button>}</div></div>}
       {missingDetails > 0 && <div className="flex items-start gap-2 border-b border-amber-400/15 bg-amber-400/[.06] px-5 py-3 text-xs leading-5 text-amber-100/80"><AlertTriangle className="mt-0.5 shrink-0" size={15} /><span>{missingDetails} {missingDetails === 1 ? 'zápasu chybí detailní damage' : 'zápasům chybí detailní damage'}. Klikni na načtení znovu; uložené zápasy se aktualizují.</span></div>}
       {!games.length ? <div className="grid min-h-44 place-items-center p-8 text-center"><div><Swords className="mx-auto text-slate-700" size={30} /><p className="mt-3 text-sm text-slate-500">Načti poslední zápasy uložených hráčů.</p></div></div> : <>
         {filteredGames.length ? <div className="divide-y divide-white/[.07]">
           {filteredGames.map((game) => {
             const participants = game.match?.participants ?? []
-            const wins = participants.filter((participant) => participant.win).length
-            const result = wins === participants.length ? 'Výhra' : wins === 0 ? 'Prohra' : 'Smíšený výsledek'
-            const resultVariantClass = wins === participants.length ? 'recent-game--win' : wins === 0 ? 'recent-game--loss' : 'recent-game--mixed'
-            const resultSymbol = wins === participants.length ? '✓' : wins === 0 ? '✕' : '◆'
-            const resultClass = wins === participants.length ? 'text-emerald-300' : wins === 0 ? 'text-red-300' : 'text-amber-200'
+            const outcome = recentGameOutcome(game)
+            const result = outcome === 'win' ? 'Výhra' : outcome === 'loss' ? 'Prohra' : 'Smíšený výsledek'
+            const resultVariantClass = outcome === 'win' ? 'recent-game--win' : outcome === 'loss' ? 'recent-game--loss' : 'recent-game--mixed'
+            const resultSymbol = outcome === 'win' ? '✓' : outcome === 'loss' ? '✕' : '◆'
+            const resultClass = outcome === 'win' ? 'text-emerald-300' : outcome === 'loss' ? 'text-red-300' : 'text-amber-200'
             const detailedParticipants = participants.filter((participant) => participant.detailedStats)
             const maxDamage = Math.max(1, ...detailedParticipants.map((participant) => participant.totalDamageDealtToChampions))
             const totalDamage = detailedParticipants.reduce((total, participant) => total + participant.totalDamageDealtToChampions, 0)
