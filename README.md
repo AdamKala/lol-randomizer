@@ -35,8 +35,8 @@ npm run dist:win
 
 Ve složce `release/` vzniknou:
 
-- `LoL-Randomizer-Setup-1.1.1-x64.exe` — klasický NSIS instalátor;
-- `LoL-Randomizer-Portable-1.1.1-x64.exe` — portable verze bez instalace.
+- `LoL-Randomizer-Setup-1.1.2-x64.exe` — klasický NSIS instalátor;
+- `LoL-Randomizer-Portable-1.1.2-x64.exe` — portable verze bez instalace.
 
 Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing certifikát. Windows SmartScreen proto může u prvních stažení zobrazit varování neznámého vydavatele.
 
