@@ -7,7 +7,7 @@ export type MatchRegion = (typeof MATCH_REGIONS)[number]
 export interface ChampionCounter {
   slug: string
   name: string
-  winRate: number
+  winRateAgainst: number
   games: number
 }
 

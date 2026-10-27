@@ -41,15 +41,16 @@ export function validateMetaDataset(value: unknown): MetaDataset {
     if (winRate !== undefined && (typeof winRate !== 'number' || winRate < 0 || winRate > 100)) {
       throw new Error(`Položka ${index + 1} má neplatný win rate.`)
     }
+    const counterWinRate = isRecord(counter) ? counter.winRateAgainst ?? counter.winRate : undefined
     if (counter !== undefined && (
       !isRecord(counter)
       || typeof counter.slug !== 'string'
       || !counter.slug.trim()
       || typeof counter.name !== 'string'
       || !counter.name.trim()
-      || typeof counter.winRate !== 'number'
-      || counter.winRate < 0
-      || counter.winRate > 100
+      || typeof counterWinRate !== 'number'
+      || counterWinRate < 0
+      || counterWinRate > 100
       || !Number.isInteger(counter.games)
       || (counter.games as number) < 0
     )) throw new Error(`Položka ${index + 1} má neplatná data counteru.`)
@@ -69,7 +70,7 @@ export function validateMetaDataset(value: unknown): MetaDataset {
         counter: {
           slug: counter.slug as string,
           name: counter.name as string,
-          winRate: counter.winRate as number,
+          winRateAgainst: counterWinRate as number,
           games: counter.games as number,
         },
       } : {}),

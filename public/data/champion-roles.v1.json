@@ -8,7 +8,7 @@
     "name": "OP.GG + U.GG snapshot",
     "url": "https://op.gg/lol/champions",
     "scope": "Ranked Solo, Emerald+, Global; role-specific champion statistics",
-    "methodology": "Výběr champion-role kombinací pochází z původního U.GG snapshotu, nikoli z Riot tříd. Pickrate a winrate jsou načtené z veřejných OP.GG stránek. Největší counter je soupeř s nejvyšším winratem proti danému picku; započítávají se matchup vzorky s alespoň 25 hrami a 5 % velikosti nejčastějšího matchupu. Počet her zůstává z původního ručně kurátorovaného U.GG snapshotu."
+    "methodology": "Výběr champion-role kombinací pochází z původního U.GG snapshotu, nikoli z Riot tříd. Pickrate a winrate jsou načtené z veřejných OP.GG stránek. Největší counter je soupeř, proti kterému má daný pick nejnižší winrate; započítávají se matchup vzorky s alespoň 25 hrami a 5 % velikosti nejčastějšího matchupu. Počet her zůstává z původního ručně kurátorovaného U.GG snapshotu."
   },
   "defaults": {
     "minPickRate": 0.5,
@@ -24,10 +24,10 @@
       "games": 46600,
       "winRate": 50.03,
       "counter": {
-        "slug": "anivia",
-        "name": "Anivia",
-        "winRate": 56.25,
-        "games": 144
+        "slug": "quinn",
+        "name": "Quinn",
+        "winRateAgainst": 39.59,
+        "games": 197
       }
     },
     {
@@ -39,10 +39,10 @@
       "games": 25300,
       "winRate": 49.34,
       "counter": {
-        "slug": "monkeyking",
-        "name": "Wukong",
-        "winRate": 57.94,
-        "games": 107
+        "slug": "poppy",
+        "name": "Poppy",
+        "winRateAgainst": 40.34,
+        "games": 119
       }
     },
     {
@@ -54,10 +54,10 @@
       "games": 27100,
       "winRate": 50.75,
       "counter": {
-        "slug": "varus",
-        "name": "Varus",
-        "winRate": 62.2,
-        "games": 82
+        "slug": "swain",
+        "name": "Swain",
+        "winRateAgainst": 42.11,
+        "games": 95
       }
     },
     {
@@ -69,10 +69,10 @@
       "games": 20400,
       "winRate": 50.65,
       "counter": {
-        "slug": "aurora",
-        "name": "Aurora",
-        "winRate": 57.89,
-        "games": 57
+        "slug": "swain",
+        "name": "Swain",
+        "winRateAgainst": 39.06,
+        "games": 64
       }
     },
     {
@@ -84,10 +84,10 @@
       "games": 59300,
       "winRate": 50.97,
       "counter": {
-        "slug": "ksante",
-        "name": "K'Sante",
-        "winRate": 56.06,
-        "games": 1197
+        "slug": "malzahar",
+        "name": "Malzahar",
+        "winRateAgainst": 41.36,
+        "games": 162
       }
     },
     {
@@ -99,10 +99,10 @@
       "games": 40800,
       "winRate": 50.01,
       "counter": {
-        "slug": "malzahar",
-        "name": "Malzahar",
-        "winRate": 57.33,
-        "games": 75
+        "slug": "warwick",
+        "name": "Warwick",
+        "winRateAgainst": 41.11,
+        "games": 180
       }
     },
     {
@@ -114,10 +114,10 @@
       "games": 42800,
       "winRate": 50.65,
       "counter": {
-        "slug": "sylas",
-        "name": "Sylas",
-        "winRate": 57.81,
-        "games": 128
+        "slug": "lissandra",
+        "name": "Lissandra",
+        "winRateAgainst": 40.96,
+        "games": 83
       }
     },
     {
@@ -129,10 +129,10 @@
       "games": 25300,
       "winRate": 50.62,
       "counter": {
-        "slug": "vayne",
-        "name": "Vayne",
-        "winRate": 59.56,
-        "games": 183
+        "slug": "zac",
+        "name": "Zac",
+        "winRateAgainst": 44.9,
+        "games": 147
       }
     },
     {
@@ -144,10 +144,10 @@
       "games": 66100,
       "winRate": 51.06,
       "counter": {
-        "slug": "ksante",
-        "name": "K'Sante",
-        "winRate": 58.36,
-        "games": 1071
+        "slug": "kayle",
+        "name": "Kayle",
+        "winRateAgainst": 43.73,
+        "games": 917
       }
     },
     {
@@ -159,10 +159,10 @@
       "games": 24300,
       "winRate": 49.19,
       "counter": {
-        "slug": "varus",
-        "name": "Varus",
-        "winRate": 62.07,
-        "games": 116
+        "slug": "aurora",
+        "name": "Aurora",
+        "winRateAgainst": 43.21,
+        "games": 81
       }
     },
     {
@@ -174,10 +174,10 @@
       "games": 15600,
       "winRate": 49.92,
       "counter": {
-        "slug": "lissandra",
-        "name": "Lissandra",
-        "winRate": 59.15,
-        "games": 71
+        "slug": "warwick",
+        "name": "Warwick",
+        "winRateAgainst": 41.94,
+        "games": 124
       }
     },
     {
@@ -189,10 +189,10 @@
       "games": 38900,
       "winRate": 50.64,
       "counter": {
-        "slug": "anivia",
-        "name": "Anivia",
-        "winRate": 64.71,
-        "games": 51
+        "slug": "zac",
+        "name": "Zac",
+        "winRateAgainst": 41.18,
+        "games": 68
       }
     },
     {
@@ -204,10 +204,10 @@
       "games": 24300,
       "winRate": 50.55,
       "counter": {
-        "slug": "zac",
-        "name": "Zac",
-        "winRate": 60.78,
-        "games": 51
+        "slug": "quinn",
+        "name": "Quinn",
+        "winRateAgainst": 40.48,
+        "games": 42
       }
     },
     {
@@ -219,10 +219,10 @@
       "games": 37900,
       "winRate": 50.16,
       "counter": {
-        "slug": "aurora",
-        "name": "Aurora",
-        "winRate": 60.71,
-        "games": 112
+        "slug": "warwick",
+        "name": "Warwick",
+        "winRateAgainst": 41.21,
+        "games": 347
       }
     },
     {
@@ -234,10 +234,10 @@
       "games": 57300,
       "winRate": 49.49,
       "counter": {
-        "slug": "volibear",
-        "name": "Volibear",
-        "winRate": 58.67,
-        "games": 1343
+        "slug": "teemo",
+        "name": "Teemo",
+        "winRateAgainst": 42.28,
+        "games": 615
       }
     },
     {
@@ -249,10 +249,10 @@
       "games": 29200,
       "winRate": 47.44,
       "counter": {
-        "slug": "heimerdinger",
-        "name": "Heimerdinger",
-        "winRate": 54.34,
-        "games": 265
+        "slug": "quinn",
+        "name": "Quinn",
+        "winRateAgainst": 38.71,
+        "games": 248
       }
     },
     {
@@ -264,10 +264,10 @@
       "games": 22400,
       "winRate": 46.62,
       "counter": {
-        "slug": "warwick",
-        "name": "Warwick",
-        "winRate": 58.92,
-        "games": 241
+        "slug": "quinn",
+        "name": "Quinn",
+        "winRateAgainst": 34.62,
+        "games": 78
       }
     },
     {
@@ -279,10 +279,10 @@
       "games": 21400,
       "winRate": 51.12,
       "counter": {
-        "slug": "chogath",
-        "name": "Cho'Gath",
-        "winRate": 57.93,
-        "games": 271
+        "slug": "tahmkench",
+        "name": "Tahm Kench",
+        "winRateAgainst": 40.24,
+        "games": 164
       }
     },
     {
@@ -294,10 +294,10 @@
       "games": 13600,
       "winRate": 49.79,
       "counter": {
-        "slug": "vayne",
-        "name": "Vayne",
-        "winRate": 59.52,
-        "games": 84
+        "slug": "lissandra",
+        "name": "Lissandra",
+        "winRateAgainst": 36.67,
+        "games": 60
       }
     },
     {
@@ -309,9 +309,9 @@
       "games": 12600,
       "winRate": 51.13,
       "counter": {
-        "slug": "ryze",
-        "name": "Ryze",
-        "winRate": 63.33,
+        "slug": "zac",
+        "name": "Zac",
+        "winRateAgainst": 36.67,
         "games": 30
       }
     },
@@ -324,10 +324,10 @@
       "games": 51500,
       "winRate": 51.44,
       "counter": {
-        "slug": "vayne",
-        "name": "Vayne",
-        "winRate": 63.46,
-        "games": 457
+        "slug": "singed",
+        "name": "Singed",
+        "winRateAgainst": 43.02,
+        "games": 430
       }
     },
     {
@@ -339,10 +339,10 @@
       "games": 53400,
       "winRate": 50.47,
       "counter": {
-        "slug": "monkeyking",
-        "name": "Wukong",
-        "winRate": 60.78,
-        "games": 204
+        "slug": "quinn",
+        "name": "Quinn",
+        "winRateAgainst": 42.98,
+        "games": 121
       }
     },
     {
@@ -354,10 +354,10 @@
       "games": 39800,
       "winRate": 50.68,
       "counter": {
-        "slug": "vladimir",
-        "name": "Vladimir",
-        "winRate": 58.3,
-        "games": 271
+        "slug": "anivia",
+        "name": "Anivia",
+        "winRateAgainst": 39.02,
+        "games": 123
       }
     },
     {
@@ -369,10 +369,10 @@
       "games": 26200,
       "winRate": 51.32,
       "counter": {
-        "slug": "ryze",
-        "name": "Ryze",
-        "winRate": 57.89,
-        "games": 76
+        "slug": "aurora",
+        "name": "Aurora",
+        "winRateAgainst": 38.78,
+        "games": 98
       }
     },
     {
@@ -384,10 +384,10 @@
       "games": 12600,
       "winRate": 49.95,
       "counter": {
-        "slug": "vayne",
-        "name": "Vayne",
-        "winRate": 57.24,
-        "games": 152
+        "slug": "chogath",
+        "name": "Cho'Gath",
+        "winRateAgainst": 44.76,
+        "games": 458
       }
     },
     {
@@ -399,10 +399,10 @@
       "games": 10700,
       "winRate": 52.17,
       "counter": {
-        "slug": "sylas",
-        "name": "Sylas",
-        "winRate": 66.67,
-        "games": 36
+        "slug": "shen",
+        "name": "Shen",
+        "winRateAgainst": 42.52,
+        "games": 127
       }
     },
     {
@@ -414,10 +414,10 @@
       "games": 7787,
       "winRate": 52.15,
       "counter": {
-        "slug": "tahmkench",
-        "name": "Tahm Kench",
-        "winRate": 67.65,
-        "games": 34
+        "slug": "malphite",
+        "name": "Malphite",
+        "winRateAgainst": 42.31,
+        "games": 234
       }
     },
     {
@@ -429,10 +429,10 @@
       "games": 40800,
       "winRate": 49.88,
       "counter": {
-        "slug": "monkeyking",
-        "name": "Wukong",
-        "winRate": 57.14,
-        "games": 210
+        "slug": "varus",
+        "name": "Varus",
+        "winRateAgainst": 43.37,
+        "games": 166
       }
     },
     {
@@ -444,10 +444,10 @@
       "games": 39800,
       "winRate": 49.83,
       "counter": {
-        "slug": "ksante",
-        "name": "K'Sante",
-        "winRate": 58.2,
-        "games": 311
+        "slug": "poppy",
+        "name": "Poppy",
+        "winRateAgainst": 42.44,
+        "games": 172
       }
     },
     {
@@ -459,10 +459,10 @@
       "games": 12600,
       "winRate": 46.88,
       "counter": {
-        "slug": "vayne",
-        "name": "Vayne",
-        "winRate": 58,
-        "games": 50
+        "slug": "urgot",
+        "name": "Urgot",
+        "winRateAgainst": 36.55,
+        "games": 145
       }
     },
     {
@@ -474,10 +474,10 @@
       "games": 24300,
       "winRate": 51.67,
       "counter": {
-        "slug": "udyr",
-        "name": "Udyr",
-        "winRate": 62.86,
-        "games": 105
+        "slug": "varus",
+        "name": "Varus",
+        "winRateAgainst": 43.75,
+        "games": 96
       }
     },
     {
@@ -489,10 +489,10 @@
       "games": 18500,
       "winRate": 51.57,
       "counter": {
-        "slug": "monkeyking",
-        "name": "Wukong",
-        "winRate": 62.67,
-        "games": 75
+        "slug": "poppy",
+        "name": "Poppy",
+        "winRateAgainst": 40.98,
+        "games": 61
       }
     },
     {
@@ -504,10 +504,10 @@
       "games": 25300,
       "winRate": 50.91,
       "counter": {
-        "slug": "lissandra",
-        "name": "Lissandra",
-        "winRate": 58.33,
-        "games": 108
+        "slug": "zac",
+        "name": "Zac",
+        "winRateAgainst": 41.57,
+        "games": 89
       }
     },
     {
@@ -519,10 +519,10 @@
       "games": 37900,
       "winRate": 50.51,
       "counter": {
-        "slug": "vayne",
-        "name": "Vayne",
-        "winRate": 64.02,
-        "games": 239
+        "slug": "poppy",
+        "name": "Poppy",
+        "winRateAgainst": 39.45,
+        "games": 109
       }
     },
     {
@@ -534,10 +534,10 @@
       "games": 29200,
       "winRate": 50.84,
       "counter": {
-        "slug": "malzahar",
-        "name": "Malzahar",
-        "winRate": 63.27,
-        "games": 49
+        "slug": "sion",
+        "name": "Sion",
+        "winRateAgainst": 42.67,
+        "games": 532
       }
     },
     {
@@ -549,10 +549,10 @@
       "games": 12600,
       "winRate": 48.38,
       "counter": {
-        "slug": "volibear",
-        "name": "Volibear",
-        "winRate": 59.41,
-        "games": 170
+        "slug": "teemo",
+        "name": "Teemo",
+        "winRateAgainst": 35.29,
+        "games": 238
       }
     },
     {
@@ -564,10 +564,10 @@
       "games": 21400,
       "winRate": 48.44,
       "counter": {
-        "slug": "zac",
-        "name": "Zac",
-        "winRate": 58.67,
-        "games": 75
+        "slug": "lissandra",
+        "name": "Lissandra",
+        "winRateAgainst": 30,
+        "games": 80
       }
     },
     {
@@ -579,10 +579,10 @@
       "games": 36000,
       "winRate": 49.18,
       "counter": {
-        "slug": "tahmkench",
-        "name": "Tahm Kench",
-        "winRate": 63.33,
-        "games": 210
+        "slug": "irelia",
+        "name": "Irelia",
+        "winRateAgainst": 43.5,
+        "games": 623
       }
     },
     {
@@ -594,10 +594,10 @@
       "games": 38900,
       "winRate": 51.19,
       "counter": {
-        "slug": "zed",
-        "name": "Zed",
-        "winRate": 61.26,
-        "games": 191
+        "slug": "shyvana",
+        "name": "Shyvana",
+        "winRateAgainst": 42.51,
+        "games": 374
       }
     },
     {
@@ -609,10 +609,10 @@
       "games": 28200,
       "winRate": 51.77,
       "counter": {
-        "slug": "karthus",
-        "name": "Karthus",
-        "winRate": 60.49,
-        "games": 162
+        "slug": "taliyah",
+        "name": "Taliyah",
+        "winRateAgainst": 42.66,
+        "games": 218
       }
     },
     {
@@ -632,10 +632,10 @@
       "games": 45700,
       "winRate": 51.61,
       "counter": {
-        "slug": "nunu",
-        "name": "Nunu & Willump",
-        "winRate": 55.99,
-        "games": 359
+        "slug": "reksai",
+        "name": "Rek'Sai",
+        "winRateAgainst": 41.13,
+        "games": 231
       }
     },
     {
@@ -647,10 +647,10 @@
       "games": 47600,
       "winRate": 50.15,
       "counter": {
-        "slug": "naafiri",
-        "name": "Naafiri",
-        "winRate": 55.98,
-        "games": 368
+        "slug": "ivern",
+        "name": "Ivern",
+        "winRateAgainst": 40.65,
+        "games": 155
       }
     },
     {
@@ -662,10 +662,10 @@
       "games": 41800,
       "winRate": 50.46,
       "counter": {
-        "slug": "malphite",
-        "name": "Malphite",
-        "winRate": 57.89,
-        "games": 152
+        "slug": "nunu",
+        "name": "Nunu & Willump",
+        "winRateAgainst": 45.87,
+        "games": 460
       }
     },
     {
@@ -677,10 +677,10 @@
       "games": 20400,
       "winRate": 51.37,
       "counter": {
-        "slug": "jayce",
-        "name": "Jayce",
-        "winRate": 60.97,
-        "games": 269
+        "slug": "reksai",
+        "name": "Rek'Sai",
+        "winRateAgainst": 44.31,
+        "games": 255
       }
     },
     {
@@ -692,10 +692,10 @@
       "games": 30100,
       "winRate": 50.31,
       "counter": {
-        "slug": "pantheon",
-        "name": "Pantheon",
-        "winRate": 64.58,
-        "games": 96
+        "slug": "gwen",
+        "name": "Gwen",
+        "winRateAgainst": 38,
+        "games": 100
       }
     },
     {
@@ -707,10 +707,10 @@
       "games": 32100,
       "winRate": 50.68,
       "counter": {
-        "slug": "locke",
-        "name": "Locke",
-        "winRate": 64.79,
-        "games": 71
+        "slug": "teemo",
+        "name": "Teemo",
+        "winRateAgainst": 39.13,
+        "games": 46
       }
     },
     {
@@ -722,10 +722,10 @@
       "games": 19400,
       "winRate": 50.97,
       "counter": {
-        "slug": "jarvaniv",
-        "name": "Jarvan IV",
-        "winRate": 58.56,
-        "games": 222
+        "slug": "reksai",
+        "name": "Rek'Sai",
+        "winRateAgainst": 37.14,
+        "games": 35
       }
     },
     {
@@ -737,10 +737,10 @@
       "games": 74800,
       "winRate": 49.09,
       "counter": {
-        "slug": "zed",
-        "name": "Zed",
-        "winRate": 55.59,
-        "games": 939
+        "slug": "zyra",
+        "name": "Zyra",
+        "winRateAgainst": 44.13,
+        "games": 741
       }
     },
     {
@@ -752,10 +752,10 @@
       "games": 49600,
       "winRate": 49.05,
       "counter": {
-        "slug": "qiyana",
-        "name": "Qiyana",
-        "winRate": 56.56,
-        "games": 1777
+        "slug": "sylas",
+        "name": "Sylas",
+        "winRateAgainst": 44.55,
+        "games": 1928
       }
     },
     {
@@ -767,10 +767,10 @@
       "games": 11700,
       "winRate": 52.32,
       "counter": {
-        "slug": "nidalee",
-        "name": "Nidalee",
-        "winRate": 67.48,
-        "games": 123
+        "slug": "malphite",
+        "name": "Malphite",
+        "winRateAgainst": 26.67,
+        "games": 30
       }
     },
     {
@@ -782,10 +782,10 @@
       "games": 40800,
       "winRate": 49.86,
       "counter": {
-        "slug": "pantheon",
-        "name": "Pantheon",
-        "winRate": 62.41,
-        "games": 266
+        "slug": "gragas",
+        "name": "Gragas",
+        "winRateAgainst": 41.44,
+        "games": 222
       }
     },
     {
@@ -797,10 +797,10 @@
       "games": 15600,
       "winRate": 49.26,
       "counter": {
-        "slug": "jax",
-        "name": "Jax",
-        "winRate": 64.86,
-        "games": 37
+        "slug": "belveth",
+        "name": "Bel'Veth",
+        "winRateAgainst": 39.51,
+        "games": 162
       }
     },
     {
@@ -812,10 +812,10 @@
       "games": 60300,
       "winRate": 49.97,
       "counter": {
-        "slug": "ambessa",
-        "name": "Ambessa",
-        "winRate": 58.47,
-        "games": 183
+        "slug": "fiddlesticks",
+        "name": "Fiddlesticks",
+        "winRateAgainst": 44.04,
+        "games": 713
       }
     },
     {
@@ -827,10 +827,10 @@
       "games": 58300,
       "winRate": 49.66,
       "counter": {
-        "slug": "volibear",
-        "name": "Volibear",
-        "winRate": 54.61,
-        "games": 282
+        "slug": "zyra",
+        "name": "Zyra",
+        "winRateAgainst": 43.64,
+        "games": 527
       }
     },
     {
@@ -842,10 +842,10 @@
       "games": 34000,
       "winRate": 50.07,
       "counter": {
-        "slug": "ambessa",
-        "name": "Ambessa",
-        "winRate": 60.56,
-        "games": 71
+        "slug": "gragas",
+        "name": "Gragas",
+        "winRateAgainst": 42.34,
+        "games": 111
       }
     },
     {
@@ -857,10 +857,10 @@
       "games": 117600,
       "winRate": 47.7,
       "counter": {
-        "slug": "locke",
-        "name": "Locke",
-        "winRate": 52.64,
-        "games": 435
+        "slug": "zyra",
+        "name": "Zyra",
+        "winRateAgainst": 44.08,
+        "games": 1309
       }
     },
     {
@@ -872,10 +872,10 @@
       "games": 42800,
       "winRate": 51.71,
       "counter": {
-        "slug": "jax",
-        "name": "Jax",
-        "winRate": 66.67,
-        "games": 156
+        "slug": "evelynn",
+        "name": "Evelynn",
+        "winRateAgainst": 45.71,
+        "games": 560
       }
     },
     {
@@ -887,10 +887,10 @@
       "games": 48600,
       "winRate": 50.74,
       "counter": {
-        "slug": "locke",
-        "name": "Locke",
-        "winRate": 61.61,
-        "games": 224
+        "slug": "reksai",
+        "name": "Rek'Sai",
+        "winRateAgainst": 45.53,
+        "games": 380
       }
     },
     {
@@ -902,10 +902,10 @@
       "games": 44700,
       "winRate": 49,
       "counter": {
-        "slug": "darius",
-        "name": "Darius",
-        "winRate": 57.31,
-        "games": 171
+        "slug": "ivern",
+        "name": "Ivern",
+        "winRateAgainst": 40.15,
+        "games": 137
       }
     },
     {
@@ -917,10 +917,10 @@
       "games": 31100,
       "winRate": 51,
       "counter": {
-        "slug": "malphite",
-        "name": "Malphite",
-        "winRate": 62.32,
-        "games": 69
+        "slug": "quinn",
+        "name": "Quinn",
+        "winRateAgainst": 42.24,
+        "games": 116
       }
     },
     {
@@ -932,9 +932,9 @@
       "games": 20400,
       "winRate": 51.69,
       "counter": {
-        "slug": "volibear",
-        "name": "Volibear",
-        "winRate": 63.64,
+        "slug": "skarner",
+        "name": "Skarner",
+        "winRateAgainst": 33.33,
         "games": 66
       }
     },
@@ -947,10 +947,10 @@
       "games": 14210,
       "winRate": 52.12,
       "counter": {
-        "slug": "gwen",
-        "name": "Gwen",
-        "winRate": 60.38,
-        "games": 53
+        "slug": "darius",
+        "name": "Darius",
+        "winRateAgainst": 40.79,
+        "games": 76
       }
     },
     {
@@ -962,10 +962,10 @@
       "games": 33000,
       "winRate": 48.39,
       "counter": {
-        "slug": "locke",
-        "name": "Locke",
-        "winRate": 58.24,
-        "games": 170
+        "slug": "masteryi",
+        "name": "Master Yi",
+        "winRateAgainst": 41.76,
+        "games": 1056
       }
     },
     {
@@ -977,10 +977,10 @@
       "games": 21400,
       "winRate": 51.23,
       "counter": {
-        "slug": "malphite",
-        "name": "Malphite",
-        "winRate": 66.13,
-        "games": 62
+        "slug": "gwen",
+        "name": "Gwen",
+        "winRateAgainst": 41.86,
+        "games": 129
       }
     },
     {
@@ -992,10 +992,10 @@
       "games": 51500,
       "winRate": 50.82,
       "counter": {
-        "slug": "jayce",
-        "name": "Jayce",
-        "winRate": 57.04,
-        "games": 270
+        "slug": "quinn",
+        "name": "Quinn",
+        "winRateAgainst": 43.84,
+        "games": 219
       }
     },
     {
@@ -1007,10 +1007,10 @@
       "games": 25300,
       "winRate": 51.17,
       "counter": {
-        "slug": "quinn",
-        "name": "Quinn",
-        "winRate": 68.18,
-        "games": 44
+        "slug": "aatrox",
+        "name": "Aatrox",
+        "winRateAgainst": 41.18,
+        "games": 34
       }
     },
     {
@@ -1022,10 +1022,10 @@
       "games": 27200,
       "winRate": 50.81,
       "counter": {
-        "slug": "talon",
-        "name": "Talon",
-        "winRate": 59.79,
-        "games": 97
+        "slug": "naafiri",
+        "name": "Naafiri",
+        "winRateAgainst": 29.09,
+        "games": 55
       }
     },
     {
@@ -1037,10 +1037,10 @@
       "games": 24300,
       "winRate": 51.4,
       "counter": {
-        "slug": "teemo",
-        "name": "Teemo",
-        "winRate": 67.57,
-        "games": 37
+        "slug": "aatrox",
+        "name": "Aatrox",
+        "winRateAgainst": 40,
+        "games": 100
       }
     },
     {
@@ -1052,10 +1052,10 @@
       "games": 46600,
       "winRate": 48.85,
       "counter": {
-        "slug": "locke",
-        "name": "Locke",
-        "winRate": 55.56,
-        "games": 171
+        "slug": "shaco",
+        "name": "Shaco",
+        "winRateAgainst": 43.26,
+        "games": 675
       }
     },
     {
@@ -1067,10 +1067,10 @@
       "games": 78700,
       "winRate": 49.63,
       "counter": {
-        "slug": "locke",
-        "name": "Locke",
-        "winRate": 58.15,
-        "games": 313
+        "slug": "belveth",
+        "name": "Bel'Veth",
+        "winRateAgainst": 44.11,
+        "games": 900
       }
     },
     {
@@ -1082,10 +1082,10 @@
       "games": 19400,
       "winRate": 49.34,
       "counter": {
-        "slug": "trundle",
-        "name": "Trundle",
-        "winRate": 65.79,
-        "games": 38
+        "slug": "rammus",
+        "name": "Rammus",
+        "winRateAgainst": 36.36,
+        "games": 66
       }
     },
     {
@@ -1097,10 +1097,10 @@
       "games": 43700,
       "winRate": 51.17,
       "counter": {
-        "slug": "fizz",
-        "name": "Fizz",
-        "winRate": 60.61,
-        "games": 66
+        "slug": "evelynn",
+        "name": "Evelynn",
+        "winRateAgainst": 41.4,
+        "games": 343
       }
     },
     {
@@ -1112,10 +1112,10 @@
       "games": 28200,
       "winRate": 51.67,
       "counter": {
-        "slug": "locke",
-        "name": "Locke",
-        "winRate": 58.15,
-        "games": 227
+        "slug": "taliyah",
+        "name": "Taliyah",
+        "winRateAgainst": 43.28,
+        "games": 610
       }
     },
     {
@@ -1127,10 +1127,10 @@
       "games": 36000,
       "winRate": 50.26,
       "counter": {
-        "slug": "pantheon",
-        "name": "Pantheon",
-        "winRate": 59.33,
-        "games": 150
+        "slug": "udyr",
+        "name": "Udyr",
+        "winRateAgainst": 40.51,
+        "games": 237
       }
     },
     {
@@ -1142,9 +1142,9 @@
       "games": 36900,
       "winRate": 51.24,
       "counter": {
-        "slug": "ambessa",
-        "name": "Ambessa",
-        "winRate": 60.26,
+        "slug": "gragas",
+        "name": "Gragas",
+        "winRateAgainst": 43.59,
         "games": 78
       }
     },
@@ -1157,10 +1157,10 @@
       "games": 84500,
       "winRate": 51.31,
       "counter": {
-        "slug": "tristana",
-        "name": "Tristana",
-        "winRate": 60.47,
-        "games": 253
+        "slug": "gwen",
+        "name": "Gwen",
+        "winRateAgainst": 46.09,
+        "games": 243
       }
     },
     {
@@ -1172,10 +1172,10 @@
       "games": 57300,
       "winRate": 48.73,
       "counter": {
-        "slug": "naafiri",
-        "name": "Naafiri",
-        "winRate": 57.67,
-        "games": 215
+        "slug": "taliyah",
+        "name": "Taliyah",
+        "winRateAgainst": 42.56,
+        "games": 719
       }
     },
     {
@@ -1187,10 +1187,10 @@
       "games": 14600,
       "winRate": 50.25,
       "counter": {
-        "slug": "tristana",
-        "name": "Tristana",
-        "winRate": 63.16,
-        "games": 57
+        "slug": "taliyah",
+        "name": "Taliyah",
+        "winRateAgainst": 42.41,
+        "games": 224
       }
     },
     {
@@ -1202,10 +1202,10 @@
       "games": 25300,
       "winRate": 50.57,
       "counter": {
-        "slug": "diana",
-        "name": "Diana",
-        "winRate": 57.23,
-        "games": 325
+        "slug": "ziggs",
+        "name": "Ziggs",
+        "winRateAgainst": 39.44,
+        "games": 71
       }
     },
     {
@@ -1217,10 +1217,10 @@
       "games": 27200,
       "winRate": 50.8,
       "counter": {
-        "slug": "tristana",
-        "name": "Tristana",
-        "winRate": 66,
-        "games": 50
+        "slug": "lissandra",
+        "name": "Lissandra",
+        "winRateAgainst": 42.55,
+        "games": 329
       }
     },
     {
@@ -1232,10 +1232,10 @@
       "games": 22400,
       "winRate": 50.76,
       "counter": {
-        "slug": "sion",
-        "name": "Sion",
-        "winRate": 62.75,
-        "games": 51
+        "slug": "gwen",
+        "name": "Gwen",
+        "winRateAgainst": 40.91,
+        "games": 44
       }
     },
     {
@@ -1247,10 +1247,10 @@
       "games": 17500,
       "winRate": 47.61,
       "counter": {
-        "slug": "irelia",
-        "name": "Irelia",
-        "winRate": 57.52,
-        "games": 153
+        "slug": "naafiri",
+        "name": "Naafiri",
+        "winRateAgainst": 33.33,
+        "games": 30
       }
     },
     {
@@ -1270,10 +1270,10 @@
       "games": 16500,
       "winRate": 50.7,
       "counter": {
-        "slug": "tristana",
-        "name": "Tristana",
-        "winRate": 57.83,
-        "games": 83
+        "slug": "anivia",
+        "name": "Anivia",
+        "winRateAgainst": 42.77,
+        "games": 325
       }
     },
     {
@@ -1285,10 +1285,10 @@
       "games": 21400,
       "winRate": 51.66,
       "counter": {
-        "slug": "jayce",
-        "name": "Jayce",
-        "winRate": 62.42,
-        "games": 149
+        "slug": "gragas",
+        "name": "Gragas",
+        "winRateAgainst": 45.7,
+        "games": 151
       }
     },
     {
@@ -1300,10 +1300,10 @@
       "games": 35000,
       "winRate": 51.04,
       "counter": {
-        "slug": "mel",
-        "name": "Mel",
-        "winRate": 62.79,
-        "games": 387
+        "slug": "lissandra",
+        "name": "Lissandra",
+        "winRateAgainst": 45.49,
+        "games": 1484
       }
     },
     {
@@ -1315,10 +1315,10 @@
       "games": 31100,
       "winRate": 49.25,
       "counter": {
-        "slug": "nasus",
-        "name": "Nasus",
-        "winRate": 57.01,
-        "games": 107
+        "slug": "garen",
+        "name": "Garen",
+        "winRateAgainst": 40.91,
+        "games": 110
       }
     },
     {
@@ -1330,10 +1330,10 @@
       "games": 5441,
       "winRate": 52.55,
       "counter": {
-        "slug": "kassadin",
-        "name": "Kassadin",
-        "winRate": 61.9,
-        "games": 63
+        "slug": "veigar",
+        "name": "Veigar",
+        "winRateAgainst": 39.29,
+        "games": 84
       }
     },
     {
@@ -1345,10 +1345,10 @@
       "games": 5029,
       "winRate": 54.35,
       "counter": {
-        "slug": "xerath",
-        "name": "Xerath",
-        "winRate": 70,
-        "games": 70
+        "slug": "aurora",
+        "name": "Aurora",
+        "winRateAgainst": 47.37,
+        "games": 57
       }
     },
     {
@@ -1368,10 +1368,10 @@
       "games": 39800,
       "winRate": 50.61,
       "counter": {
-        "slug": "pantheon",
-        "name": "Pantheon",
-        "winRate": 66.67,
-        "games": 117
+        "slug": "gragas",
+        "name": "Gragas",
+        "winRateAgainst": 42.86,
+        "games": 91
       }
     },
     {
@@ -1383,10 +1383,10 @@
       "games": 23300,
       "winRate": 48.35,
       "counter": {
-        "slug": "naafiri",
-        "name": "Naafiri",
-        "winRate": 60,
-        "games": 75
+        "slug": "malphite",
+        "name": "Malphite",
+        "winRateAgainst": 41.24,
+        "games": 177
       }
     },
     {
@@ -1398,10 +1398,10 @@
       "games": 65100,
       "winRate": 50.5,
       "counter": {
-        "slug": "naafiri",
-        "name": "Naafiri",
-        "winRate": 59.59,
-        "games": 146
+        "slug": "gwen",
+        "name": "Gwen",
+        "winRateAgainst": 41.5,
+        "games": 147
       }
     },
     {
@@ -1413,10 +1413,10 @@
       "games": 38900,
       "winRate": 50.58,
       "counter": {
-        "slug": "jayce",
-        "name": "Jayce",
-        "winRate": 57.79,
-        "games": 154
+        "slug": "malzahar",
+        "name": "Malzahar",
+        "winRateAgainst": 43.94,
+        "games": 1395
       }
     },
     {
@@ -1428,10 +1428,10 @@
       "games": 20400,
       "winRate": 51.3,
       "counter": {
-        "slug": "ryze",
-        "name": "Ryze",
-        "winRate": 59.57,
-        "games": 507
+        "slug": "ziggs",
+        "name": "Ziggs",
+        "winRateAgainst": 42.67,
+        "games": 150
       }
     },
     {
@@ -1443,10 +1443,10 @@
       "games": 40800,
       "winRate": 50.86,
       "counter": {
-        "slug": "brand",
-        "name": "Brand",
-        "winRate": 60.58,
-        "games": 104
+        "slug": "velkoz",
+        "name": "Vel'Koz",
+        "winRateAgainst": 41.2,
+        "games": 233
       }
     },
     {
@@ -1458,10 +1458,10 @@
       "games": 37900,
       "winRate": 50.08,
       "counter": {
-        "slug": "pantheon",
-        "name": "Pantheon",
-        "winRate": 59.63,
-        "games": 109
+        "slug": "talon",
+        "name": "Talon",
+        "winRateAgainst": 43.38,
+        "games": 355
       }
     },
     {
@@ -1481,10 +1481,10 @@
       "games": 42800,
       "winRate": 47.51,
       "counter": {
-        "slug": "annie",
-        "name": "Annie",
-        "winRate": 54.19,
-        "games": 334
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 36.07,
+        "games": 122
       }
     },
     {
@@ -1496,10 +1496,10 @@
       "games": 28200,
       "winRate": 48.58,
       "counter": {
-        "slug": "jayce",
-        "name": "Jayce",
-        "winRate": 56.32,
-        "games": 87
+        "slug": "gwen",
+        "name": "Gwen",
+        "winRateAgainst": 38.46,
+        "games": 65
       }
     },
     {
@@ -1511,10 +1511,10 @@
       "games": 19400,
       "winRate": 46.93,
       "counter": {
-        "slug": "jayce",
-        "name": "Jayce",
-        "winRate": 57.53,
-        "games": 73
+        "slug": "sion",
+        "name": "Sion",
+        "winRateAgainst": 32.73,
+        "games": 55
       }
     },
     {
@@ -1526,10 +1526,10 @@
       "games": 12600,
       "winRate": 51.33,
       "counter": {
-        "slug": "velkoz",
-        "name": "Vel'Koz",
-        "winRate": 62.16,
-        "games": 37
+        "slug": "veigar",
+        "name": "Veigar",
+        "winRateAgainst": 42.73,
+        "games": 110
       }
     },
     {
@@ -1541,10 +1541,10 @@
       "games": 61200,
       "winRate": 48.54,
       "counter": {
-        "slug": "malphite",
-        "name": "Malphite",
-        "winRate": 57.68,
-        "games": 319
+        "slug": "velkoz",
+        "name": "Vel'Koz",
+        "winRateAgainst": 41.35,
+        "games": 266
       }
     },
     {
@@ -1556,10 +1556,10 @@
       "games": 49600,
       "winRate": 49.89,
       "counter": {
-        "slug": "mel",
-        "name": "Mel",
-        "winRate": 60.16,
-        "games": 610
+        "slug": "fizz",
+        "name": "Fizz",
+        "winRateAgainst": 44.88,
+        "games": 2255
       }
     },
     {
@@ -1571,10 +1571,10 @@
       "games": 10700,
       "winRate": 51.08,
       "counter": {
-        "slug": "tristana",
-        "name": "Tristana",
-        "winRate": 65.38,
-        "games": 52
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 41.54,
+        "games": 65
       }
     },
     {
@@ -1586,10 +1586,10 @@
       "games": 30100,
       "winRate": 50.96,
       "counter": {
-        "slug": "xerath",
-        "name": "Xerath",
-        "winRate": 57.68,
-        "games": 267
+        "slug": "naafiri",
+        "name": "Naafiri",
+        "winRateAgainst": 39.22,
+        "games": 51
       }
     },
     {
@@ -1601,10 +1601,10 @@
       "games": 32100,
       "winRate": 51.42,
       "counter": {
-        "slug": "kogmaw",
-        "name": "Kog'Maw",
-        "winRate": 57.14,
-        "games": 161
+        "slug": "aurelionsol",
+        "name": "Aurelion Sol",
+        "winRateAgainst": 45.72,
+        "games": 409
       }
     },
     {
@@ -1616,10 +1616,10 @@
       "games": 42800,
       "winRate": 50.44,
       "counter": {
-        "slug": "gragas",
-        "name": "Gragas",
-        "winRate": 60.71,
-        "games": 84
+        "slug": "kayle",
+        "name": "Kayle",
+        "winRateAgainst": 40,
+        "games": 80
       }
     },
     {
@@ -1631,10 +1631,10 @@
       "games": 38900,
       "winRate": 51.78,
       "counter": {
-        "slug": "yone",
-        "name": "Yone",
-        "winRate": 58.84,
-        "games": 1171
+        "slug": "veigar",
+        "name": "Veigar",
+        "winRateAgainst": 43.36,
+        "games": 369
       }
     },
     {
@@ -1646,10 +1646,10 @@
       "games": 46600,
       "winRate": 47.98,
       "counter": {
-        "slug": "mel",
-        "name": "Mel",
-        "winRate": 53.27,
-        "games": 490
+        "slug": "kassadin",
+        "name": "Kassadin",
+        "winRateAgainst": 42.27,
+        "games": 854
       }
     },
     {
@@ -1661,10 +1661,10 @@
       "games": 29200,
       "winRate": 51.26,
       "counter": {
-        "slug": "azir",
-        "name": "Azir",
-        "winRate": 58.01,
-        "games": 412
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 43.33,
+        "games": 120
       }
     },
     {
@@ -1676,10 +1676,10 @@
       "games": 78700,
       "winRate": 50.2,
       "counter": {
-        "slug": "kogmaw",
-        "name": "Kog'Maw",
-        "winRate": 56.71,
-        "games": 231
+        "slug": "taliyah",
+        "name": "Taliyah",
+        "winRateAgainst": 44.81,
+        "games": 1040
       }
     },
     {
@@ -1691,10 +1691,10 @@
       "games": 74800,
       "winRate": 49.71,
       "counter": {
-        "slug": "kogmaw",
-        "name": "Kog'Maw",
-        "winRate": 56.37,
-        "games": 259
+        "slug": "vex",
+        "name": "Vex",
+        "winRateAgainst": 41.16,
+        "games": 1171
       }
     },
     {
@@ -1706,10 +1706,10 @@
       "games": 60300,
       "winRate": 49.31,
       "counter": {
-        "slug": "kassadin",
-        "name": "Kassadin",
-        "winRate": 57.67,
-        "games": 574
+        "slug": "malphite",
+        "name": "Malphite",
+        "winRateAgainst": 43.7,
+        "games": 1080
       }
     },
     {
@@ -1721,10 +1721,10 @@
       "games": 13600,
       "winRate": 49.81,
       "counter": {
-        "slug": "aurora",
-        "name": "Aurora",
-        "winRate": 62.07,
-        "games": 58
+        "slug": "talon",
+        "name": "Talon",
+        "winRateAgainst": 32.26,
+        "games": 31
       }
     },
     {
@@ -1736,10 +1736,10 @@
       "games": 21400,
       "winRate": 50.27,
       "counter": {
-        "slug": "azir",
-        "name": "Azir",
-        "winRate": 57.31,
-        "games": 253
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 42.17,
+        "games": 83
       }
     },
     {
@@ -1751,10 +1751,10 @@
       "games": 46600,
       "winRate": 49.56,
       "counter": {
-        "slug": "smolder",
-        "name": "Smolder",
-        "winRate": 53.5,
-        "games": 1230
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 43.11,
+        "games": 842
       }
     },
     {
@@ -1766,10 +1766,10 @@
       "games": 56400,
       "winRate": 49.63,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 52.74,
-        "games": 2975
+        "slug": "yasuo",
+        "name": "Yasuo",
+        "winRateAgainst": 45.28,
+        "games": 519
       }
     },
     {
@@ -1781,10 +1781,10 @@
       "games": 116600,
       "winRate": 48.38,
       "counter": {
-        "slug": "yunara",
-        "name": "Yunara",
-        "winRate": 51.56,
-        "games": 4352
+        "slug": "yasuo",
+        "name": "Yasuo",
+        "winRateAgainst": 46.01,
+        "games": 1104
       }
     },
     {
@@ -1796,10 +1796,10 @@
       "games": 11700,
       "winRate": 48.61,
       "counter": {
-        "slug": "draven",
-        "name": "Draven",
-        "winRate": 52.94,
-        "games": 374
+        "slug": "ziggs",
+        "name": "Ziggs",
+        "winRateAgainst": 33.09,
+        "games": 136
       }
     },
     {
@@ -1811,10 +1811,10 @@
       "games": 49600,
       "winRate": 49.55,
       "counter": {
-        "slug": "kalista",
-        "name": "Kalista",
-        "winRate": 55.12,
-        "games": 918
+        "slug": "velkoz",
+        "name": "Vel'Koz",
+        "winRateAgainst": 42.94,
+        "games": 177
       }
     },
     {
@@ -1826,10 +1826,10 @@
       "games": 139000,
       "winRate": 46.36,
       "counter": {
-        "slug": "varus",
-        "name": "Varus",
-        "winRate": 50.9,
-        "games": 2118
+        "slug": "yasuo",
+        "name": "Yasuo",
+        "winRateAgainst": 42.53,
+        "games": 1192
       }
     },
     {
@@ -1841,10 +1841,10 @@
       "games": 9755,
       "winRate": 52.59,
       "counter": {
-        "slug": "nilah",
-        "name": "Nilah",
-        "winRate": 62.79,
-        "games": 43
+        "slug": "katarina",
+        "name": "Katarina",
+        "winRateAgainst": 42.86,
+        "games": 49
       }
     },
     {
@@ -1856,10 +1856,10 @@
       "games": 102000,
       "winRate": 49.89,
       "counter": {
-        "slug": "viktor",
-        "name": "Viktor",
-        "winRate": 54.96,
-        "games": 1594
+        "slug": "yasuo",
+        "name": "Yasuo",
+        "winRateAgainst": 46.19,
+        "games": 1810
       }
     },
     {
@@ -1871,10 +1871,10 @@
       "games": 91300,
       "winRate": 51.08,
       "counter": {
-        "slug": "samira",
-        "name": "Samira",
-        "winRate": 56.37,
-        "games": 2065
+        "slug": "twitch",
+        "name": "Twitch",
+        "winRateAgainst": 46.16,
+        "games": 4127
       }
     },
     {
@@ -1886,10 +1886,10 @@
       "games": 131200,
       "winRate": 50.04,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 55.15,
-        "games": 14308
+        "slug": "nilah",
+        "name": "Nilah",
+        "winRateAgainst": 44.44,
+        "games": 1080
       }
     },
     {
@@ -1901,10 +1901,10 @@
       "games": 19400,
       "winRate": 49.08,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 54.64,
-        "games": 2476
+        "slug": "ziggs",
+        "name": "Ziggs",
+        "winRateAgainst": 43.88,
+        "games": 294
       }
     },
     {
@@ -1916,10 +1916,10 @@
       "games": 6473,
       "winRate": 54.32,
       "counter": {
-        "slug": "yasuo",
-        "name": "Yasuo",
-        "winRate": 66.22,
-        "games": 74
+        "slug": "sivir",
+        "name": "Sivir",
+        "winRateAgainst": 44.32,
+        "games": 185
       }
     },
     {
@@ -1931,10 +1931,10 @@
       "games": 23611,
       "winRate": 52.27,
       "counter": {
-        "slug": "ziggs",
-        "name": "Ziggs",
-        "winRate": 57.8,
-        "games": 173
+        "slug": "veigar",
+        "name": "Veigar",
+        "winRateAgainst": 42.74,
+        "games": 124
       }
     },
     {
@@ -1946,10 +1946,10 @@
       "games": 68000,
       "winRate": 49.25,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 53.13,
-        "games": 5187
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 45.72,
+        "games": 899
       }
     },
     {
@@ -1961,10 +1961,10 @@
       "games": 8590,
       "winRate": 53.4,
       "counter": {
-        "slug": "swain",
-        "name": "Swain",
-        "winRate": 62.5,
-        "games": 40
+        "slug": "aurelionsol",
+        "name": "Aurelion Sol",
+        "winRateAgainst": 38.46,
+        "games": 39
       }
     },
     {
@@ -1976,10 +1976,10 @@
       "games": 83600,
       "winRate": 50.66,
       "counter": {
-        "slug": "kalista",
-        "name": "Kalista",
-        "winRate": 54.16,
-        "games": 1743
+        "slug": "yasuo",
+        "name": "Yasuo",
+        "winRateAgainst": 45.85,
+        "games": 879
       }
     },
     {
@@ -1991,10 +1991,10 @@
       "games": 11089,
       "winRate": 51.93,
       "counter": {
-        "slug": "yasuo",
-        "name": "Yasuo",
-        "winRate": 64.32,
-        "games": 185
+        "slug": "xayah",
+        "name": "Xayah",
+        "winRateAgainst": 40.13,
+        "games": 309
       }
     },
     {
@@ -2006,10 +2006,10 @@
       "games": 58300,
       "winRate": 49.7,
       "counter": {
-        "slug": "draven",
-        "name": "Draven",
-        "winRate": 54.3,
-        "games": 733
+        "slug": "swain",
+        "name": "Swain",
+        "winRateAgainst": 36.13,
+        "games": 191
       }
     },
     {
@@ -2029,10 +2029,10 @@
       "games": 6800,
       "winRate": 50.53,
       "counter": {
-        "slug": "ashe",
-        "name": "Ashe",
-        "winRate": 59.29,
-        "games": 113
+        "slug": "lux",
+        "name": "Lux",
+        "winRateAgainst": 40,
+        "games": 50
       }
     },
     {
@@ -2044,10 +2044,10 @@
       "games": 40800,
       "winRate": 51.1,
       "counter": {
-        "slug": "veigar",
-        "name": "Veigar",
-        "winRate": 60.2,
-        "games": 201
+        "slug": "twitch",
+        "name": "Twitch",
+        "winRateAgainst": 45.83,
+        "games": 912
       }
     },
     {
@@ -2059,10 +2059,10 @@
       "games": 50500,
       "winRate": 49.83,
       "counter": {
-        "slug": "corki",
-        "name": "Corki",
-        "winRate": 57.8,
-        "games": 282
+        "slug": "katarina",
+        "name": "Katarina",
+        "winRateAgainst": 43.33,
+        "games": 180
       }
     },
     {
@@ -2074,10 +2074,10 @@
       "games": 9513,
       "winRate": 52.52,
       "counter": {
-        "slug": "samira",
-        "name": "Samira",
-        "winRate": 63.49,
-        "games": 189
+        "slug": "veigar",
+        "name": "Veigar",
+        "winRateAgainst": 42.86,
+        "games": 49
       }
     },
     {
@@ -2089,10 +2089,10 @@
       "games": 42800,
       "winRate": 49.86,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 54.05,
-        "games": 4137
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 45.7,
+        "games": 825
       }
     },
     {
@@ -2104,10 +2104,10 @@
       "games": 47600,
       "winRate": 50.95,
       "counter": {
-        "slug": "varus",
-        "name": "Varus",
-        "winRate": 54.41,
-        "games": 974
+        "slug": "katarina",
+        "name": "Katarina",
+        "winRateAgainst": 40.82,
+        "games": 245
       }
     },
     {
@@ -2119,10 +2119,10 @@
       "games": 61200,
       "winRate": 49.32,
       "counter": {
-        "slug": "caitlyn",
-        "name": "Caitlyn",
-        "winRate": 52.32,
-        "games": 2330
+        "slug": "veigar",
+        "name": "Veigar",
+        "winRateAgainst": 42.05,
+        "games": 195
       }
     },
     {
@@ -2134,10 +2134,10 @@
       "games": 10406,
       "winRate": 52.76,
       "counter": {
-        "slug": "corki",
-        "name": "Corki",
-        "winRate": 62.9,
-        "games": 62
+        "slug": "lux",
+        "name": "Lux",
+        "winRateAgainst": 38.64,
+        "games": 44
       }
     },
     {
@@ -2149,10 +2149,10 @@
       "games": 7545,
       "winRate": 54.03,
       "counter": {
-        "slug": "corki",
-        "name": "Corki",
-        "winRate": 60.32,
-        "games": 63
+        "slug": "xerath",
+        "name": "Xerath",
+        "winRateAgainst": 42.5,
+        "games": 40
       }
     },
     {
@@ -2164,10 +2164,10 @@
       "games": 69000,
       "winRate": 48.99,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 53.88,
-        "games": 1611
+        "slug": "ziggs",
+        "name": "Ziggs",
+        "winRateAgainst": 44.44,
+        "games": 198
       }
     },
     {
@@ -2179,10 +2179,10 @@
       "games": 23706,
       "winRate": 52.01,
       "counter": {
-        "slug": "ziggs",
-        "name": "Ziggs",
-        "winRate": 60.8,
-        "games": 176
+        "slug": "nilah",
+        "name": "Nilah",
+        "winRateAgainst": 35.87,
+        "games": 184
       }
     },
     {
@@ -2194,10 +2194,10 @@
       "games": 52500,
       "winRate": 51.89,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 54.57,
-        "games": 3359
+        "slug": "kogmaw",
+        "name": "Kog'Maw",
+        "winRateAgainst": 49.07,
+        "games": 642
       }
     },
     {
@@ -2209,10 +2209,10 @@
       "games": 7475,
       "winRate": 52.08,
       "counter": {
-        "slug": "vayne",
-        "name": "Vayne",
-        "winRate": 61.43,
-        "games": 70
+        "slug": "swain",
+        "name": "Swain",
+        "winRateAgainst": 38.64,
+        "games": 44
       }
     },
     {
@@ -2224,10 +2224,10 @@
       "games": 38900,
       "winRate": 50.67,
       "counter": {
-        "slug": "ezreal",
-        "name": "Ezreal",
-        "winRate": 54.84,
-        "games": 2068
+        "slug": "twitch",
+        "name": "Twitch",
+        "winRateAgainst": 46.83,
+        "games": 1213
       }
     },
     {
@@ -2239,10 +2239,10 @@
       "games": 14600,
       "winRate": 51.39,
       "counter": {
-        "slug": "corki",
-        "name": "Corki",
-        "winRate": 66.91,
-        "games": 136
+        "slug": "yasuo",
+        "name": "Yasuo",
+        "winRateAgainst": 39.2,
+        "games": 176
       }
     },
     {
@@ -2254,10 +2254,10 @@
       "games": 39800,
       "winRate": 51.15,
       "counter": {
-        "slug": "shen",
-        "name": "Shen",
-        "winRate": 56.9,
-        "games": 232
+        "slug": "soraka",
+        "name": "Soraka",
+        "winRateAgainst": 45.93,
+        "games": 910
       }
     },
     {
@@ -2269,10 +2269,10 @@
       "games": 11700,
       "winRate": 52.05,
       "counter": {
-        "slug": "camille",
-        "name": "Camille",
-        "winRate": 70.97,
-        "games": 31
+        "slug": "galio",
+        "name": "Galio",
+        "winRateAgainst": 36.96,
+        "games": 46
       }
     },
     {
@@ -2284,10 +2284,10 @@
       "games": 10700,
       "winRate": 45.19,
       "counter": {
-        "slug": "camille",
-        "name": "Camille",
-        "winRate": 57.89,
-        "games": 38
+        "slug": "sylas",
+        "name": "Sylas",
+        "winRateAgainst": 29.27,
+        "games": 41
       }
     },
     {
@@ -2299,10 +2299,10 @@
       "games": 38900,
       "winRate": 48.96,
       "counter": {
-        "slug": "camille",
-        "name": "Camille",
-        "winRate": 54.28,
-        "games": 269
+        "slug": "elise",
+        "name": "Elise",
+        "winRateAgainst": 42.06,
+        "games": 233
       }
     },
     {
@@ -2314,10 +2314,10 @@
       "games": 71900,
       "winRate": 51.33,
       "counter": {
-        "slug": "camille",
-        "name": "Camille",
-        "winRate": 56.77,
-        "games": 303
+        "slug": "taric",
+        "name": "Taric",
+        "winRateAgainst": 46.35,
+        "games": 397
       }
     },
     {
@@ -2329,10 +2329,10 @@
       "games": 35000,
       "winRate": 49.06,
       "counter": {
-        "slug": "sylas",
-        "name": "Sylas",
-        "winRate": 57.82,
-        "games": 147
+        "slug": "sona",
+        "name": "Sona",
+        "winRateAgainst": 41.47,
+        "games": 217
       }
     },
     {
@@ -2344,10 +2344,10 @@
       "games": 31100,
       "winRate": 52.07,
       "counter": {
-        "slug": "poppy",
-        "name": "Poppy",
-        "winRate": 61.25,
-        "games": 351
+        "slug": "senna",
+        "name": "Senna",
+        "winRateAgainst": 46.67,
+        "games": 1260
       }
     },
     {
@@ -2359,10 +2359,10 @@
       "games": 49600,
       "winRate": 48.59,
       "counter": {
-        "slug": "sylas",
-        "name": "Sylas",
-        "winRate": 54.26,
-        "games": 352
+        "slug": "sona",
+        "name": "Sona",
+        "winRateAgainst": 43.52,
+        "games": 1018
       }
     },
     {
@@ -2374,10 +2374,10 @@
       "games": 51500,
       "winRate": 51.55,
       "counter": {
-        "slug": "brand",
-        "name": "Brand",
-        "winRate": 57.91,
-        "games": 354
+        "slug": "amumu",
+        "name": "Amumu",
+        "winRateAgainst": 42.39,
+        "games": 184
       }
     },
     {
@@ -2389,10 +2389,10 @@
       "games": 68000,
       "winRate": 51.95,
       "counter": {
-        "slug": "yuumi",
-        "name": "Yuumi",
-        "winRate": 57.32,
-        "games": 2132
+        "slug": "velkoz",
+        "name": "Vel'Koz",
+        "winRateAgainst": 47.21,
+        "games": 1112
       }
     },
     {
@@ -2404,10 +2404,10 @@
       "games": 79700,
       "winRate": 49.58,
       "counter": {
-        "slug": "swain",
-        "name": "Swain",
-        "winRate": 57.12,
-        "games": 1180
+        "slug": "leona",
+        "name": "Leona",
+        "winRateAgainst": 45.52,
+        "games": 3897
       }
     },
     {
@@ -2419,10 +2419,10 @@
       "games": 82600,
       "winRate": 48.95,
       "counter": {
-        "slug": "ashe",
-        "name": "Ashe",
-        "winRate": 58.6,
-        "games": 285
+        "slug": "rell",
+        "name": "Rell",
+        "winRateAgainst": 43.97,
+        "games": 746
       }
     },
     {
@@ -2434,10 +2434,10 @@
       "games": 16500,
       "winRate": 50.79,
       "counter": {
-        "slug": "camille",
-        "name": "Camille",
-        "winRate": 63.95,
-        "games": 86
+        "slug": "braum",
+        "name": "Braum",
+        "winRateAgainst": 41.43,
+        "games": 420
       }
     },
     {
@@ -2449,10 +2449,10 @@
       "games": 30100,
       "winRate": 50.22,
       "counter": {
-        "slug": "xerath",
-        "name": "Xerath",
-        "winRate": 57.14,
-        "games": 602
+        "slug": "braum",
+        "name": "Braum",
+        "winRateAgainst": 46.65,
+        "games": 1402
       }
     },
     {
@@ -2464,10 +2464,10 @@
       "games": 56400,
       "winRate": 49.68,
       "counter": {
-        "slug": "maokai",
-        "name": "Maokai",
-        "winRate": 55.14,
-        "games": 292
+        "slug": "rell",
+        "name": "Rell",
+        "winRateAgainst": 44.43,
+        "games": 619
       }
     },
     {
@@ -2479,10 +2479,10 @@
       "games": 59300,
       "winRate": 50.7,
       "counter": {
-        "slug": "sylas",
-        "name": "Sylas",
-        "winRate": 56.42,
-        "games": 358
+        "slug": "maokai",
+        "name": "Maokai",
+        "winRateAgainst": 47.26,
+        "games": 565
       }
     },
     {
@@ -2494,10 +2494,10 @@
       "games": 73900,
       "winRate": 49.35,
       "counter": {
-        "slug": "yuumi",
-        "name": "Yuumi",
-        "winRate": 54.6,
-        "games": 2509
+        "slug": "rell",
+        "name": "Rell",
+        "winRateAgainst": 43.29,
+        "games": 2326
       }
     },
     {
@@ -2509,10 +2509,10 @@
       "games": 15600,
       "winRate": 48.62,
       "counter": {
-        "slug": "shaco",
-        "name": "Shaco",
-        "winRate": 58,
-        "games": 100
+        "slug": "zoe",
+        "name": "Zoe",
+        "winRateAgainst": 38.1,
+        "games": 63
       }
     },
     {
@@ -2524,10 +2524,10 @@
       "games": 13600,
       "winRate": 47.43,
       "counter": {
-        "slug": "neeko",
-        "name": "Neeko",
-        "winRate": 52.97,
-        "games": 202
+        "slug": "rell",
+        "name": "Rell",
+        "winRateAgainst": 42.09,
+        "games": 506
       }
     },
     {
@@ -2539,10 +2539,10 @@
       "games": 70000,
       "winRate": 49.35,
       "counter": {
-        "slug": "xerath",
-        "name": "Xerath",
-        "winRate": 54.99,
-        "games": 751
+        "slug": "rakan",
+        "name": "Rakan",
+        "winRateAgainst": 43.72,
+        "games": 1553
       }
     },
     {
@@ -2554,10 +2554,10 @@
       "games": 38900,
       "winRate": 51.16,
       "counter": {
-        "slug": "shaco",
-        "name": "Shaco",
-        "winRate": 62.93,
-        "games": 205
+        "slug": "poppy",
+        "name": "Poppy",
+        "winRateAgainst": 46.15,
+        "games": 585
       }
     },
     {
@@ -2569,10 +2569,10 @@
       "games": 39821,
       "winRate": 52.17,
       "counter": {
-        "slug": "sylas",
-        "name": "Sylas",
-        "winRate": 59.47,
-        "games": 227
+        "slug": "taric",
+        "name": "Taric",
+        "winRateAgainst": 46.43,
+        "games": 280
       }
     },
     {
@@ -2584,10 +2584,10 @@
       "games": 23300,
       "winRate": 49.78,
       "counter": {
-        "slug": "shaco",
-        "name": "Shaco",
-        "winRate": 62.65,
-        "games": 83
+        "slug": "zilean",
+        "name": "Zilean",
+        "winRateAgainst": 44.69,
+        "games": 311
       }
     },
     {
@@ -2599,10 +2599,10 @@
       "games": 53400,
       "winRate": 50.94,
       "counter": {
-        "slug": "tahmkench",
-        "name": "Tahm Kench",
-        "winRate": 55.44,
-        "games": 478
+        "slug": "taric",
+        "name": "Taric",
+        "winRateAgainst": 45.28,
+        "games": 307
       }
     },
     {
@@ -2614,10 +2614,10 @@
       "games": 28200,
       "winRate": 50.72,
       "counter": {
-        "slug": "swain",
-        "name": "Swain",
-        "winRate": 57.25,
-        "games": 697
+        "slug": "leblanc",
+        "name": "LeBlanc",
+        "winRateAgainst": 43.66,
+        "games": 213
       }
     },
     {
@@ -2629,10 +2629,10 @@
       "games": 31100,
       "winRate": 51.53,
       "counter": {
-        "slug": "neeko",
-        "name": "Neeko",
-        "winRate": 59.6,
-        "games": 151
+        "slug": "amumu",
+        "name": "Amumu",
+        "winRateAgainst": 42.11,
+        "games": 95
       }
     },
     {
@@ -2644,10 +2644,10 @@
       "games": 46600,
       "winRate": 51.13,
       "counter": {
-        "slug": "camille",
-        "name": "Camille",
-        "winRate": 62.43,
-        "games": 173
+        "slug": "janna",
+        "name": "Janna",
+        "winRateAgainst": 47,
+        "games": 1234
       }
     },
     {
@@ -2659,10 +2659,10 @@
       "games": 21400,
       "winRate": 47.96,
       "counter": {
-        "slug": "shaco",
-        "name": "Shaco",
-        "winRate": 55.88,
-        "games": 136
+        "slug": "velkoz",
+        "name": "Vel'Koz",
+        "winRateAgainst": 42.09,
+        "games": 354
       }
     },
     {
@@ -2674,10 +2674,10 @@
       "games": 12600,
       "winRate": 51.98,
       "counter": {
-        "slug": "shaco",
-        "name": "Shaco",
-        "winRate": 63.33,
-        "games": 60
+        "slug": "soraka",
+        "name": "Soraka",
+        "winRateAgainst": 41.98,
+        "games": 262
       }
     },
     {
@@ -2689,10 +2689,10 @@
       "games": 119500,
       "winRate": 51.7,
       "counter": {
-        "slug": "sylas",
-        "name": "Sylas",
-        "winRate": 61.06,
-        "games": 719
+        "slug": "amumu",
+        "name": "Amumu",
+        "winRateAgainst": 47.89,
+        "games": 497
       }
     },
     {
@@ -2704,10 +2704,10 @@
       "games": 22400,
       "winRate": 51.01,
       "counter": {
-        "slug": "swain",
-        "name": "Swain",
-        "winRate": 57.91,
-        "games": 354
+        "slug": "zilean",
+        "name": "Zilean",
+        "winRateAgainst": 44.36,
+        "games": 408
       }
     },
     {
@@ -2719,10 +2719,10 @@
       "games": 38900,
       "winRate": 48.49,
       "counter": {
-        "slug": "shaco",
-        "name": "Shaco",
-        "winRate": 55.48,
-        "games": 146
+        "slug": "galio",
+        "name": "Galio",
+        "winRateAgainst": 34.91,
+        "games": 106
       }
     },
     {
@@ -2734,10 +2734,10 @@
       "games": 16500,
       "winRate": 51.49,
       "counter": {
-        "slug": "camille",
-        "name": "Camille",
-        "winRate": 57.36,
-        "games": 129
+        "slug": "maokai",
+        "name": "Maokai",
+        "winRateAgainst": 45.91,
+        "games": 220
       }
     },
     {
@@ -2749,10 +2749,10 @@
       "games": 36900,
       "winRate": 49.98,
       "counter": {
-        "slug": "shaco",
-        "name": "Shaco",
-        "winRate": 60.32,
-        "games": 126
+        "slug": "galio",
+        "name": "Galio",
+        "winRateAgainst": 43.75,
+        "games": 96
       }
     }
   ]

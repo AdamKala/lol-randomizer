@@ -155,7 +155,7 @@ function DraftCard({ slot, index, onReroll, onRoleChange }: { slot: Draft['slots
         <dl className="draft-card-stats mt-3">
           <div><dt>Pickrate</dt><dd>{oneDecimal.format(slot.champion.pickRate)} %</dd></div>
           <div><dt>Winrate</dt><dd>{slot.champion.winRate === undefined ? '—' : `${oneDecimal.format(slot.champion.winRate)} %`}</dd></div>
-          <div title={slot.champion.counter ? `${slot.champion.counter.name} · ${oneDecimal.format(slot.champion.counter.winRate)} % proti ${slot.champion.name} · ${integer.format(slot.champion.counter.games)} her` : 'Counter není v datasetu dostupný'}><dt>Největší counter</dt><dd>{slot.champion.counter?.name ?? '—'}</dd></div>
+          <div title={slot.champion.counter ? `${slot.champion.name} proti ${slot.champion.counter.name}: ${oneDecimal.format(slot.champion.counter.winRateAgainst)} % winrate · ${integer.format(slot.champion.counter.games)} her` : 'Counter není v datasetu dostupný'}><dt>Největší counter</dt><dd>{slot.champion.counter?.name ?? '—'}</dd></div>
         </dl>
         <div className="draft-card-controls mt-3 border-t border-white/[.07] pt-3">
           <select value={slot.role} onChange={(event) => onRoleChange(event.target.value as Role)} className="draft-role-select min-w-0 rounded border bg-[#07101e] px-1.5 py-1 text-[.62rem] font-bold focus:outline-none" aria-label={`Změnit linku pro ${slot.player}`} title="Změnit linku pouze tomuto hráči">

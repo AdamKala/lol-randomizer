@@ -30,7 +30,7 @@ function selectCounter(matchups) {
   const maxGames = Math.max(...matchups.map((matchup) => matchup.play), 0)
   const minimumGames = Math.max(25, Math.ceil(maxGames * 0.05))
   const candidates = matchups.filter((matchup) => matchup.play >= minimumGames)
-  return candidates.sort((left, right) => right.win_rate - left.win_rate || right.play - left.play)[0]
+  return candidates.sort((left, right) => left.win_rate - right.win_rate || right.play - left.play)[0]
 }
 
 async function fetchEntry(entry) {
@@ -54,7 +54,7 @@ async function fetchEntry(entry) {
         return { ...stats, counter: {
           slug: counter.champion.key,
           name: counter.champion.name,
-          winRate: counter.win_rate,
+          winRateAgainst: counter.win_rate,
           games: counter.play,
         } }
       } catch {
@@ -96,14 +96,19 @@ dataset.entries = refreshed.map((entry) => ({
   ...entry,
   pickRate: roundRate(entry.pickRate),
   ...(entry.winRate === undefined ? {} : { winRate: roundRate(entry.winRate) }),
-  ...(entry.counter ? { counter: { ...entry.counter, winRate: roundRate(entry.counter.winRate) } } : {}),
+  ...(entry.counter ? { counter: {
+    slug: entry.counter.slug,
+    name: entry.counter.name,
+    winRateAgainst: roundRate(entry.counter.winRateAgainst ?? entry.counter.winRate),
+    games: entry.counter.games,
+  } } : {}),
 }))
 dataset.updatedAt = new Date().toISOString().slice(0, 10)
 dataset.source = {
   name: 'OP.GG + U.GG snapshot',
   url: 'https://op.gg/lol/champions',
   scope: 'Ranked Solo, Emerald+, Global; role-specific champion statistics',
-  methodology: 'Výběr champion-role kombinací pochází z původního U.GG snapshotu, nikoli z Riot tříd. Pickrate a winrate jsou načtené z veřejných OP.GG stránek. Největší counter je soupeř s nejvyšším winratem proti danému picku; započítávají se matchup vzorky s alespoň 25 hrami a 5 % velikosti nejčastějšího matchupu. Počet her zůstává z původního ručně kurátorovaného U.GG snapshotu.',
+  methodology: 'Výběr champion-role kombinací pochází z původního U.GG snapshotu, nikoli z Riot tříd. Pickrate a winrate jsou načtené z veřejných OP.GG stránek. Největší counter je soupeř, proti kterému má daný pick nejnižší winrate; započítávají se matchup vzorky s alespoň 25 hrami a 5 % velikosti nejčastějšího matchupu. Počet her zůstává z původního ručně kurátorovaného U.GG snapshotu.',
 }
 
 await writeFile(datasetPath, `${JSON.stringify(dataset, null, 2)}\n`)
