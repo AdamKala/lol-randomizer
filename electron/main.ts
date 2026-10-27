@@ -111,6 +111,18 @@ function createWindow(): BrowserWindow {
           statisticsTab?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
           const statisticsPanel = [...document.querySelectorAll('h2')].some((heading) => heading.textContent?.trim().startsWith('Statistiky'))
+          const damageSortButton = [...document.querySelectorAll('th button')].find((button) => button.textContent?.trim().startsWith('DMG Ø'))
+          let statisticsSortingUi = true
+          let groupInsightsUi = true
+          if (damageSortButton) {
+            damageSortButton.click()
+            await new Promise((resolve) => requestAnimationFrame(resolve))
+            const descending = damageSortButton.closest('th')?.getAttribute('aria-sort') === 'descending'
+            damageSortButton.click()
+            await new Promise((resolve) => requestAnimationFrame(resolve))
+            statisticsSortingUi = descending && damageSortButton.closest('th')?.getAttribute('aria-sort') === 'ascending'
+            groupInsightsUi = document.body.textContent?.includes('Nejhranější pozice') === true && document.body.textContent?.includes('Kdo s kým vyhrává') === true && document.body.textContent?.includes('Kdo kde a co hraje') === true
+          }
           recentTab?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
           const recentPanel = [...document.querySelectorAll('h2')].some((heading) => heading.textContent?.trim() === 'Poslední hry')
@@ -150,12 +162,14 @@ function createWindow(): BrowserWindow {
             rosterUi: document.body.textContent?.includes('Stálý roster') === true,
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
-            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && recentPanel && importDialogUi && playerProfileUi),
+            tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && statisticsSortingUi && groupInsightsUi && recentPanel && importDialogUi && playerProfileUi),
             tabDiagnostics: {
               generalTab: Boolean(generalTab),
               statisticsTab: Boolean(statisticsTab),
               recentTab: Boolean(recentTab),
               statisticsPanel,
+              statisticsSortingUi,
+              groupInsightsUi,
               recentPanel,
               importButton: Boolean(importButton),
               importDialog: Boolean(importDialog),

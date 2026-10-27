@@ -56,7 +56,9 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - horní záložky **Obecné**, **Statistiky** a **Poslední hry**;
 - poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, linkou, K/D/A, KDA, damage, damage za minutu, goldy, CS, vision, OP.GG hodnocením a damage grafem;
 - samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage, goldy a vision;
-- proklikávací profil každého hráče s aktuální formou, nejlepšími ukazateli, rozdělením rolí, posledními hrami a statistikami nejhranějších šampionů;
+- řazení tabulky hráčů podle jména, počtu her, bilance, winratu, KDA, výkonu, CS, damage, goldů, vision i nejhranějšího šampiona;
+- týmový přehled nejhranějších pozic, hlavní role a šampiona každého hráče i winratu všech společných dvojic;
+- proklikávací profil každého hráče s aktuální formou, nejlepšími ukazateli, rozdělením rolí, winratem se spoluhráči, posledními hrami a statistikami nejhranějších šampionů;
 - tmavý a světlý vzhled a volba regionu EUNE/EUW ve viditelném menu Nastavení;
 - globální cooldown odvozený z posledních 0–10 potvrzených her (výchozí 3);
 - vrácení poslední hry, bezpečné smazání a automatický přepočet cooldownu;
@@ -121,6 +123,7 @@ src/
 │   ├── meta.ts               # načtení a validace role datasetu
 │   ├── stats.ts              # agregace skutečných Riot výsledků
 │   ├── playerDetail.ts       # profil, forma, role a champion statistiky hráče
+│   ├── groupInsights.ts      # pozice, preference a společný winrate dvojic
 │   ├── recentMatches.ts      # deduplikace a převod posledních zápasů do historie
 │   └── storage.ts            # migrace, verzované localStorage a zálohy
 └── types.ts
