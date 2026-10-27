@@ -21,7 +21,7 @@ if (existsSync(cargoBin) && !pathEntries.includes(cargoBin)) {
 // Snap-packaged VS Code exports GTK/GIO paths from its core20 runtime. Native
 // Tauri binaries must use the host GTK stack or they can load an incompatible
 // libpthread and fail immediately after a successful compilation.
-if (process.platform === "linux" && env.SNAP) {
+if (process.platform === "linux") {
   for (const name of [
     "GIO_MODULE_DIR",
     "GTK_EXE_PREFIX",
