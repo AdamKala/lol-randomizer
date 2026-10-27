@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Draft, MetaDataset } from '../types'
-import { refreshDraftMetadata } from './meta'
+import { loadBundledDataset, refreshDraftMetadata } from './meta'
+
+afterEach(() => vi.unstubAllGlobals())
 
 const dataset: MetaDataset = {
   schemaVersion: 1,
@@ -23,6 +25,17 @@ const dataset: MetaDataset = {
 }
 
 describe('obnovení meta dat rozpracovaného draftu', () => {
+  it('načte výchozí dataset přímo z balíčku bez síťového fetch', async () => {
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+
+    const bundled = await loadBundledDataset()
+
+    expect(bundled.schemaVersion).toBe(1)
+    expect(bundled.entries.length).toBeGreaterThan(100)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('nahradí zastaralý counter aktuální položkou z datasetu', () => {
     const draft: Draft = {
       id: 'draft-1',

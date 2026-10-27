@@ -1,5 +1,7 @@
 import { ROLES, type ChampionRoleEntry, type Draft, type MetaDataset, type Role } from '../types'
 
+declare const __LOL_RANDOMIZER_BUNDLED_META_DATASET__: unknown
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -106,10 +108,7 @@ export function isDatasetStale(dataset: MetaDataset, now = new Date()): boolean 
 }
 
 export async function loadBundledDataset(): Promise<MetaDataset> {
-  const url = `${import.meta.env.BASE_URL}data/champion-roles.v1.json`
-  const response = await fetch(url)
-  if (!response.ok) throw new Error('Výchozí role data se nepodařilo načíst.')
-  return validateMetaDataset(await response.json())
+  return validateMetaDataset(__LOL_RANDOMIZER_BUNDLED_META_DATASET__)
 }
 
 export function refreshDraftMetadata(draft: Draft, dataset: MetaDataset): Draft {
