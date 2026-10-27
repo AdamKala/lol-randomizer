@@ -86,7 +86,7 @@ Všechny výsledky se ukládají do `release/`. Buildy zatím nejsou digitálně
 
 ## Offline provoz a ukládání
 
-Výchozí role dataset `public/data/champion-roles.v1.json` a všechny ikony, které používá, jsou součástí aplikace. Po instalaci tedy randomizer, historie i obrázky fungují bez připojení k internetu. Externí odkaz na zdroj dat se pouze na vyžádání otevře ve výchozím systémovém prohlížeči.
+Výchozí role dataset `public/data/champion-roles.v1.json` včetně pickratu, winratu a největšího counteru pro danou linku a všechny používané ikony jsou součástí aplikace. Po instalaci tedy randomizer, historie i obrázky fungují bez připojení k internetu. Externí odkaz na zdroj dat se pouze na vyžádání otevře ve výchozím systémovém prohlížeči.
 
 Roster se při spuštění ze zdrojového projektu ukládá do verzovaného souboru `data/players.json`. Stažené detailní výsledky se automaticky deduplikují podle `matchId` a ukládají do `data/statistics.json`. Po běžném `git add`, commitu a pushi je tedy stejný roster i cache statistik součástí repozitáře a načte se na dalším počítači bez opakovaného stahování kompletních zápasů.
 
@@ -157,7 +157,7 @@ Doménová logika zůstává oddělená od Reactu i Electronu a je pokrytá samo
 
 ## Meta data
 
-Výchozí dataset je transparentně označený U.GG snapshot pro patch 26.21. Zařazení šampiona na linku vychází z reálně hraných pozic ve veřejné metě, ne z oficiálních Riot tříd. Jeden šampion proto může být současně v několika rolových poolech. Meta snapshot zůstává oddělený od výsledků her a hráčské statistiky nikdy neovlivňují losování rolí ani šampionů. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného obsahu profilových stránek a detailů zápasů OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani autentizovaný endpoint.
+Výchozí dataset je transparentně označený kombinovaný U.GG/OP.GG snapshot pro patch 26.21. Zařazení šampiona na linku vychází z reálně hraných pozic ve veřejné metě, ne z oficiálních Riot tříd. Jeden šampion proto může být současně v několika rolových poolech. Pickrate, winrate a role-specific counter se ukládají přímo do offline JSONu. Meta snapshot zůstává oddělený od výsledků her a hráčské statistiky nikdy neovlivňují losování rolí ani šampionů. Výsledky aplikace bez přihlašování čte z veřejného strukturovaného obsahu profilových stránek a detailů zápasů OP.GG v izolovaném Electron main procesu; nepoužívá soukromý ani autentizovaný endpoint.
 
 Aplikace ukazuje zdroj, patch, datum a stav zastaralosti. Aktuálnější kompatibilní JSON lze importovat přímo v UI. Import kontroluje verzi schématu, stabilní Riot ID, Data Dragon slugy, role, duplicity a statistiky.
 
@@ -166,6 +166,14 @@ Lokální ikony lze po změně výchozího datasetu obnovit příkazem:
 ```bash
 npm run assets:download
 ```
+
+Veřejné role-specific statistiky OP.GG lze znovu načíst do verzovaného offline datasetu příkazem:
+
+```bash
+npm run meta:refresh-opgg
+```
+
+Aktualizátor znovu nestahuje už kompletní položky; úplné obnovení všech hodnot lze vynutit pomocí `npm run meta:refresh-opgg -- --force`.
 
 ## GitHub Actions
 

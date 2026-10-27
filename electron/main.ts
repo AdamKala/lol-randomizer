@@ -152,6 +152,17 @@ function createWindow(): BrowserWindow {
           await new Promise((resolve) => requestAnimationFrame(resolve))
           generalTab?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
+          const generateDraftButton = [...document.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Vygenerovat sestavu')
+          if (!document.querySelector('.draft-card-stats')) {
+            generateDraftButton?.click()
+            await new Promise((resolve) => requestAnimationFrame(resolve))
+          }
+          const draftStats = document.querySelector('.draft-card-stats')
+          const draftMetaUi = Boolean(
+            draftStats?.textContent?.includes('Pickrate')
+            && draftStats.textContent.includes('Winrate')
+            && draftStats.textContent.includes('Největší counter'),
+          )
           const rosterPlayerButton = [...document.querySelectorAll('button')].find((button) => button.getAttribute('title')?.startsWith('Otevřít profil hráče'))
           rosterPlayerButton?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
@@ -172,6 +183,7 @@ function createWindow(): BrowserWindow {
             settingsUi: document.body.textContent?.includes('Nastavení') === true && document.body.textContent?.includes('Světlý') === true,
             lightTheme,
             responsiveViewport: document.documentElement.scrollWidth <= window.innerWidth,
+            draftMetaUi,
             tabsUi: Boolean(generalTab && statisticsTab && recentTab && statisticsPanel && statisticsSortingUi && statisticsRowUi && groupInsightsUi && recentPanel && importDialogUi && playerProfileUi),
             tabDiagnostics: {
               generalTab: Boolean(generalTab),
@@ -190,6 +202,7 @@ function createWindow(): BrowserWindow {
               dateInput: Boolean(dateInput),
               dateInputFormat,
               playerProfileUi,
+              draftMetaUi,
             },
             matchSyncBridge: typeof window.desktop?.matches?.syncGame === 'function',
             recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',
@@ -199,7 +212,7 @@ function createWindow(): BrowserWindow {
           }
         })()`)
         console.log(`[electron-smoke] ${JSON.stringify(result)}`)
-        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.responsiveViewport === true && result.tabsUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true && result.statisticsBridge === true
+        const valid = result.heading.includes('LoL Randomizer') && result.entries > 100 && result.iconOk === true && result.rosterUi === true && result.settingsUi === true && result.lightTheme === true && result.responsiveViewport === true && result.draftMetaUi === true && result.tabsUi === true && result.matchSyncBridge === true && result.recentImportBridge === true && result.rosterBridge === true && result.rosterWriteOk === true && result.statisticsBridge === true
         app.exit(valid ? 0 : 1)
       } catch (error) {
         console.error('[electron-smoke] selhal', error)

@@ -31,18 +31,49 @@ export function validateMetaDataset(value: unknown): MetaDataset {
   const roles = new Set<Role>()
   const entries: ChampionRoleEntry[] = value.entries.map((raw, index) => {
     if (!isRecord(raw)) throw new Error(`Položka ${index + 1} není objekt.`)
-    const { id, slug, name, role, pickRate, games } = raw
+    const { id, slug, name, role, pickRate, games, winRate, counter } = raw
     if (!Number.isInteger(id) || (id as number) <= 0) throw new Error(`Položka ${index + 1} nemá platné Riot champion ID.`)
     if (typeof slug !== 'string' || !slug.trim()) throw new Error(`Položka ${index + 1} nemá Data Dragon slug.`)
     if (typeof name !== 'string' || !name.trim()) throw new Error(`Položka ${index + 1} nemá název šampiona.`)
     if (!isRole(role)) throw new Error(`Položka ${index + 1} má neplatnou roli.`)
     if (typeof pickRate !== 'number' || pickRate < 0 || pickRate > 100) throw new Error(`Položka ${index + 1} má neplatný pick rate.`)
     if (!Number.isInteger(games) || (games as number) < 0) throw new Error(`Položka ${index + 1} má neplatný počet her.`)
+    if (winRate !== undefined && (typeof winRate !== 'number' || winRate < 0 || winRate > 100)) {
+      throw new Error(`Položka ${index + 1} má neplatný win rate.`)
+    }
+    if (counter !== undefined && (
+      !isRecord(counter)
+      || typeof counter.slug !== 'string'
+      || !counter.slug.trim()
+      || typeof counter.name !== 'string'
+      || !counter.name.trim()
+      || typeof counter.winRate !== 'number'
+      || counter.winRate < 0
+      || counter.winRate > 100
+      || !Number.isInteger(counter.games)
+      || (counter.games as number) < 0
+    )) throw new Error(`Položka ${index + 1} má neplatná data counteru.`)
     const key = `${role}:${id}`
     if (seen.has(key)) throw new Error(`Duplicitní kombinace role a šampiona: ${role} / ${name}.`)
     seen.add(key)
     roles.add(role)
-    return { id: id as number, slug, name, role, pickRate, games: games as number }
+    return {
+      id: id as number,
+      slug,
+      name,
+      role,
+      pickRate,
+      games: games as number,
+      ...(typeof winRate === 'number' ? { winRate } : {}),
+      ...(isRecord(counter) ? {
+        counter: {
+          slug: counter.slug as string,
+          name: counter.name as string,
+          winRate: counter.winRate as number,
+          games: counter.games as number,
+        },
+      } : {}),
+    }
   })
 
   const missing = ROLES.filter((role) => !roles.has(role))

@@ -113,7 +113,37 @@
     color: rgb(var(--draft-role));
   }
   .draft-role-select:focus { border-color: rgb(var(--draft-role) / .9); }
-  .draft-card-meta strong { color: rgb(var(--draft-role)); font-weight: 800; }
+  .draft-card-stats {
+    display: grid;
+    gap: .28rem;
+    border-top: 1px solid rgb(255 255 255 / .07);
+    padding-top: .6rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .draft-card-stats > div {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .45rem;
+  }
+  .draft-card-stats dt {
+    flex: none;
+    color: rgb(100 116 139);
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .035em;
+  }
+  .draft-card-stats dd {
+    overflow: hidden;
+    margin: 0;
+    color: rgb(var(--draft-role));
+    font-size: .66rem;
+    font-weight: 800;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .stats-panel {
     background-image:
       radial-gradient(circle at 6% 0%, rgba(10, 200, 185, .085), transparent 22rem),

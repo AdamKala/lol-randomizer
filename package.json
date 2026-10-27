@@ -21,6 +21,7 @@
     "dist:linux": "npm run build && electron-builder --linux AppImage deb --x64 --publish never",
     "dist:mac": "npm run build && electron-builder --mac dmg zip --x64 --arm64 --publish never",
     "assets:download": "node scripts/download-champion-icons.mjs",
+    "meta:refresh-opgg": "node scripts/refresh-champion-stats.mjs",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"

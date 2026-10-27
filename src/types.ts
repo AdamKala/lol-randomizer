@@ -4,6 +4,13 @@ export const MATCH_REGIONS = ['eune', 'euw'] as const
 export type Role = (typeof ROLES)[number]
 export type MatchRegion = (typeof MATCH_REGIONS)[number]
 
+export interface ChampionCounter {
+  slug: string
+  name: string
+  winRate: number
+  games: number
+}
+
 export interface ChampionRoleEntry {
   id: number
   slug: string
@@ -11,6 +18,8 @@ export interface ChampionRoleEntry {
   role: Role
   pickRate: number
   games: number
+  winRate?: number
+  counter?: ChampionCounter
 }
 
 export interface MetaDataset {
