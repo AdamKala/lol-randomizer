@@ -119,12 +119,13 @@ function createWindow(): BrowserWindow {
           await new Promise((resolve) => requestAnimationFrame(resolve))
           const importDialog = document.querySelector('[aria-labelledby="recent-import-title"]')
           const countInput = importDialog?.querySelector('input[type="number"]')
-          const countInputMax = countInput?.getAttribute('max') ?? null
+          const countInputHasNoMax = countInput ? !countInput.hasAttribute('max') : false
           const dateModeButton = [...(importDialog?.querySelectorAll('button') ?? [])].find((button) => button.textContent?.trim() === 'Od data')
           dateModeButton?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
-          const dateInput = importDialog?.querySelector('input[type="date"]')
-          const importDialogUi = Boolean(importDialog && countInput && countInputMax === '100' && dateModeButton && dateInput)
+          const dateInput = importDialog?.querySelector('input[placeholder="DD/MM/YYYY"]')
+          const dateInputFormat = /^[0-9]{2}[/][0-9]{2}[/][0-9]{4}$/.test(dateInput?.value ?? '')
+          const importDialogUi = Boolean(importDialog && countInput && countInputHasNoMax && dateModeButton && dateInput && dateInputFormat)
           const closeImportButton = importDialog?.querySelector('button[aria-label="Zavřít"]')
           closeImportButton?.click()
           await new Promise((resolve) => requestAnimationFrame(resolve))
@@ -149,9 +150,10 @@ function createWindow(): BrowserWindow {
               importButton: Boolean(importButton),
               importDialog: Boolean(importDialog),
               countInput: Boolean(countInput),
-              countMax: countInputMax,
+              countInputHasNoMax,
               dateModeButton: Boolean(dateModeButton),
               dateInput: Boolean(dateInput),
+              dateInputFormat,
             },
             matchSyncBridge: typeof window.desktop?.matches?.syncGame === 'function',
             recentImportBridge: typeof window.desktop?.matches?.importRecentMatches === 'function',

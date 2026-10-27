@@ -27,8 +27,6 @@ type TrackedPlayer = MatchSyncRequest['players'][number]
 const PROFILE_LIMIT_BYTES = 5_000_000
 const DETAIL_LIMIT_BYTES = 8_000_000
 const ACTION_LIMIT_BYTES = 15_000_000
-const MAX_IMPORTED_MATCHES = 100
-const MAX_IMPORT_PAGES = MAX_IMPORTED_MATCHES / 20
 const USER_AGENT = 'LoL-Randomizer/1.5.0 (+https://github.com/AdamKala/lol-randomizer)'
 let cachedGamesAction: { scriptUrl: string; actionId: string } | null = null
 
@@ -72,7 +70,7 @@ function validateImportRequest(value: unknown): asserts value is RecentMatchesIm
   if (!isRecord(value.range)) throw new Error('Vyber počet her nebo datum začátku importu.')
   if (value.range.mode === 'count') {
     const count = number(value.range.count)
-    if (typeof value.range.count !== 'number' || !Number.isInteger(count) || count < 1 || count > MAX_IMPORTED_MATCHES) throw new Error(`Počet her musí být celé číslo od 1 do ${MAX_IMPORTED_MATCHES}.`)
+    if (typeof value.range.count !== 'number' || !Number.isSafeInteger(count) || count < 1) throw new Error('Počet her musí být kladné celé číslo.')
   } else if (value.range.mode === 'since') {
     if (typeof value.range.since !== 'string' || !Number.isFinite(Date.parse(value.range.since))) throw new Error('Datum začátku importu není platné.')
   } else throw new Error('Neplatný způsob výběru historie.')
@@ -144,7 +142,7 @@ export function parseOpggRecentMatches(html: string): PublicPlayerMatch[] {
 }
 
 export function selectOpggRecentMatches(matches: PublicPlayerMatch[], range: RecentMatchesRange): PublicPlayerMatch[] {
-  if (range.mode === 'count') return matches.slice(0, Math.max(1, Math.min(MAX_IMPORTED_MATCHES, Math.trunc(range.count))))
+  if (range.mode === 'count') return matches.slice(0, Math.max(1, Math.trunc(range.count)))
   const since = Date.parse(range.since)
   return matches.filter((match) => Date.parse(match.gameStartedAt) >= since)
 }
@@ -295,9 +293,9 @@ async function fetchPlayerMatchesRange(player: TrackedPlayer, region: MatchRegio
     const matchIds = new Set<string>()
     const cursors = new Set<string>()
     const since = range.mode === 'since' ? Date.parse(range.since) : Number.NEGATIVE_INFINITY
-    const target = range.mode === 'count' ? range.count : MAX_IMPORTED_MATCHES
+    const target = range.mode === 'count' ? range.count : Number.POSITIVE_INFINITY
     let endedAt = ''
-    for (let pageNumber = 0; pageNumber < MAX_IMPORT_PAGES && matches.length < target; pageNumber += 1) {
+    while (matches.length < target) {
       const response = await fetch(profileUrl, {
         method: 'POST',
         headers: { Accept: 'text/x-component', 'Content-Type': 'text/plain;charset=UTF-8', 'Next-Action': actionId, 'User-Agent': USER_AGENT },

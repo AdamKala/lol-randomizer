@@ -130,24 +130,34 @@ function ConfirmDialog({ draft, onCancel, onConfirm }: { draft: Draft; onCancel:
   )
 }
 
-function localDateValue(date: Date): string {
-  const year = date.getFullYear()
+function czechDateValue(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return `${day}/${month}/${date.getFullYear()}`
+}
+
+function czechDateToIso(value: string): string | null {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim())
+  if (!match) return null
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const year = Number(match[3])
+  const date = new Date(year, month - 1, day)
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day || date > new Date()) return null
+  return date.toISOString()
 }
 
 function RecentImportDialog({ importing, onCancel, onImport }: { importing: boolean; onCancel: () => void; onImport: (range: RecentMatchesRange) => Promise<boolean> }) {
   const [mode, setMode] = useState<RecentMatchesRange['mode']>('count')
   const [count, setCount] = useState(10)
-  const [sinceDate, setSinceDate] = useState(() => { const date = new Date(); date.setDate(date.getDate() - 7); return localDateValue(date) })
-  const today = localDateValue(new Date())
-  const countIsValid = Number.isInteger(count) && count >= 1 && count <= 100
+  const [sinceDate, setSinceDate] = useState(() => { const date = new Date(); date.setDate(date.getDate() - 7); return czechDateValue(date) })
+  const sinceIso = czechDateToIso(sinceDate)
+  const countIsValid = Number.isSafeInteger(count) && count >= 1
   const submit = async () => {
-    if ((mode === 'count' && !countIsValid) || (mode === 'since' && !sinceDate)) return
+    if ((mode === 'count' && !countIsValid) || (mode === 'since' && !sinceIso)) return
     const range: RecentMatchesRange = mode === 'count'
       ? { mode: 'count', count }
-      : { mode: 'since', since: new Date(`${sinceDate}T00:00:00`).toISOString() }
+      : { mode: 'since', since: sinceIso! }
     if (await onImport(range)) onCancel()
   }
   return (
@@ -155,9 +165,9 @@ function RecentImportDialog({ importing, onCancel, onImport }: { importing: bool
       <div className="glass w-full max-w-lg rounded-xl border-cyan/25 p-5 shadow-2xl md:p-7">
         <div className="flex items-start justify-between gap-4"><div><p className="eyebrow">Import OP.GG</p><h2 id="recent-import-title" className="mt-2 font-display text-2xl font-bold text-gold-light">Načíst hry</h2><p className="mt-2 text-sm leading-6 text-slate-400">Vyber počet posledních her, nebo datum, od kterého je chceš zahrnout.</p></div><button type="button" className="btn-ghost !min-h-9 !px-2" onClick={onCancel} disabled={importing} aria-label="Zavřít"><X size={18} /></button></div>
         <div className="mt-6 grid grid-cols-2 gap-2 rounded-lg border border-white/[.08] bg-black/10 p-1.5"><button type="button" onClick={() => setMode('count')} className={`min-h-11 rounded-md px-3 text-sm font-bold transition ${mode === 'count' ? 'bg-cyan/15 text-cyan' : 'text-slate-500 hover:bg-white/[.04] hover:text-slate-200'}`}><HistoryIcon className="mr-2 inline" size={16} />Počet her</button><button type="button" onClick={() => setMode('since')} className={`min-h-11 rounded-md px-3 text-sm font-bold transition ${mode === 'since' ? 'bg-cyan/15 text-cyan' : 'text-slate-500 hover:bg-white/[.04] hover:text-slate-200'}`}><CalendarDays className="mr-2 inline" size={16} />Od data</button></div>
-        <div className="mt-5 rounded-lg border border-white/[.08] bg-white/[.02] p-4">{mode === 'count' ? <label className="block"><span className="text-sm font-semibold text-slate-300">Posledních her každého hráče</span><input type="number" min="1" max="100" step="1" className="field mt-2" value={count} onChange={(event) => setCount(Number(event.target.value))} autoFocus /><small className="mt-2 block text-xs text-slate-600">Zadej číslo od 1 do 100.</small></label> : <label className="block"><span className="text-sm font-semibold text-slate-300">Načíst hry ode dne</span><input type="date" max={today} className="field mt-2" value={sinceDate} onChange={(event) => setSinceDate(event.target.value)} autoFocus /><small className="mt-2 block text-xs text-slate-600">Čas se počítá od půlnoci ve tvém místním čase.</small></label>}</div>
-        <div className="mt-4 flex gap-2 rounded-lg border border-amber-400/15 bg-amber-400/[.05] p-3 text-xs leading-5 text-amber-100/70"><AlertTriangle className="mt-0.5 shrink-0" size={15} /><span>OP.GG se načítá po stránkách. Kvůli rychlosti a šetrnosti je jeden import omezený na 100 her na hráče; datum se použije v tomto rozsahu.</span></div>
-        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" className="btn-ghost" onClick={onCancel} disabled={importing}>Zrušit</button><button type="button" className="btn-blue" onClick={() => void submit()} disabled={importing || (mode === 'count' ? !countIsValid : !sinceDate)}>{importing ? <LoaderCircle size={16} className="animate-spin" /> : <Download size={16} />} {importing ? 'Načítám z OP.GG…' : 'Načíst hry'}</button></div>
+        <div className="mt-5 rounded-lg border border-white/[.08] bg-white/[.02] p-4">{mode === 'count' ? <label className="block"><span className="text-sm font-semibold text-slate-300">Posledních her každého hráče</span><input type="number" min="1" step="1" className="field mt-2" value={count} onChange={(event) => setCount(Number(event.target.value))} autoFocus /><small className="mt-2 block text-xs text-slate-600">Zadej libovolné kladné celé číslo.</small></label> : <label className="block"><span className="text-sm font-semibold text-slate-300">Načíst hry ode dne</span><input type="text" inputMode="numeric" maxLength={10} placeholder="DD/MM/YYYY" className="field mt-2" value={sinceDate} onChange={(event) => setSinceDate(event.target.value)} aria-invalid={!sinceIso} autoComplete="off" autoFocus /><small className={`mt-2 block text-xs ${sinceIso ? 'text-slate-600' : 'text-red-300'}`}>{sinceIso ? 'Formát DD/MM/YYYY, počítáno od místní půlnoci.' : 'Zadej platné datum ve formátu DD/MM/YYYY.'}</small></label>}</div>
+        <div className="mt-4 flex gap-2 rounded-lg border border-amber-400/15 bg-amber-400/[.05] p-3 text-xs leading-5 text-amber-100/70"><AlertTriangle className="mt-0.5 shrink-0" size={15} /><span>OP.GG se načítá po 20 hrách. Vyšší počet nebo starší datum proto může trvat déle.</span></div>
+        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" className="btn-ghost" onClick={onCancel} disabled={importing}>Zrušit</button><button type="button" className="btn-blue" onClick={() => void submit()} disabled={importing || (mode === 'count' ? !countIsValid : !sinceIso)}>{importing ? <LoaderCircle size={16} className="animate-spin" /> : <Download size={16} />} {importing ? 'Načítám z OP.GG…' : 'Načíst hry'}</button></div>
       </div>
     </div>
   )
@@ -551,7 +561,7 @@ export default function App() {
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Cooldown potvrzených her <small className="block text-slate-600">0–10 her</small></span><input className="field text-center" type="number" min="0" max="10" value={state.settings.cooldownGames} onChange={(event) => updateSettings({ cooldownGames: Math.max(0, Math.min(10, Number(event.target.value))) })} /></label>
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální pick rate <small className="block text-slate-600">v procentech</small></span><input className="field text-center" type="number" min="0" max="100" step="0.1" value={state.settings.minPickRate} onChange={(event) => updateSettings({ minPickRate: Math.max(0, Number(event.target.value)) })} /></label>
               <label className="grid grid-cols-[1fr_7rem] items-center gap-4 text-sm text-slate-300"><span>Minimální počet her</span><input className="field text-center" type="number" min="0" step="100" value={state.settings.minGames} onChange={(event) => updateSettings({ minGames: Math.max(0, Number(event.target.value)) })} /></label>
-              <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] p-3"><div className="flex items-center gap-2 text-sm font-bold text-emerald-200"><Check size={16} /> Bez API klíče</div><p className="mt-1.5 text-xs leading-5 text-slate-500">Výsledky a až 100 posledních her aplikace čte z veřejných profilů OP.GG. Stačí správné Riot ID a zvolený region.</p></div>
+              <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/[.06] p-3"><div className="flex items-center gap-2 text-sm font-bold text-emerald-200"><Check size={16} /> Bez API klíče</div><p className="mt-1.5 text-xs leading-5 text-slate-500">Výsledky a zvolený počet posledních her aplikace čte z veřejných profilů OP.GG. Stačí správné Riot ID a zvolený region.</p></div>
               <button type="button" className="btn-ghost !text-xs hover:!border-red-400/30 hover:!text-red-300" onClick={resetApp}><Trash2 size={14} /> Obnovit celou aplikaci</button>
             </div>
           </details>

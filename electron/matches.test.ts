@@ -57,8 +57,8 @@ describe('OP.GG veřejná historie', () => {
     const newer = { ...matches[0], rawMatchId: 'newer', gameStartedAt: '2026-10-27T10:00:00.000Z' }
     expect(selectOpggRecentMatches([newer, older], { mode: 'count', count: 1 }).map((match) => match.rawMatchId)).toEqual(['newer'])
     expect(selectOpggRecentMatches([newer, older], { mode: 'since', since: '2026-10-25T00:00:00.000Z' }).map((match) => match.rawMatchId)).toEqual(['newer'])
-    const twelve = Array.from({ length: 12 }, (_, index) => ({ ...newer, rawMatchId: `match-${index}` }))
-    expect(selectOpggRecentMatches(twelve, { mode: 'count', count: 12 })).toHaveLength(12)
+    const many = Array.from({ length: 125 }, (_, index) => ({ ...newer, rawMatchId: `match-${index}` }))
+    expect(selectOpggRecentMatches(many, { mode: 'count', count: 125 })).toHaveLength(125)
   })
 
   it('načte stránku starších her včetně damage a kurzoru', () => {

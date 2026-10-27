@@ -52,7 +52,7 @@ Buildy nejsou digitálně podepsané, dokud není do CI doplněn code-signing ce
 - individuální změna linky na kartě hráče; obsazená linka se prohodí pouze mezi dotčenými dvěma hráči;
 - potvrzení „🎮 Jdeme do hry!“ jako okamžik zápisu plánu do historie;
 - automatické dohledání společného dokončeného zápasu z veřejných profilů OP.GG bez API klíče;
-- stránkovaný import 1–100 posledních zápasů každého hráče nebo dostupných zápasů od zadaného data, včetně deduplikace společných her;
+- stránkovaný import zvoleného počtu posledních zápasů každého hráče nebo zápasů od data ve formátu `DD/MM/YYYY`, včetně deduplikace společných her;
 - horní záložky **Obecné**, **Statistiky** a **Poslední hry**;
 - poslední hry seskupené po zápasech do rozbalovacích karet se skutečným výsledkem, K/D/A, KDA, damage, OP.GG hodnocením a damage grafem;
 - samostatná sekce dlouhodobých statistik s winratem, průměrným KDA, výkonem, CS, damage a vision;
@@ -86,7 +86,7 @@ Randomizer, cooldown, historie a už stažené statistiky fungují offline. Nov�
 2. Ve viditelném menu **Nastavení** vyber region EUNE nebo EUW.
 3. Vygeneruj sestavu a před hrou potvrď **🎮 Jdeme do hry!**
 4. Po dohrání aplikace společný zápas automaticky dohledá na OP.GG. Čekající hry kontroluje každé tři minuty a také po příštím spuštění; výsledek lze načíst i ručně v historii.
-5. Tlačítko **Načíst hry** v sekci **Poslední hry** otevře dialog. Vyber buď 1–100 posledních zápasů každého hráče, nebo datum, od kterého se má historie načítat. OP.GG se stránkuje po 20 hrách až do limitu 100 na hráče. Společné zápasy se uloží jen jednou a hráči bez Riot ID se přeskočí.
+5. Tlačítko **Načíst hry** v sekci **Poslední hry** otevře dialog. Vyber libovolný kladný počet posledních zápasů každého hráče nebo datum ve formátu `DD/MM/YYYY`, od kterého se má historie načítat. OP.GG se stránkuje po 20 hrách bez pevného limitu aplikace, takže větší import může trvat déle. Společné zápasy se uloží jen jednou a hráči bez Riot ID se přeskočí.
 
 Importované zápasy mají vlastní záložku **Poslední hry**, vstupují do statistik, ale neovlivňují historii sestav ani cooldown randomizeru. Jeden společný zápas se zobrazí jako jedna rozbalovací karta s počtem vašich hráčů; uvnitř je jejich damage graf a jednotlivé výkony. Stránkovaný import čte detailní data přímo z veřejné odpovědi OP.GG; automatické párování potvrzené hry doplní veřejným detailem zápasu přesný damage, vision, OP.GG skóre i pořadí hráče. Mezery kolem `#` v Riot ID nevadí. Pokud detail dočasně není dostupný, aplikace zachová K/D/A a CS, zobrazí upozornění a dovolí detail později aktualizovat.
 
