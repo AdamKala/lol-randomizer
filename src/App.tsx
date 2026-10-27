@@ -115,10 +115,10 @@ function createId(): string {
 function RoleBadge({ role }: { role: Role }) {
   const data = ROLE_LABELS[role]
   return (
-    <span className="draft-role-badge">
+    <div className="draft-role-header">
       <span className="draft-role-mark">{data.mark}</span>
-      <span className="min-w-0"><small className="draft-role-kicker">{data.short}</small><strong className="draft-role-name">{data.title}</strong></span>
-    </span>
+      <span className="min-w-0"><small className="draft-role-kicker">{data.short}</small><strong className="draft-role-name" title={data.title}>{data.title}</strong></span>
+    </div>
   )
 }
 
@@ -144,10 +144,10 @@ function downloadJson(filename: string, value: unknown) {
 function DraftCard({ slot, index, onReroll, onRoleChange }: { slot: Draft['slots'][number]; index: number; onReroll: () => void; onRoleChange: (role: Role) => void }) {
   return (
     <article className={`draft-card ${DRAFT_CARD_VARIANTS[slot.role]} group relative min-w-0 overflow-hidden rounded-xl border bg-[#091322] shadow-xl transition duration-300 hover:-translate-y-1`} style={{ animationDelay: `${index * 65}ms` }}>
+      <RoleBadge role={slot.role} />
       <div className="draft-card-media relative aspect-[6/5] overflow-hidden bg-[#070d17]">
         <ChampionImage champion={slot.champion} className="h-full w-full scale-[1.02] object-cover transition duration-500 group-hover:scale-[1.08]" />
-        <div className="absolute left-3 right-12 top-3 z-[2]"><RoleBadge role={slot.role} /></div>
-        <button type="button" onClick={onReroll} className="draft-reroll-button absolute right-3 top-3 z-[2] grid place-items-center rounded-full border backdrop-blur transition hover:rotate-180" aria-label={`Přelosovat šampiona pro ${slot.player}`} title="Přelosovat pouze tohoto šampiona"><RotateCw size={16} /></button>
+        <button type="button" onClick={onReroll} className="absolute right-3 top-3 z-[2] grid size-10 place-items-center rounded-full border border-white/15 bg-[#050a12]/80 text-slate-200 backdrop-blur transition hover:rotate-180 hover:border-cyan/60 hover:text-cyan" aria-label={`Přelosovat šampiona pro ${slot.player}`} title="Přelosovat pouze tohoto šampiona"><RotateCw size={17} /></button>
       </div>
       <div className="relative px-4 pb-4 pt-3">
         <p className="truncate text-xs font-semibold uppercase tracking-[.16em] text-slate-400" title={slot.player}>{slot.player}</p>

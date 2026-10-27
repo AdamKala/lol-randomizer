@@ -62,18 +62,15 @@
       linear-gradient(115deg, rgb(var(--draft-role) / .13), transparent 44%);
     box-shadow: inset 0 3px 0 rgb(var(--draft-role) / .72);
   }
-  .draft-role-badge {
-    display: inline-flex;
-    width: fit-content;
-    max-width: 100%;
+  .draft-role-header {
+    display: flex;
+    min-height: 3.25rem;
     align-items: center;
-    gap: .45rem;
-    border: 1px solid rgb(var(--draft-role) / .58);
-    border-radius: .55rem;
-    padding: .35rem .5rem .35rem .38rem;
-    background: rgba(3, 8, 18, .8);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, .3), 0 0 16px rgb(var(--draft-role) / .1);
-    backdrop-filter: blur(10px);
+    gap: .55rem;
+    border-bottom: 1px solid rgb(var(--draft-role) / .28);
+    padding: .55rem .7rem;
+    background: linear-gradient(100deg, rgb(var(--draft-role) / .16), rgb(var(--draft-role) / .045));
+    box-shadow: inset 3px 0 0 rgb(var(--draft-role) / .78);
   }
   .draft-role-mark {
     display: grid;
@@ -92,33 +89,20 @@
   .draft-role-kicker {
     display: block;
     color: rgb(var(--draft-role));
-    font-size: .58rem;
+    font-size: .54rem;
     font-weight: 800;
     line-height: 1;
     letter-spacing: .16em;
   }
   .draft-role-name {
-    display: none;
+    display: block;
     overflow: hidden;
     margin-top: .18rem;
     color: #f8fafc;
-    font-size: .68rem;
+    font-size: .7rem;
     line-height: 1;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .draft-reroll-button {
-    width: 2.25rem;
-    height: 2.25rem;
-    border-color: rgb(var(--draft-role) / .46);
-    background: rgba(3, 8, 18, .82);
-    color: rgb(var(--draft-role));
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .28);
-  }
-  .draft-reroll-button:hover {
-    border-color: rgb(var(--draft-role) / .9);
-    background: rgb(var(--draft-role) / .17);
-    box-shadow: 0 0 18px rgb(var(--draft-role) / .2);
   }
   .draft-card-controls {
     display: grid;
@@ -132,8 +116,6 @@
   .draft-role-select:focus { border-color: rgb(var(--draft-role) / .9); }
   .draft-card-meta { text-align: left; }
   @container (min-width: 11.5rem) {
-    .draft-role-kicker { font-size: .48rem; }
-    .draft-role-name { display: block; }
     .draft-card-controls { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
     .draft-role-select { width: auto; }
     .draft-card-meta { text-align: right; }
@@ -326,6 +308,11 @@ input[type='number']::-webkit-inner-spin-button { opacity: .45; }
   border-color: rgb(var(--draft-role) / .68) !important;
   box-shadow: 0 16px 32px rgba(30, 41, 59, .17), 0 0 22px rgb(var(--draft-role) / .1);
 }
+:root[data-theme='light'] .draft-role-header {
+  border-bottom-color: rgb(var(--draft-role) / .3);
+  background: linear-gradient(100deg, rgb(var(--draft-role) / .2), rgb(var(--draft-role) / .07));
+}
+:root[data-theme='light'] .draft-role-name { color: #1e293b; }
 
 :root[data-theme='light'] .stats-panel {
   background-image:
